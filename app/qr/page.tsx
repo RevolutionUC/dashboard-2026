@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Types
+interface QRPayload {
+  participantId: string;
+  metadata?: Record<string, unknown>;
+}
+
 interface ParticipantData {
   participantId: string;
   firstName: string;
@@ -18,30 +23,50 @@ interface ParticipantData {
 type ScanStatus = "idle" | "scanning" | "loading" | "success" | "error";
 type ScannerMode = "checkin" | "workshop" | "food";
 
+// Parse QR code payload - only contains participantId and metadata
+function parseQRPayload(qrValue: string): QRPayload {
+  try {
+    const parsed = JSON.parse(qrValue);
+    // Handle different possible field names
+    const participantId =
+      parsed.participantId || parsed.Participant_ID || parsed.id;
+
+    if (!participantId) {
+      throw new Error("No participant ID found in QR code");
+    }
+
+    return {
+      participantId: String(participantId),
+      metadata: parsed.metadata,
+    };
+  } catch {
+    // If not valid JSON, treat the raw value as the participant ID
+    if (qrValue && qrValue.trim()) {
+      return {
+        participantId: qrValue.trim(),
+      };
+    }
+    throw new Error("Invalid QR code format");
+  }
+}
+
 // API functions
 async function getParticipantInfo(
   participantId: string,
 ): Promise<ParticipantData> {
-  const response = await fetch("/api/get-info", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    // Using query params for GET request
-  });
-
-  // For now, simulating the API call since the endpoint format uses GET
-  // In production, this would be: GET /api/get-info?participantId=...
-  const mockResponse = await fetch(
+  const response = await fetch(
     `/api/get-info?participantId=${encodeURIComponent(participantId)}`,
   );
 
-  if (!mockResponse.ok) {
-    const errorData = await mockResponse.json().catch(() => ({}));
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    if (response.status === 404) {
+      throw new Error("No participant found for this QR code");
+    }
     throw new Error(errorData.message || "Failed to fetch participant info");
   }
 
-  const data = await mockResponse.json();
+  const data = await response.json();
   return {
     participantId,
     firstName: data.FirstName,
@@ -129,18 +154,11 @@ export default function QRScannerPage() {
       setParticipantData(null);
 
       try {
-        // Parse QR code - assuming it contains the participantId directly or as JSON
-        let participantId: string;
-        try {
-          const parsed = JSON.parse(qrValue);
-          participantId =
-            parsed.participantId || parsed.Participant_ID || qrValue;
-        } catch {
-          // If not JSON, treat the raw value as the participant ID
-          participantId = qrValue;
-        }
+        // Parse QR code - only contains participantId and metadata
+        const qrPayload = parseQRPayload(qrValue);
 
-        const data = await getParticipantInfo(participantId);
+        // Fetch full participant info from API
+        const data = await getParticipantInfo(qrPayload.participantId);
         setParticipantData(data);
         setScanStatus("scanning");
       } catch (error) {
