@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 import Link from "next/link";
 
 export function AuthHeader() {
@@ -21,7 +22,7 @@ export function AuthHeader() {
           {session.user.name || session.user.email}
         </span>
         {session.user.image && (
-          <img
+          <Image
             src={session.user.image}
             alt={session.user.name || "User"}
             className="h-8 w-8 rounded-full"
