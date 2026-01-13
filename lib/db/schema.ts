@@ -74,6 +74,8 @@ export const participants = pgTable(
   "participants",
   {
     uuid: uuid("uuid").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "set null" }),
     firstName: text("first_name").notNull(),
     lastName: text("last_name").notNull(),
     email: text("email").notNull().unique(),
@@ -102,6 +104,7 @@ export const participants = pgTable(
   (table) => [
     index("participants_email_idx").on(table.email),
     index("participants_status_idx").on(table.status),
+    index("participants_userId_idx").on(table.userId),
   ],
 );
 
