@@ -14,7 +14,7 @@ interface ParticipantData {
   participantId: string;
   firstName: string;
   lastName: string;
-  status: "CONFIRMED" | "WAITLISTED";
+  status: "PENDING" | "CONFIRMED" | "WAITLISTED";
   checkedIn: boolean;
   metadata?: Record<string, unknown>;
 }

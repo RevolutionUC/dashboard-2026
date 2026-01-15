@@ -3,6 +3,8 @@ import { ilike, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { participants } from "@/lib/db/schema";
 import { ParticipantsSearchBox } from "@/components/participants-search-box";
+import { ParticipantStatusMenu } from "@/components/participant-status-menu";
+import { isParticipantStatus } from "@/lib/participant-status";
 import {
   Pagination,
   PaginationContent,
@@ -120,8 +122,14 @@ export default async function Search({
                     {p.phone} · {p.school}
                   </div>
                 </div>
-                <div className="shrink-0 text-xs text-muted-foreground">
-                  {p.status ?? "PENDING"} · {p.checkedIn ? "Checked in" : "Not checked in"}
+                <div className="shrink-0 flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {(p.checkedIn ? "Checked in" : "Not checked in") + " ·"}
+                  </span>
+                  <ParticipantStatusMenu
+                    participantId={p.uuid}
+                    currentStatus={isParticipantStatus(p.status) ? p.status : "PENDING"}
+                  />
                 </div>
               </summary>
 
