@@ -1,4 +1,5 @@
 "use client";
+import { Calendar, Home, Inbox, Search, Settings, QrCode } from "lucide-react";
 
 import {
   CalendarDays,
@@ -41,6 +42,16 @@ const items = [
   {
     title: "QR",
     url: "/qr",
+    icon: QrCode,
+  },
+  {
+    title: "Calendar",
+    url: "#",
+    icon: Calendar,
+  },
+  {
+    title: "Emails",
+    url: "/emails",
     icon: Inbox,
   },
   {
