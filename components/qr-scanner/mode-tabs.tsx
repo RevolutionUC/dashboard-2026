@@ -17,8 +17,8 @@ interface TabConfig {
 
 const tabs: TabConfig[] = [
   { mode: "checkin", label: "Check-in", disabled: false },
-  { mode: "workshop", label: "Workshops", disabled: true },
-  { mode: "food", label: "Food", disabled: true },
+  { mode: "workshop", label: "Workshops", disabled: false },
+  { mode: "food", label: "Food", disabled: false },
 ];
 
 export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
