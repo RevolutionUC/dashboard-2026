@@ -10,7 +10,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PARTICIPANT_STATUSES, type ParticipantStatus } from "@/lib/participant-status";
+import {
+  PARTICIPANT_STATUSES,
+  type ParticipantStatus,
+} from "@/lib/participant-status";
 
 function labelForStatus(status: ParticipantStatus) {
   return status.replaceAll("_", "-");
@@ -36,7 +39,9 @@ export function ParticipantStatusMenu({
     });
 
     if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as { message?: string } | null;
+      const data = (await res.json().catch(() => null)) as {
+        message?: string;
+      } | null;
       throw new Error(data?.message || "Failed to update status");
     }
   }
@@ -68,4 +73,3 @@ export function ParticipantStatusMenu({
     </DropdownMenu>
   );
 }
-

@@ -59,7 +59,8 @@ export default async function DashboardPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Participants overview {display.isPlaceholder ? "(placeholder data)" : ""}
+          Participants overview{" "}
+          {display.isPlaceholder ? "(placeholder data)" : ""}
         </p>
       </div>
 
@@ -69,7 +70,9 @@ export default async function DashboardPage() {
             <CardTitle>Total participants</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold tabular-nums">{display.total}</div>
+            <div className="text-3xl font-semibold tabular-nums">
+              {display.total}
+            </div>
           </CardContent>
         </Card>
 
@@ -78,7 +81,9 @@ export default async function DashboardPage() {
             <CardTitle>Confirmed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold tabular-nums">{display.confirmed}</div>
+            <div className="text-3xl font-semibold tabular-nums">
+              {display.confirmed}
+            </div>
           </CardContent>
         </Card>
 
@@ -87,7 +92,9 @@ export default async function DashboardPage() {
             <CardTitle>Waitlisted</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold tabular-nums">{display.waitlisted}</div>
+            <div className="text-3xl font-semibold tabular-nums">
+              {display.waitlisted}
+            </div>
           </CardContent>
         </Card>
 
@@ -96,7 +103,9 @@ export default async function DashboardPage() {
             <CardTitle>Checked in</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold tabular-nums">{display.checkedIn}</div>
+            <div className="text-3xl font-semibold tabular-nums">
+              {display.checkedIn}
+            </div>
           </CardContent>
         </Card>
       </div>
