@@ -36,7 +36,7 @@ export default function QRScannerPage() {
   useEffect(() => {
     fetchEvents()
       .then(setEvents)
-      .catch((err) => console.error("Failed to load events:", err));
+      .catch((err: Error) => console.error("Failed to load events:", err));
   }, []);
 
   // Reset when mode changes
@@ -86,7 +86,7 @@ export default function QRScannerPage() {
         const data = await fetchParticipant(participantId);
         setParticipant(data);
         setStatus("scanning");
-      } catch (err) {
+      } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Invalid QR code");
         setStatus("error");
       } finally {
@@ -108,9 +108,11 @@ export default function QRScannerPage() {
       );
       setStatus("success");
       if (mode === "checkin") {
-        setParticipant((p) => (p ? { ...p, checkedIn: true } : null));
+        setParticipant((p: Participant | null) =>
+          p ? { ...p, checkedIn: true } : null,
+        );
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
       setStatus("error");
     } finally {
@@ -144,7 +146,7 @@ export default function QRScannerPage() {
               className={cn(
                 "flex-1 py-3 px-4 font-medium transition-colors",
                 isActive
-                  ? `border-b-2 ${c.borderClass} ${c.textClass} bg-${c.color}-50`
+                  ? `border-b-2 ${c.borderClass} ${c.textClass}`
                   : "text-gray-500 hover:text-gray-700",
               )}
             >
