@@ -195,7 +195,7 @@ export const eventRegistrations = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     user_id: uuid("user_id")
       .notNull()
-      .references(() => participants.user_id, { onDelete: "cascade" }),
+    .references(() => participants.user_id, { onDelete: "cascade" }),
     eventId: uuid("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
