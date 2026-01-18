@@ -7,10 +7,7 @@ import { db } from "@/lib/db";
 import { participants } from "@/lib/db/schema";
 import { isParticipantStatus } from "@/lib/participant-status";
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ uuid: string }> },
-) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: string }> }) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -52,4 +49,3 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true });
 }
-

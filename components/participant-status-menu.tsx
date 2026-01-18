@@ -10,10 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  PARTICIPANT_STATUSES,
-  type ParticipantStatus,
-} from "@/lib/participant-status";
+import { PARTICIPANT_STATUSES, type ParticipantStatus } from "@/lib/participant-status";
 
 function labelForStatus(status: ParticipantStatus) {
   return status.replaceAll("_", "-");
