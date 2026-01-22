@@ -43,10 +43,7 @@ export function AuthHeader() {
 
   return (
     <header className="fixed top-0 right-0 z-50 p-4 flex items-center gap-3">
-      <Link
-        href="/sign-in"
-        className="text-sm font-medium hover:underline cursor-pointer"
-      >
+      <Link href="/sign-in" className="text-sm font-medium hover:underline cursor-pointer">
         Sign In
       </Link>
       <Link

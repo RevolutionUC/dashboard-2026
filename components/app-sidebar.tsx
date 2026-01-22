@@ -23,11 +23,7 @@ const items = [
     url: "/qr",
     icon: QrCode,
   },
-  {
-    title: "Calendar",
-    url: "#",
-    icon: Calendar,
-  },
+
   {
     title: "Emails",
     url: "/emails",
@@ -35,13 +31,8 @@ const items = [
   },
   {
     title: "Search",
-    url: "#",
+    url: "/search",
     icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
   },
 ];
 
