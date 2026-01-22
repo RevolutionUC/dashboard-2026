@@ -15,7 +15,7 @@ import {
 import { emailTemplates } from "@/lib/templates";
 import { PARTICIPANT_STATUSES } from "@/lib/participant-status";
 
-type RecipientType = "all" | "minors" | "status" | "specific";
+type RecipientType = "all" | "status" | "specific";
 
 export default function EmailSendPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -136,14 +136,6 @@ export default function EmailSendPage() {
               <RadioGroupItem value="all" id="all" />
               <Label htmlFor="all" className="font-normal cursor-pointer">
                 All participants
-              </Label>
-            </div>
-
-            {/* Minors-only */}
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="minors" id="minors" />
-              <Label htmlFor="minors" className="font-normal cursor-pointer">
-                Minors-only
               </Label>
             </div>
 
