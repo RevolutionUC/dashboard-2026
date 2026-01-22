@@ -1,0 +1,120 @@
+import * as React from "react";
+import { Section } from "@react-email/components";
+import { EmailLayout } from "./components/EmailLayout";
+import { EmailHeading } from "./components/EmailHeading";
+import { EmailText, EmailLink } from "./components/EmailText";
+import { EmailButton } from "./components/EmailButton";
+import { WristbandsPartial } from "./components/partials";
+
+interface InfoEmailMinorsProps {
+    firstName?: string;
+}
+
+export const InfoEmailMinors: React.FC<InfoEmailMinorsProps> = ({
+    firstName = "Hacker",
+}) => {
+    return (
+        <EmailLayout preview="Important Information for Minors at RevolutionUC">
+            <EmailHeading as="h1">Hey, {firstName},</EmailHeading>
+
+            <EmailText>
+                We're excited to have you at RevolutionUC! Because you're under 18,
+                there is some extra information you need to know to get ready. Following
+                these guidelines is mandatory and necessary for compliance with
+                university guidelines. Please share this document with your
+                parent/guardian.
+            </EmailText>
+
+            <EmailText>
+                <strong>Communication Information</strong>
+                <br />
+                Parents/guardians will be able to contact hackathon organizers with
+                questions or concerns during the event. The primary contact for
+                questions related to minors at the event is Tucker Cook, who can be
+                reached at (513) 609-3963. Our backup contact is Ayush Verma, who can be
+                reached at (513) 816-2316. Questions can also be asked prior to the
+                event via email at info@revolutionuc.com. Parents/guardians are also
+                welcome to contact their participant at any time during the event by
+                phone, email, etc.
+            </EmailText>
+
+            <EmailText>
+                <strong>Waiver and Release Forms</strong>
+                <br />
+                You can view and download the required waiver and release forms at the
+                link below. Each form (total of 7) must be completed and signed by a
+                parent/guardian - these must be completed and emailed to this email (
+                <EmailLink href="mailto:info@revolutionuc.com">
+                    info@revolutionuc.com
+                </EmailLink>
+                ) before March 2026. These forms are mandatory in order to be allowed to
+                participate in RevolutionUC.
+            </EmailText>
+
+            <EmailText>
+                The seven forms are the Minors Waiver, Liability Waiver, Early Release
+                form, Medical Info and Release form, Over-the-Counter Medication form,
+                Self-Administration of Prescription Medication form, and Photo Release
+                form. Please make sure to fill out these forms; it is not the same
+                waiver that is given to over-18 participants at the time of
+                registration. Submission of the waiver and forms at check-in is
+                mandatory for participation.
+            </EmailText>
+
+            <EmailText>
+                In the event of an emergency, we will notify your primary emergency
+                contact. If we cannot reach your primary contact, we will notify your
+                secondary emergency contact.
+            </EmailText>
+
+            <Section style={{ textAlign: "center", margin: "24px 0" }}>
+                <EmailButton href="https://drive.google.com/drive/folders/1Tz8ie8l4nbdQoDHEIHJ--EThnAw8yNOB?usp=sharing">
+                    Download Forms
+                </EmailButton>
+            </Section>
+
+            <EmailText>
+                <strong>Dedicated Hackerspace</strong>
+                <br />
+                The event will be taking place in person, at a new location slightly off
+                of UC's main campus at the 1819 Innovation Hub. The entirety of the
+                building will be considered a part of the hackerspace, but designated
+                members of our organizing team will oversee a specific area for minors.
+                This effort will ensure we can offer mandated supervision for all
+                minors.
+            </EmailText>
+
+            <EmailText>
+                The address for the 1819 Innovation Hub is 2900 Reading Rd, Cincinnati,
+                OH 45206.
+            </EmailText>
+
+            <EmailText>
+                <strong>Leaving and Re-Entering the Event</strong>
+                <br />
+                If you want to leave during the event, you must either be signed out by
+                your parent/guardian at the 1819 Innovation Hub or be pre-approved by
+                your parent/guardian on the previously mentioned Early Release form. If
+                you are not pre-approved, then your parent/guardian must also sign you
+                back in. This includes if you wish to leave before the event ends. If
+                under 18 and leaving, you must sign out with the designated hackathon
+                organizer in the 1819 Innovation Hub before leaving, and sign back in
+                upon returning.
+            </EmailText>
+
+            <WristbandsPartial />
+
+            <EmailText>
+                <strong>Pick-up and Drop-off</strong>
+                <br />
+                If you're not driving to the event, you can be dropped off directly at
+                the 1819 Innovation Hub. This is also where you can be picked up after
+                the event.
+            </EmailText>
+
+            <EmailText>We look forward to hacking with you!</EmailText>
+        </EmailLayout>
+    );
+};
+
+export default InfoEmailMinors;

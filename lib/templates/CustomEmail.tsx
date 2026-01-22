@@ -42,21 +42,24 @@ export const CustomEmail: React.FC<CustomEmailProps> = ({
 // Styles
 const heading = {
   color: "#1a1a1a",
-  fontSize: "24px",
-  fontWeight: "600",
-  lineHeight: "32px",
-  margin: "0 0 24px",
+  fontSize: "28px",
+  fontWeight: "700",
+  lineHeight: "36px",
+  margin: "0 0 32px",
+  textAlign: "center" as const,
 };
 
 const paragraph = {
-  color: "#525f7f",
+  color: "#374151",
   fontSize: "16px",
-  lineHeight: "26px",
-  margin: "0 0 16px",
+  lineHeight: "28px",
+  margin: "0 0 20px",
 };
 
 const signatureSection = {
-  marginTop: "32px",
+  marginTop: "48px",
+  paddingTop: "24px",
+  borderTop: "1px solid #e5e7eb",
 };
 
 export default CustomEmail;
