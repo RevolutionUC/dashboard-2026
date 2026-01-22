@@ -66,7 +66,7 @@ export function extractGitHubUrls(links: string): string[] {
   if (!links) return [];
 
   const urls: string[] = [];
-  const regex = /https?:\/\/github\.com\/([^\/\s,\]\)]+)\/([^\/\s,\]\)\#]+)/gi;
+  const regex = /https?:\/\/github\.com\/([^/\s,\])]+)\/([^/\s,\])#]+)/gi;
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(links)) !== null) {
