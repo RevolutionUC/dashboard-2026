@@ -50,5 +50,4 @@ next-env.d.ts
 
 better-auth_migrations/
 
-*.csv
-*.json
+/fraud-report*.json
