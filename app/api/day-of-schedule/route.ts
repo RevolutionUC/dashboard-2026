@@ -30,10 +30,7 @@ export async function GET() {
     return NextResponse.json(allScheduleItems);
   } catch (error) {
     console.error("Error fetching day-of schedule:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch day-of schedule" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch day-of schedule" }, { status: 500 });
   }
 }
 
@@ -82,10 +79,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newScheduleItem, { status: 201 });
   } catch (error) {
     console.error("Error creating day-of schedule item:", error);
-    return NextResponse.json(
-      { error: "Failed to create day-of schedule item" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to create day-of schedule item" }, { status: 500 });
   }
 }
 
@@ -105,10 +99,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Event ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
     }
 
     const [deletedItem] = await db
@@ -123,9 +114,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
     console.error("Error deleting day-of schedule item:", error);
-    return NextResponse.json(
-      { error: "Failed to delete day-of schedule item" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete day-of schedule item" }, { status: 500 });
   }
 }

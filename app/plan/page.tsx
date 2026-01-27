@@ -46,9 +46,7 @@ const localizer = momentLocalizer(moment);
 export default function Plan() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null,
-  );
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(EVENT_DAY);
   const { data: session } = authClient.useSession();

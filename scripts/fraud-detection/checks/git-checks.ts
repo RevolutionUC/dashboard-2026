@@ -25,8 +25,7 @@ export function runGitChecks(
         severity: "high",
         category: "private-repo",
         title: "Private or inaccessible repository",
-        description:
-          "Cannot verify commit history - repository is private or does not exist",
+        description: "Cannot verify commit history - repository is private or does not exist",
         evidence: [analysis.error || "Repository not accessible"],
         scoreImpact: 30,
       });
@@ -58,45 +57,31 @@ export function runGitChecks(
   const authorFlag = checkMismatchedAuthors(analysis, registeredTeamSize);
   if (authorFlag) flags.push(authorFlag);
 
-  const boundaryFlag = checkBoundaryCommits(
-    analysis,
-    hackathonStart,
-    hackathonEnd,
-  );
+  const boundaryFlag = checkBoundaryCommits(analysis, hackathonStart, hackathonEnd);
   if (boundaryFlag) flags.push(boundaryFlag);
 
   return flags;
 }
 
-function checkPreHackathonCommits(
-  analysis: GitAnalysis,
-  hackathonStart: Date,
-): FraudFlag | null {
+function checkPreHackathonCommits(analysis: GitAnalysis, hackathonStart: Date): FraudFlag | null {
   if (!analysis.firstCommitDate) return null;
 
   const bufferStart = new Date(hackathonStart.getTime() - 60 * 60 * 1000);
 
   if (analysis.firstCommitDate < bufferStart) {
     const daysBefore = Math.floor(
-      (hackathonStart.getTime() - analysis.firstCommitDate.getTime()) /
-        (1000 * 60 * 60 * 24),
+      (hackathonStart.getTime() - analysis.firstCommitDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
-    const preHackathonCommits = analysis.commits.filter(
-      (c) => c.authorDate < hackathonStart,
-    );
-    const totalPreHackathonLines = preHackathonCommits.reduce(
-      (sum, c) => sum + c.additions,
-      0,
-    );
+    const preHackathonCommits = analysis.commits.filter((c) => c.authorDate < hackathonStart);
+    const totalPreHackathonLines = preHackathonCommits.reduce((sum, c) => sum + c.additions, 0);
 
     if (totalPreHackathonLines < 100 && preHackathonCommits.length <= 2) {
       return {
         severity: "medium",
         category: "pre-hackathon-commits",
         title: "Repository initialized before hackathon",
-        description:
-          "Repo has early commits but with minimal code - may be setup only",
+        description: "Repo has early commits but with minimal code - may be setup only",
         evidence: [
           `First commit: ${analysis.firstCommitDate.toISOString()}`,
           `Hackathon start: ${hackathonStart.toISOString()}`,
@@ -168,10 +153,7 @@ function checkCodeDump(analysis: GitAnalysis): FraudFlag | null {
   return null;
 }
 
-function checkDeadlineOnlyCommits(
-  analysis: GitAnalysis,
-  hackathonEnd: Date,
-): FraudFlag | null {
+function checkDeadlineOnlyCommits(analysis: GitAnalysis, hackathonEnd: Date): FraudFlag | null {
   if (analysis.totalCommits < 3) return null;
 
   const finalHours = new Date(hackathonEnd.getTime() - 2 * 60 * 60 * 1000);
@@ -199,21 +181,15 @@ function checkDeadlineOnlyCommits(
   return null;
 }
 
-function checkNoCommitsDuringHackathon(
-  analysis: GitAnalysis,
-): FraudFlag | null {
+function checkNoCommitsDuringHackathon(analysis: GitAnalysis): FraudFlag | null {
   if (analysis.totalCommits === 0) return null;
 
-  if (
-    analysis.commitsDuringHackathon === 0 &&
-    analysis.commitsBeforeHackathon > 0
-  ) {
+  if (analysis.commitsDuringHackathon === 0 && analysis.commitsBeforeHackathon > 0) {
     return {
       severity: "high",
       category: "no-commits-during-hackathon",
       title: "No commits during hackathon window",
-      description:
-        "All commits are either before or after the hackathon period",
+      description: "All commits are either before or after the hackathon period",
       evidence: [
         `Commits before hackathon: ${analysis.commitsBeforeHackathon}`,
         `Commits during hackathon: ${analysis.commitsDuringHackathon}`,
@@ -280,9 +256,7 @@ function checkSuspiciousMessages(analysis: GitAnalysis): FraudFlag[] {
   for (const commit of analysis.commits) {
     for (const pattern of SUSPICIOUS_MESSAGE_PATTERNS) {
       if (pattern.test(commit.message)) {
-        suspiciousCommits.push(
-          `"${commit.message}" (${commit.sha.slice(0, 7)})`,
-        );
+        suspiciousCommits.push(`"${commit.message}" (${commit.sha.slice(0, 7)})`);
         break;
       }
     }
@@ -293,8 +267,7 @@ function checkSuspiciousMessages(analysis: GitAnalysis): FraudFlag[] {
       severity: "medium",
       category: "suspicious-messages",
       title: "Suspicious commit messages found",
-      description:
-        "Commit messages suggest code may have been migrated from another project",
+      description: "Commit messages suggest code may have been migrated from another project",
       evidence: suspiciousCommits,
       scoreImpact: 20,
     });
@@ -310,9 +283,7 @@ function checkMismatchedAuthors(
   const humanAuthors = analysis.uniqueAuthors.filter((email) => {
     const lower = email.toLowerCase();
     return (
-      !lower.includes("dependabot") &&
-      !lower.includes("github-actions") &&
-      !lower.includes("[bot]")
+      !lower.includes("dependabot") && !lower.includes("github-actions") && !lower.includes("[bot]")
     );
   });
 

@@ -1,9 +1,4 @@
-import type {
-  FraudReport,
-  FraudSeverity,
-  ProjectAnalysis,
-  RiskLevel,
-} from "../types";
+import type { FraudReport, FraudSeverity, ProjectAnalysis, RiskLevel } from "../types";
 
 const colors = {
   reset: "\x1b[0m",
@@ -62,9 +57,7 @@ export function printReport(report: FraudReport): void {
 
   console.log();
   console.log(color(line, colors.cyan));
-  console.log(
-    color("  HACKATHON FRAUD DETECTION REPORT", colors.cyan, colors.bold),
-  );
+  console.log(color("  HACKATHON FRAUD DETECTION REPORT", colors.cyan, colors.bold));
   console.log(color(line, colors.cyan));
   console.log();
 
@@ -84,15 +77,9 @@ export function printReport(report: FraudReport): void {
   console.log(
     `  ${color("DISQUALIFY", riskColor("DISQUALIFY"))} (score >= 70): ${report.disqualifyCount}`,
   );
-  console.log(
-    `  ${color("REVIEW", riskColor("REVIEW"))} (score 40-69): ${report.reviewCount}`,
-  );
-  console.log(
-    `  ${color("WATCH", riskColor("WATCH"))} (score 20-39): ${report.watchCount}`,
-  );
-  console.log(
-    `  ${color("PASS", riskColor("PASS"))} (score < 20): ${report.passCount}`,
-  );
+  console.log(`  ${color("REVIEW", riskColor("REVIEW"))} (score 40-69): ${report.reviewCount}`);
+  console.log(`  ${color("WATCH", riskColor("WATCH"))} (score 20-39): ${report.watchCount}`);
+  console.log(`  ${color("PASS", riskColor("PASS"))} (score < 20): ${report.passCount}`);
   console.log();
 
   const categoriesWithFlags = Object.entries(report.flagsByCategory).filter(
@@ -106,15 +93,11 @@ export function printReport(report: FraudReport): void {
     console.log();
   }
 
-  const disqualify = report.projects.filter(
-    (p) => p.riskLevel === "DISQUALIFY",
-  );
+  const disqualify = report.projects.filter((p) => p.riskLevel === "DISQUALIFY");
   if (disqualify.length > 0) {
     console.log();
     console.log(color(line, colors.red));
-    console.log(
-      color("  CRITICAL - DISQUALIFICATION REQUIRED", colors.red, colors.bold),
-    );
+    console.log(color("  CRITICAL - DISQUALIFICATION REQUIRED", colors.red, colors.bold));
     console.log(color(line, colors.red));
     for (const analysis of disqualify) {
       printProjectAnalysis(analysis);
@@ -125,13 +108,7 @@ export function printReport(report: FraudReport): void {
   if (review.length > 0) {
     console.log();
     console.log(color(line, colors.yellow));
-    console.log(
-      color(
-        "  HIGH PRIORITY - MANUAL REVIEW REQUIRED",
-        colors.yellow,
-        colors.bold,
-      ),
-    );
+    console.log(color("  HIGH PRIORITY - MANUAL REVIEW REQUIRED", colors.yellow, colors.bold));
     console.log(color(line, colors.yellow));
     for (const analysis of review) {
       printProjectAnalysis(analysis);
@@ -161,10 +138,7 @@ export function printReport(report: FraudReport): void {
   console.log();
 }
 
-function printProjectAnalysis(
-  analysis: ProjectAnalysis,
-  compact = false,
-): void {
+function printProjectAnalysis(analysis: ProjectAnalysis, compact = false): void {
   const { project, flags, fraudScore, riskLevel, gitAnalyses } = analysis;
 
   console.log();
@@ -172,15 +146,11 @@ function printProjectAnalysis(
     color(`[SCORE: ${fraudScore}]`, scoreColor(fraudScore)),
     color(project.title, colors.bold),
   );
-  console.log(
-    `  ${color("Risk:", colors.dim)} ${color(riskLevel, riskColor(riskLevel))}`,
-  );
+  console.log(`  ${color("Risk:", colors.dim)} ${color(riskLevel, riskColor(riskLevel))}`);
   console.log(`  ${color("DevPost:", colors.dim)} ${project.submissionUrl}`);
 
   if (project.githubUrls.length > 0) {
-    console.log(
-      `  ${color("GitHub:", colors.dim)} ${project.githubUrls.join(", ")}`,
-    );
+    console.log(`  ${color("GitHub:", colors.dim)} ${project.githubUrls.join(", ")}`);
   } else {
     console.log(`  ${color("GitHub:", colors.dim)} None provided`);
   }
@@ -189,9 +159,7 @@ function printProjectAnalysis(
 
   if (compact) {
     if (flags.length > 0) {
-      const flagSummary = flags
-        .map((f) => `[${f.severity.toUpperCase()}] ${f.title}`)
-        .join("; ");
+      const flagSummary = flags.map((f) => `[${f.severity.toUpperCase()}] ${f.title}`).join("; ");
       console.log(`  ${color("Flags:", colors.dim)} ${flagSummary}`);
     }
     return;

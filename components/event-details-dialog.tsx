@@ -107,9 +107,7 @@ export function EventDetailsDialog({
               }`}
             >
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isInternal ? "bg-red-500" : "bg-blue-500"
-                }`}
+                className={`h-1.5 w-1.5 rounded-full ${isInternal ? "bg-red-500" : "bg-blue-500"}`}
               />
               {isInternal ? "Internal" : "Public"}
             </span>
@@ -119,9 +117,7 @@ export function EventDetailsDialog({
 
         <div className="grid gap-4 py-4">
           {error && (
-            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-              {error}
-            </div>
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>
           )}
 
           {/* Date & Time */}
@@ -152,9 +148,7 @@ export function EventDetailsDialog({
               <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
                 <p className="font-medium">Capacity</p>
-                <p className="text-sm text-muted-foreground">
-                  {event.capacity} attendees
-                </p>
+                <p className="text-sm text-muted-foreground">{event.capacity} attendees</p>
               </div>
             </div>
           )}
@@ -167,10 +161,7 @@ export function EventDetailsDialog({
               <p className="text-sm text-muted-foreground">
                 {event.creatorName || event.creatorEmail || "Unknown"}
                 {event.creatorName && event.creatorEmail && (
-                  <span className="text-muted-foreground/70">
-                    {" "}
-                    ({event.creatorEmail})
-                  </span>
+                  <span className="text-muted-foreground/70"> ({event.creatorEmail})</span>
                 )}
               </p>
             </div>
@@ -205,11 +196,7 @@ export function EventDetailsDialog({
               </Button>
             )}
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </DialogFooter>

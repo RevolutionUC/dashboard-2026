@@ -125,9 +125,7 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
               <Label htmlFor="visibility">Visibility *</Label>
               <Select
                 value={formData.visibility}
-                onValueChange={(value) =>
-                  handleSelectChange("visibility", value)
-                }
+                onValueChange={(value) => handleSelectChange("visibility", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select visibility" />

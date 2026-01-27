@@ -4,20 +4,9 @@ import { parseCSV } from "./csv-parser";
 import { analyzeProject, sortByRisk } from "./checks";
 import { analyzeRepository } from "./utils/git-clone";
 import { getRepoInfo, RateLimiter } from "./utils/github-api";
-import {
-  printReport,
-  printProgress,
-  printError,
-  printSuccess,
-} from "./reporters/console";
+import { printReport, printProgress, printError, printSuccess } from "./reporters/console";
 import { saveJsonReport, saveCsvSummary } from "./reporters/json";
-import type {
-  CLIOptions,
-  FraudCategory,
-  FraudReport,
-  GitAnalysis,
-  ProjectAnalysis,
-} from "./types";
+import type { CLIOptions, FraudCategory, FraudReport, GitAnalysis, ProjectAnalysis } from "./types";
 
 const DEFAULT_START = "2025-03-01T12:00:00-05:00";
 const DEFAULT_END = "2025-03-02T12:30:00-05:00";
@@ -105,13 +94,8 @@ async function main(): Promise<void> {
   const hackathonStart = new Date(options.start);
   const hackathonEnd = new Date(options.end);
 
-  if (
-    Number.isNaN(hackathonStart.getTime()) ||
-    Number.isNaN(hackathonEnd.getTime())
-  ) {
-    printError(
-      "Invalid date format. Use ISO format (e.g., 2025-03-01T12:00:00-05:00)",
-    );
+  if (Number.isNaN(hackathonStart.getTime()) || Number.isNaN(hackathonEnd.getTime())) {
+    printError("Invalid date format. Use ISO format (e.g., 2025-03-01T12:00:00-05:00)");
     process.exit(1);
   }
 
@@ -123,9 +107,7 @@ async function main(): Promise<void> {
   console.log(`CSV File: ${options.csv}`);
   console.log(`Hackathon Start: ${hackathonStart.toISOString()}`);
   console.log(`Hackathon End: ${hackathonEnd.toISOString()}`);
-  console.log(
-    `Mode: ${options.quick ? "Quick (API only)" : "Full (with git clone)"}`,
-  );
+  console.log(`Mode: ${options.quick ? "Quick (API only)" : "Full (with git clone)"}`);
   console.log();
 
   printProgress("Parsing CSV file...");
@@ -189,12 +171,7 @@ async function main(): Promise<void> {
       }
     }
 
-    const projectAnalysis = analyzeProject(
-      project,
-      gitAnalyses,
-      hackathonStart,
-      hackathonEnd,
-    );
+    const projectAnalysis = analyzeProject(project, gitAnalyses, hackathonStart, hackathonEnd);
     projectAnalyses.push(projectAnalysis);
   }
 
@@ -208,11 +185,8 @@ async function main(): Promise<void> {
     hackathonEnd,
     totalProjects: projects.length,
     projectsWithGitHub: projectsWithGitHub.length,
-    projectsAnalyzed: projectAnalyses.filter((p) =>
-      p.gitAnalyses.some((g) => g.repoExists),
-    ).length,
-    disqualifyCount: sortedAnalyses.filter((p) => p.riskLevel === "DISQUALIFY")
-      .length,
+    projectsAnalyzed: projectAnalyses.filter((p) => p.gitAnalyses.some((g) => g.repoExists)).length,
+    disqualifyCount: sortedAnalyses.filter((p) => p.riskLevel === "DISQUALIFY").length,
     reviewCount: sortedAnalyses.filter((p) => p.riskLevel === "REVIEW").length,
     watchCount: sortedAnalyses.filter((p) => p.riskLevel === "WATCH").length,
     passCount: sortedAnalyses.filter((p) => p.riskLevel === "PASS").length,
@@ -232,9 +206,7 @@ async function main(): Promise<void> {
   }
 }
 
-function calculateFlagsByCategory(
-  analyses: ProjectAnalysis[],
-): Record<FraudCategory, number> {
+function calculateFlagsByCategory(analyses: ProjectAnalysis[]): Record<FraudCategory, number> {
   const counts: Record<FraudCategory, number> = {
     "pre-hackathon-commits": 0,
     "git-history-manipulation": 0,

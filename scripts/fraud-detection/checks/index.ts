@@ -1,10 +1,4 @@
-import type {
-  FraudFlag,
-  GitAnalysis,
-  Project,
-  ProjectAnalysis,
-  RiskLevel,
-} from "../types";
+import type { FraudFlag, GitAnalysis, Project, ProjectAnalysis, RiskLevel } from "../types";
 import { runGitChecks } from "./git-checks";
 
 export function calculateFraudScore(flags: FraudFlag[]): number {
@@ -39,8 +33,7 @@ export function analyzeProject(
       severity: "medium",
       category: "no-repo",
       title: "No repository for complex project",
-      description:
-        "Project has detailed description and tech stack but no source code link",
+      description: "Project has detailed description and tech stack but no source code link",
       evidence: [
         `Description length: ${project.description.length} chars`,
         `Technologies: ${project.builtWith.join(", ")}`,
@@ -50,12 +43,7 @@ export function analyzeProject(
   }
 
   for (const gitAnalysis of gitAnalyses) {
-    const gitFlags = runGitChecks(
-      gitAnalysis,
-      hackathonStart,
-      hackathonEnd,
-      project.teamSize,
-    );
+    const gitFlags = runGitChecks(gitAnalysis, hackathonStart, hackathonEnd, project.teamSize);
     flags.push(...gitFlags);
   }
 

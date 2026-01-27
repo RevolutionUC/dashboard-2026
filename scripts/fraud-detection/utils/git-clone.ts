@@ -82,24 +82,19 @@ export async function analyzeRepository(
           result.largestCommitMessage = commit.message;
         }
 
-        const timeDiff = Math.abs(
-          commit.authorDate.getTime() - commit.committerDate.getTime(),
-        );
+        const timeDiff = Math.abs(commit.authorDate.getTime() - commit.committerDate.getTime());
         if (timeDiff > 60 * 60 * 1000) {
           result.authorDateMismatches++;
         }
       }
 
-      const authorEmails = new Set(
-        commits.map((c) => c.authorEmail.toLowerCase()),
-      );
+      const authorEmails = new Set(commits.map((c) => c.authorEmail.toLowerCase()));
       result.uniqueAuthors = Array.from(authorEmails);
     }
 
     return result;
   } catch (error) {
-    result.error =
-      error instanceof Error ? error.message : "Unknown error during clone";
+    result.error = error instanceof Error ? error.message : "Unknown error during clone";
 
     if (
       result.error.includes("Authentication failed") ||
@@ -151,10 +146,8 @@ function parseGitLog(logOutput: string): CommitInfo[] {
     } else if (currentCommit) {
       const numstatMatch = line.match(/^(\d+|-)\s+(\d+|-)\s+(.+)$/);
       if (numstatMatch) {
-        const additions =
-          numstatMatch[1] === "-" ? 0 : Number.parseInt(numstatMatch[1], 10);
-        const deletions =
-          numstatMatch[2] === "-" ? 0 : Number.parseInt(numstatMatch[2], 10);
+        const additions = numstatMatch[1] === "-" ? 0 : Number.parseInt(numstatMatch[1], 10);
+        const deletions = numstatMatch[2] === "-" ? 0 : Number.parseInt(numstatMatch[2], 10);
         const filename = numstatMatch[3];
         currentCommit.additions = (currentCommit.additions || 0) + additions;
         currentCommit.deletions = (currentCommit.deletions || 0) + deletions;

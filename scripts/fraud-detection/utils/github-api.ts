@@ -8,11 +8,8 @@ export interface RepoInfo {
   error: string | null;
 }
 
-export async function getRepoInfo(
-  repoUrl: string,
-  token?: string,
-): Promise<RepoInfo> {
-  const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+export async function getRepoInfo(repoUrl: string, token?: string): Promise<RepoInfo> {
+  const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
   if (!match) {
     return {
       exists: false,
@@ -113,9 +110,7 @@ export class RateLimiter {
     const now = Date.now();
     const elapsed = now - this.lastRequest;
     if (elapsed < this.minInterval) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, this.minInterval - elapsed),
-      );
+      await new Promise((resolve) => setTimeout(resolve, this.minInterval - elapsed));
     }
     this.lastRequest = Date.now();
   }
