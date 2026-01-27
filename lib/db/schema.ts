@@ -10,6 +10,12 @@ import {
 } from "drizzle-orm/pg-core";
 import { PARTICIPANT_STATUSES } from "@/lib/participant-status";
 
+// Event visibility enum for day-of schedule
+export const scheduleVisibility = pgEnum("schedule_visibility", [
+  "internal",
+  "public",
+]);
+
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -121,7 +127,7 @@ export const participants = pgTable(
     referralSource: text("referral_source").array(),
     resumeUrl: text("resume_url"),
     qrBase64: text("qr_base64"),
-    status: participantStatus("status").notNull().default("PENDING"),
+    status: participantStatus("status").notNull().default("REGISTERED"),
     checkedIn: boolean("checked_in").default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -156,6 +162,30 @@ export const events = pgTable(
       .defaultNow(),
   },
   (table) => [index("events_type_idx").on(table.eventType)],
+);
+
+// Day-of Schedule Table
+export const dayOfSchedule = pgTable(
+  "day_of_schedule",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    startTime: timestamp("start_time", { withTimezone: true }),
+    endTime: timestamp("end_time", { withTimezone: true }),
+    location: text("location"),
+    capacity: integer("capacity"),
+    visibility: scheduleVisibility("visibility").notNull().default("internal"),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("day_of_schedule_visibility_idx").on(table.visibility)],
 );
 
 export const eventRegistrations = pgTable(
