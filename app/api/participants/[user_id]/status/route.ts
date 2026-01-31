@@ -30,7 +30,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ user_i
   if (!isParticipantStatus(nextStatus)) {
     return NextResponse.json({ message: "Invalid status" }, { status: 400 });
   }
-
   // Fetch the current status before updating so we can log the transition
   const [current] = await db
     .select({
@@ -52,7 +51,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ user_i
   const previousStatus = current.status;
 
   const checkedIn = nextStatus === "CHECKED_IN";
-
   const updated = await db
     .update(participants)
     .set({
