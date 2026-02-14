@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CalendarRange,
   ChevronRight,
+  ClipboardList,
   FolderKanban,
   Gavel,
   Home,
@@ -72,6 +73,11 @@ const planSubItems = [
     title: "Projects",
     url: "/projects",
     icon: FolderKanban,
+  },
+  {
+    title: "Assignments",
+    url: "/assignments",
+    icon: ClipboardList,
   },
 ];
 
