@@ -11,6 +11,7 @@ import {
 import { db } from "@/lib/db";
 import { categories, judgeGroups, judges } from "@/lib/db/schema";
 import { EditCategoryModal } from "./edit-category-modal";
+import { EditJudgeModal } from "./edit-judge-modal";
 import { NewCategoryModal } from "./new-category-modal";
 import { NewJudgeModal } from "./new-judge-modal";
 
@@ -118,8 +119,8 @@ export default async function JudgeAndCategoriesPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Judges ({allJudges.length})</CardTitle>
-          <NewJudgeModal categories={allCategories} />
+            <CardTitle>Judges ({allJudges.length})</CardTitle>
+            <NewJudgeModal categories={allCategories} />
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -130,13 +131,14 @@ export default async function JudgeAndCategoriesPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Group</TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {allJudges.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={5}
                         className="text-center text-muted-foreground"
                       >
                         No judges found
@@ -179,6 +181,12 @@ export default async function JudgeAndCategoriesPage() {
                               Not assigned
                             </span>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <EditJudgeModal
+                            judge={judge}
+                            categories={allCategories}
+                          />
                         </TableCell>
                       </TableRow>
                     ))

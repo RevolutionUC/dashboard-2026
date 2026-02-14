@@ -27,7 +27,8 @@ export async function createCategory(data: CreateCategoryInput) {
     console.error("Error creating category:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create category",
+      error:
+        error instanceof Error ? error.message : "Failed to create category",
     };
   }
 }
@@ -48,7 +49,8 @@ export async function createCategoriesBulk(data: BulkCreateCategoryInput[]) {
     console.error("Error creating categories:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create categories",
+      error:
+        error instanceof Error ? error.message : "Failed to create categories",
     };
   }
 }
@@ -77,7 +79,8 @@ export async function updateCategory(data: UpdateCategoryInput) {
     console.error("Error updating category:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to update category",
+      error:
+        error instanceof Error ? error.message : "Failed to update category",
     };
   }
 }
@@ -124,6 +127,36 @@ export async function createJudgesBulk(data: BulkCreateJudgeInput[]) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create judges",
+    };
+  }
+}
+
+export async function updateJudgeAction(
+  prevState: { success?: boolean; error?: string } | null,
+  formData: FormData,
+) {
+  const id = formData.get("id") as string;
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const categoryId = formData.get("categoryId") as string;
+
+  if (!id || !name || !email || !categoryId) {
+    return { error: "All fields are required" };
+  }
+
+  try {
+    await db
+      .update(judges)
+      .set({ name, email, categoryId })
+      .where(eq(judges.id, id));
+
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating judge:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update judge",
     };
   }
 }
