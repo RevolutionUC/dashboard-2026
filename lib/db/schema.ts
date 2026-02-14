@@ -1,11 +1,11 @@
 import {
+  boolean,
+  index,
+  integer,
   pgEnum,
   pgTable,
   text,
-  boolean,
   timestamp,
-  index,
-  integer,
   uuid,
 } from "drizzle-orm/pg-core";
 import { PARTICIPANT_STATUSES } from "@/lib/participant-status";
@@ -162,7 +162,7 @@ export const dayOfSchedule = pgTable(
 export const eventRegistrations = pgTable(
   "event_registrations",
   {
-    // unique index for evernts regsitration table
+    // unique index for evernts registration table
     id: uuid("id").primaryKey().defaultRandom(),
     user_id: uuid("participant_id")
       .notNull()
@@ -175,5 +175,59 @@ export const eventRegistrations = pgTable(
   (table) => [
     index("event_registrations_participant_idx").on(table.user_id),
     index("event_registrations_event_idx").on(table.eventId),
+  ],
+);
+
+// ============================================
+// Judge and Category Tables
+// ============================================
+
+export const categoryType = pgEnum("category_type", ["Sponsor", "Inhouse", "General", "MLH"]);
+
+export const categories = pgTable(
+  "categories",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    type: categoryType("type").notNull().default("General"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("categories_type_idx").on(table.type)],
+);
+
+export const judgeGroups = pgTable(
+  "judge_groups",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    name: text("name").notNull(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade", }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("judge_groups_category_idx").on(table.categoryId),
+    index("judge_groups_name_idx").on(table.name),
+  ],
+);
+
+export const judges = pgTable(
+  "judges",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("judges_category_idx").on(table.categoryId),
+    index("judges_group_idx").on(table.judgeGroupId),
   ],
 );
