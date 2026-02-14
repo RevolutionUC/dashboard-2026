@@ -4,6 +4,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -317,5 +318,25 @@ export const projects = pgTable(
   (table) => [
     index("projects_status_idx").on(table.status),
     index("projects_location_idx").on(table.location),
+  ],
+);
+
+export const submissions = pgTable(
+  "submissions",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.categoryId] }),
+    index("submissions_project_idx").on(table.projectId),
+    index("submissions_category_idx").on(table.categoryId),
   ],
 );
