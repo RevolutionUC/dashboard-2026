@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CalendarRange,
   ChevronRight,
+  FolderKanban,
   Gavel,
   Home,
   Inbox,
@@ -66,6 +67,11 @@ const planSubItems = [
     title: "Judges & Categories",
     url: "/judges-and-categories",
     icon: Gavel,
+  },
+  {
+    title: "Projects",
+    url: "/projects",
+    icon: FolderKanban,
   },
 ];
 

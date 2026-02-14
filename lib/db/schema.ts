@@ -295,7 +295,12 @@ export const auditLogs = pgTable(
 // Judge and Category Tables
 // ============================================
 
-export const categoryType = pgEnum("category_type", ["Sponsor", "Inhouse", "General", "MLH"]);
+export const categoryType = pgEnum("category_type", [
+  "Sponsor",
+  "Inhouse",
+  "General",
+  "MLH",
+]);
 
 export const categories = pgTable(
   "categories",
@@ -303,8 +308,12 @@ export const categories = pgTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     type: categoryType("type").notNull().default("General"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("categories_type_idx").on(table.type)],
 );
@@ -316,9 +325,16 @@ export const judgeGroups = pgTable(
     name: text("name").notNull(),
     categoryId: text("category_id")
       .notNull()
-      .references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade", }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+      .references(() => categories.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("judge_groups_category_idx").on(table.categoryId),
@@ -332,13 +348,56 @@ export const judges = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
-    categoryId: text("category_id").notNull().references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade" }),
-    judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, { onDelete: "set null" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("judges_category_idx").on(table.categoryId),
     index("judges_group_idx").on(table.judgeGroupId),
+  ],
+);
+
+// ============================================
+// Project Tables
+// ============================================
+
+export const projectStatus = pgEnum("project_status", [
+  "created",
+  "disqualified",
+]);
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    status: projectStatus("status").notNull().default("created"),
+    url: text("url"),
+    location: text("location").notNull(),
+    location2: text("location2").notNull(),
+    disqualifyReason: text("disqualify_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("projects_status_idx").on(table.status),
+    index("projects_location_idx").on(table.location),
   ],
 );
