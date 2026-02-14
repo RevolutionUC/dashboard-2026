@@ -1,8 +1,18 @@
 import { eq } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { db } from "@/lib/db";
 import { categories, judgeGroups, judges } from "@/lib/db/schema";
+import { EditCategoryModal } from "./edit-category-modal";
+import { NewCategoryModal } from "./new-category-modal";
+import { NewJudgeModal } from "./new-judge-modal";
 
 export default async function JudgeAndCategoriesPage() {
   const [allCategories, allJudges, allJudgeGroups] = await Promise.all([
@@ -40,13 +50,16 @@ export default async function JudgeAndCategoriesPage() {
     <main className="mx-auto w-full max-w-6xl p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">Judges & Categories</h1>
-        <p className="text-sm text-muted-foreground">Manage judges and their assigned categories</p>
+        <p className="text-sm text-muted-foreground">
+          Manage judges and their assigned categories
+        </p>
       </div>
 
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Categories ({allCategories.length})</CardTitle>
+            <NewCategoryModal />
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -62,15 +75,22 @@ export default async function JudgeAndCategoriesPage() {
                 <TableBody>
                   {allCategories.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell
+                        colSpan={4}
+                        className="text-center text-muted-foreground"
+                      >
                         No categories found
                       </TableCell>
                     </TableRow>
                   ) : (
                     allCategories.map((category) => (
                       <TableRow key={category.id}>
-                        <TableCell className="font-mono text-xs">{category.id}</TableCell>
-                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {category.id}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {category.name}
+                        </TableCell>
                         <TableCell>
                           <span
                             className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
@@ -84,6 +104,9 @@ export default async function JudgeAndCategoriesPage() {
                             {category.type}
                           </span>
                         </TableCell>
+                        <TableCell>
+                          <EditCategoryModal category={category} />
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -95,7 +118,8 @@ export default async function JudgeAndCategoriesPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Judges ({allJudges.length})</CardTitle>
+          <CardTitle>Judges ({allJudges.length})</CardTitle>
+          <NewJudgeModal categories={allCategories} />
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -111,18 +135,25 @@ export default async function JudgeAndCategoriesPage() {
                 <TableBody>
                   {allJudges.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell
+                        colSpan={4}
+                        className="text-center text-muted-foreground"
+                      >
                         No judges found
                       </TableCell>
                     </TableRow>
                   ) : (
                     allJudges.map((judge) => (
                       <TableRow key={judge.id}>
-                        <TableCell className="font-medium">{judge.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {judge.name}
+                        </TableCell>
                         <TableCell className="text-sm">{judge.email}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <span className="text-sm font-medium">{judge.categoryName}</span>
+                            <span className="text-sm font-medium">
+                              {judge.categoryName}
+                            </span>
                             {judge.categoryType && (
                               <span
                                 className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -144,7 +175,9 @@ export default async function JudgeAndCategoriesPage() {
                               {judge.judgeGroupName}
                             </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground">Not assigned</span>
+                            <span className="text-xs text-muted-foreground">
+                              Not assigned
+                            </span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -163,12 +196,15 @@ export default async function JudgeAndCategoriesPage() {
           <CardContent>
             {allJudgeGroups.length === 0 ? (
               <div className="rounded-md border p-8 text-center text-muted-foreground">
-                No judge groups found. Click &quot;Assign Judges to Groups&quot; to create groups.
+                No judge groups found. Click &quot;Assign Judges to Groups&quot;
+                to create groups.
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {allJudgeGroups.map((group) => {
-                  const groupMembers = allJudges.filter((j) => j.judgeGroupId === group.id);
+                  const groupMembers = allJudges.filter(
+                    (j) => j.judgeGroupId === group.id,
+                  );
                   return (
                     <div
                       key={group.id}
@@ -191,7 +227,9 @@ export default async function JudgeAndCategoriesPage() {
                             {group.categoryType}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{group.categoryName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {group.categoryName}
+                        </p>
                       </div>
                       <div className="flex flex-1 flex-col p-4 pt-2">
                         <div className="space-y-1">
@@ -201,7 +239,9 @@ export default async function JudgeAndCategoriesPage() {
                               className="group flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-accent"
                             >
                               <div className="flex flex-col">
-                                <span className="text-sm font-medium">{member.name}</span>
+                                <span className="text-sm font-medium">
+                                  {member.name}
+                                </span>
                                 <span className="text-xs text-muted-foreground">
                                   {member.email}
                                 </span>

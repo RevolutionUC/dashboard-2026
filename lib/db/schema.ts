@@ -219,9 +219,7 @@ export const judges = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
-    categoryId: text("category_id")
-      .notNull()
-      .references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    categoryId: text("category_id").notNull().references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade" }),
     judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
