@@ -11,7 +11,10 @@ import {
 import { PARTICIPANT_STATUSES } from "@/lib/participant-status";
 
 // Event visibility enum for day-of schedule
-export const scheduleVisibility = pgEnum("schedule_visibility", ["internal", "public"]);
+export const scheduleVisibility = pgEnum("schedule_visibility", [
+  "internal",
+  "public",
+]);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -19,8 +22,12 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull(),
   image: text("image"),
-  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export const session = pgTable(
@@ -29,7 +36,9 @@ export const session = pgTable(
     id: text("id").primaryKey(),
     expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull(),
     ipAddress: text("ipAddress"),
     userAgent: text("userAgent"),
@@ -60,7 +69,9 @@ export const account = pgTable(
     }),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
@@ -73,8 +84,12 @@ export const verification = pgTable(
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
@@ -83,7 +98,9 @@ export const verification = pgTable(
 // RevolutionUC Application Tables
 // ============================================
 
-export const participantStatus = pgEnum("participant_status", [...PARTICIPANT_STATUSES]);
+export const participantStatus = pgEnum("participant_status", [
+  ...PARTICIPANT_STATUSES,
+]);
 
 export const participants = pgTable(
   "participants",
@@ -112,8 +129,12 @@ export const participants = pgTable(
     qrBase64: text("qr_base64"),
     status: participantStatus("status").notNull().default("REGISTERED"),
     checkedIn: boolean("checked_in").default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("participants_email_idx").on(table.email),
@@ -133,8 +154,12 @@ export const events = pgTable(
     endTime: timestamp("end_time", { withTimezone: true }),
     location: text("location"),
     capacity: integer("capacity"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("events_type_idx").on(table.eventType)],
 );
@@ -153,8 +178,12 @@ export const dayOfSchedule = pgTable(
     createdBy: text("created_by").references(() => user.id, {
       onDelete: "set null",
     }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("day_of_schedule_visibility_idx").on(table.visibility)],
 );
@@ -170,7 +199,9 @@ export const eventRegistrations = pgTable(
     eventId: uuid("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
-    registeredAt: timestamp("registered_at", { withTimezone: true }).notNull().defaultNow(),
+    registeredAt: timestamp("registered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("event_registrations_participant_idx").on(table.user_id),
@@ -182,7 +213,12 @@ export const eventRegistrations = pgTable(
 // Judge and Category Tables
 // ============================================
 
-export const categoryType = pgEnum("category_type", ["Sponsor", "Inhouse", "General", "MLH"]);
+export const categoryType = pgEnum("category_type", [
+  "Sponsor",
+  "Inhouse",
+  "General",
+  "MLH",
+]);
 
 export const categories = pgTable(
   "categories",
@@ -190,8 +226,12 @@ export const categories = pgTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     type: categoryType("type").notNull().default("General"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("categories_type_idx").on(table.type)],
 );
@@ -203,9 +243,16 @@ export const judgeGroups = pgTable(
     name: text("name").notNull(),
     categoryId: text("category_id")
       .notNull()
-      .references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade", }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+      .references(() => categories.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("judge_groups_category_idx").on(table.categoryId),
@@ -219,13 +266,56 @@ export const judges = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
-    categoryId: text("category_id").notNull().references(() => categories.id, { onDelete: "cascade", onUpdate: "cascade" }),
-    judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, { onDelete: "set null" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("judges_category_idx").on(table.categoryId),
     index("judges_group_idx").on(table.judgeGroupId),
+  ],
+);
+
+// ============================================
+// Project Tables
+// ============================================
+
+export const projectStatus = pgEnum("project_status", [
+  "created",
+  "disqualified",
+]);
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    status: projectStatus("status").notNull().default("created"),
+    url: text("url"),
+    location: text("location").notNull(),
+    location2: text("location2").notNull(),
+    disqualifyReason: text("disqualify_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("projects_status_idx").on(table.status),
+    index("projects_location_idx").on(table.location),
   ],
 );

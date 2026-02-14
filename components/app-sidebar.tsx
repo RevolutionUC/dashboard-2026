@@ -1,4 +1,4 @@
-import { Gavel, Home, Inbox, Search } from "lucide-react";
+import { FolderKanban, Gavel, Home, Inbox, Search } from "lucide-react";
 
 import {
   Sidebar,
@@ -38,6 +38,11 @@ const items = [
     title: "Judges & Categories",
     url: "/judges-and-categories",
     icon: Gavel,
+  },
+  {
+    title: "Projects",
+    url: "/projects",
+    icon: FolderKanban,
   },
 ];
 
