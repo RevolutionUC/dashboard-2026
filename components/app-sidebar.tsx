@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CalendarRange,
   ChevronRight,
+  Gavel,
   Home,
   Inbox,
   NotepadText,
@@ -60,6 +61,11 @@ const planSubItems = [
     title: "Events",
     url: "/plan/events",
     icon: CalendarRange,
+  },
+  {
+    title: "Judges & Categories",
+    url: "/judges-and-categories",
+    icon: Gavel,
   },
 ];
 
