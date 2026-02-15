@@ -13,6 +13,7 @@ import {
   ScrollText,
   Search,
   ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
 import {
   Collapsible,
@@ -78,6 +79,11 @@ const planSubItems = [
     title: "Assignments",
     url: "/assignments",
     icon: ClipboardList,
+  },
+  {
+    title: "Scorings",
+    url: "/scorings",
+    icon: TrendingUp,
   },
 ];
 
