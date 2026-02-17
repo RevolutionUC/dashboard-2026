@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthHeader } from "@/components/auth-header";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
