@@ -417,7 +417,8 @@ export const evaluations = pgTable(
       .references(() => categories.id, { onDelete: "cascade" }),
     scores: integer("scores").array(),
     categoryRelevance: integer("category_relevance").notNull().default(0),
-    bordaScore: integer("borda_score").notNull().default(0),
+    categoryBordaScore: integer("category_borda_score"),
+    generalBordaScore: integer("general_borda_score"),
   },
   (table) => [
     primaryKey({ columns: [table.judgeId, table.projectId] }),
