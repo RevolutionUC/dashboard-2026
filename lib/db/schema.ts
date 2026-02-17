@@ -399,6 +399,12 @@ export const assignments = pgTable(
   ],
 );
 
+export const assignmentsRelations = relations(assignments, ({ one }) => ({
+  judgeGroup: one(judgeGroups, { fields: [assignments.judgeGroupId], references: [judgeGroups.id] }),
+  project: one(projects, { fields: [assignments.projectId], references: [projects.id] }),
+}));
+
+
 // ============================================
 // Evaluation Table (Judge scoring for projects)
 // ============================================
