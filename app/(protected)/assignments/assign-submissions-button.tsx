@@ -11,12 +11,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { assignSubmissionsToJudgeGroups } from "./actions";
+import { assignProjectsToJudgeGroups } from "./actions";
 
 export function AssignSubmissionsButton() {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
-    assignSubmissionsToJudgeGroups,
+    assignProjectsToJudgeGroups,
     null,
   );
   const [showMessage, setShowMessage] = useState(false);

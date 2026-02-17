@@ -1,11 +1,12 @@
 "use server";
 
-import { count, eq } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import {
   assignments,
   categories,
+  evaluations,
   judgeGroups,
   judges,
   submissions,
@@ -55,7 +56,7 @@ interface AssignmentToInsert {
   judgeGroupId: number;
 }
 
-export async function assignSubmissionsToJudgeGroups() {
+export async function assignProjectsToJudgeGroups() {
   try {
     // Find General category ID
     const generalCategory = await db
@@ -270,12 +271,69 @@ export async function assignSubmissionsToJudgeGroups() {
     }
 
     await db.insert(assignments).values(assignmentsToInsert);
+
+    // Create evaluation records for each judge-project pair
+    // First, get all judges in the assigned groups with their categories
+    const judgeGroupIds = [
+      ...new Set(assignmentsToInsert.map((a) => a.judgeGroupId)),
+    ];
+    const judgesInGroups = await db
+      .select({
+        judgeId: judges.id,
+        judgeGroupId: judges.judgeGroupId,
+        categoryId: judges.categoryId,
+      })
+      .from(judges)
+      .where(inArray(judges.judgeGroupId, judgeGroupIds));
+
+    // Build a map of judgeGroupId -> judges
+    const judgesByGroup = new Map<
+      number,
+      Array<{ judgeId: string; categoryId: string }>
+    >();
+    for (const judge of judgesInGroups) {
+      if (!judgesByGroup.has(judge.judgeGroupId!)) {
+        judgesByGroup.set(judge.judgeGroupId!, []);
+      }
+      judgesByGroup.get(judge.judgeGroupId!)!.push({
+        judgeId: judge.judgeId,
+        categoryId: judge.categoryId,
+      });
+    }
+
+    // Create evaluation records
+    const evaluationsToInsert: Array<{
+      projectId: string;
+      judgeId: string;
+      categoryId: string;
+    }> = [];
+
+    for (const assignment of assignmentsToInsert) {
+      const groupJudges = judgesByGroup.get(assignment.judgeGroupId) || [];
+      for (const judge of groupJudges) {
+        evaluationsToInsert.push({
+          projectId: assignment.projectId,
+          judgeId: judge.judgeId,
+          categoryId: judge.categoryId,
+        });
+      }
+    }
+
+    // Delete existing evaluations to avoid conflicts
+    await db.delete(evaluations);
+
+    // Insert new evaluation records
+    if (evaluationsToInsert.length > 0) {
+      await db.insert(evaluations).values(evaluationsToInsert);
+    }
+
     revalidatePath("/assignments");
 
     return {
       success: true,
       count: assignmentsToInsert.length,
       projectsAssigned: finalAssignmentsByProject.size,
+      evaluationsCreated: evaluationsToInsert.length,
     };
   } catch (error) {
     console.error("Error assigning submissions to judge groups:", error);
