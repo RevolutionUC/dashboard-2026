@@ -375,6 +375,12 @@ export const submissions = pgTable(
   ],
 );
 
+export const submissionsRelations = relations(submissions, ({ one }) => ({
+  project: one(projects, { fields: [submissions.projectId], references: [projects.id] }),
+  category: one(categories, { fields: [submissions.categoryId], references: [categories.id] }),
+}));
+
+
 // ============================================
 // Assignment Tables (Project to Judge Group)
 // ============================================
