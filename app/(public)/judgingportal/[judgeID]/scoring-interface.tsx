@@ -17,6 +17,7 @@ interface ScoringInterfaceProps {
   projects: ProjectWithScores[];
   judgeId: string;
   isSponsor: boolean;
+  categoryType: string;
 }
 
 function StarRating({
@@ -76,6 +77,7 @@ export function ScoringInterface({
   projects,
   judgeId,
   isSponsor,
+  categoryType,
 }: ScoringInterfaceProps) {
   const [saving, setSaving] = useState<string | null>(null);
   const [localScores, setLocalScores] = useState<
@@ -143,6 +145,8 @@ export function ScoringInterface({
       return hasAllScores;
     });
   }, [projects, localScores, localRelevance, isSponsor]);
+
+  const isGeneral = categoryType === "General";
 
   return (
     <>
@@ -221,7 +225,7 @@ export function ScoringInterface({
 
       <div className="mt-6">
         <Link
-          href={`./ranking`}
+          href={isGeneral ? "/judgingportal/finished" : "./ranking"}
           className={`block w-full rounded-lg py-3 text-center font-semibold transition-colors ${
             allScored
               ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -233,11 +237,11 @@ export function ScoringInterface({
             }
           }}
         >
-          Start ranking
+          {isGeneral ? "Finish" : "Start ranking"}
         </Link>
         {!allScored && (
           <p className="mt-2 text-center text-xs text-slate-500">
-            Score all projects to enable ranking
+            Score all projects to {isGeneral ? "finish" : "enable ranking"}
           </p>
         )}
       </div>
