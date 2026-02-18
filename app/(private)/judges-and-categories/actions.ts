@@ -2,6 +2,7 @@
 
 import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { assertAuthorization } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { categories, judgeGroups, judges } from "@/lib/db/schema";
 
@@ -15,6 +16,8 @@ interface CreateCategoryInput {
 
 export async function createCategory(data: CreateCategoryInput) {
   try {
+    await assertAuthorization();
+
     await db.insert(categories).values({
       id: data.id,
       name: data.name,
@@ -41,6 +44,8 @@ interface BulkCreateCategoryInput {
 
 export async function createCategoriesBulk(data: BulkCreateCategoryInput[]) {
   try {
+    await assertAuthorization();
+
     await db.insert(categories).values(data);
 
     revalidatePath("/judges-and-categories");
@@ -64,6 +69,8 @@ interface UpdateCategoryInput {
 
 export async function updateCategory(data: UpdateCategoryInput) {
   try {
+    await assertAuthorization();
+
     await db
       .update(categories)
       .set({
@@ -93,6 +100,8 @@ interface CreateJudgeInput {
 
 export async function createJudge(data: CreateJudgeInput) {
   try {
+    await assertAuthorization();
+
     await db.insert(judges).values({
       name: data.name,
       email: data.email,
@@ -118,6 +127,8 @@ interface BulkCreateJudgeInput {
 
 export async function createJudgesBulk(data: BulkCreateJudgeInput[]) {
   try {
+    await assertAuthorization();
+
     await db.insert(judges).values(data);
 
     revalidatePath("/judges-and-categories");
@@ -135,6 +146,8 @@ export async function updateJudgeAction(
   prevState: { success?: boolean; error?: string } | null,
   formData: FormData,
 ) {
+  await assertAuthorization();
+
   const id = formData.get("id") as string;
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
@@ -181,6 +194,8 @@ interface JudgeGroupInfo {
 
 export async function assignJudgesToGroups() {
   try {
+    await assertAuthorization();
+
     const allJudges = await db
       .select({
         id: judges.id,
@@ -196,8 +211,10 @@ export async function assignJudgesToGroups() {
       .from(judges)
       .innerJoin(categories, eq(judges.categoryId, categories.id));
 
-    const allCategories = await db.select({ id: categories.id }).from(categories).orderBy(categories.id);
-
+    const allCategories = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .orderBy(categories.id);
 
     // Group judges by category
     const judgesByCategories = allJudges.reduce(
@@ -239,14 +256,17 @@ export async function assignJudgesToGroups() {
 
     // Assign names to groups
     const judgeGroupCountByCategory: Record<string, number> = {};
-    const categoryIndex = new Map(allCategories.map((c, index) => [c.id, index]));
-
+    const categoryIndex = new Map(
+      allCategories.map((c, index) => [c.id, index]),
+    );
 
     for (const group of judgeGroupsToCreate) {
       const count = (judgeGroupCountByCategory[group.categoryId] || 0) + 1;
       judgeGroupCountByCategory[group.categoryId] = count;
 
-      const firstChar = String.fromCharCode(65 + (categoryIndex.get(group.categoryId) ?? -1));
+      const firstChar = String.fromCharCode(
+        65 + (categoryIndex.get(group.categoryId) ?? -1),
+      );
       const secondChar = count.toString();
 
       group.name = `${firstChar}${secondChar}`;

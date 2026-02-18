@@ -3,6 +3,7 @@
 import { parse } from "csv-parse/sync";
 import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { assertAuthorization } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   categories,
@@ -90,6 +91,8 @@ export async function importProjectsFromDevpost(
   formData: FormData,
 ): Promise<ImportState> {
   try {
+    await assertAuthorization();
+
     // TODO: Don't allow create/import projects when judging assignments has been made
 
     const csvFile = formData.get("csvFile") as File;

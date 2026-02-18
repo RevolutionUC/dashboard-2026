@@ -2,6 +2,7 @@
 
 import { count, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { assertAuthorization } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   assignments,
@@ -58,6 +59,8 @@ interface AssignmentToInsert {
 
 export async function assignProjectsToJudgeGroups() {
   try {
+    await assertAuthorization();
+
     // Find General category ID
     const generalCategory = await db
       .select({ id: categories.id })
