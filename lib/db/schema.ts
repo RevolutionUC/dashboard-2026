@@ -215,6 +215,8 @@ export const eventRegistrations = pgTable(
 // Judge and Category Tables
 // ============================================
 
+export const judgingPhase = pgEnum("judging_phase", ["scoring", "finalized"]);
+
 export const categoryType = pgEnum("category_type", [
   "Sponsor",
   "Inhouse",
@@ -292,6 +294,7 @@ export const judges = pgTable(
     judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, {
       onDelete: "set null",
     }),
+    judgingPhase: judgingPhase("judging_phase").notNull().default("scoring"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -376,10 +379,15 @@ export const submissions = pgTable(
 );
 
 export const submissionsRelations = relations(submissions, ({ one }) => ({
-  project: one(projects, { fields: [submissions.projectId], references: [projects.id] }),
-  category: one(categories, { fields: [submissions.categoryId], references: [categories.id] }),
+  project: one(projects, {
+    fields: [submissions.projectId],
+    references: [projects.id],
+  }),
+  category: one(categories, {
+    fields: [submissions.categoryId],
+    references: [categories.id],
+  }),
 }));
-
 
 // ============================================
 // Assignment Tables (Project to Judge Group)
@@ -406,10 +414,15 @@ export const assignments = pgTable(
 );
 
 export const assignmentsRelations = relations(assignments, ({ one }) => ({
-  judgeGroup: one(judgeGroups, { fields: [assignments.judgeGroupId], references: [judgeGroups.id] }),
-  project: one(projects, { fields: [assignments.projectId], references: [projects.id] }),
+  judgeGroup: one(judgeGroups, {
+    fields: [assignments.judgeGroupId],
+    references: [judgeGroups.id],
+  }),
+  project: one(projects, {
+    fields: [assignments.projectId],
+    references: [projects.id],
+  }),
 }));
-
 
 // ============================================
 // Evaluation Table (Judge scoring for projects)
