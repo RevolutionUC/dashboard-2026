@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { finalizeRankings, resetAllRankings, saveRanking } from "../actions";
+import { ChevronLeft } from "lucide-react";
 
 interface EvaluationWithScore {
   projectId: string;
@@ -149,20 +150,7 @@ export function RankingInterface({
         href={`../`}
         className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
       >
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
+        <ChevronLeft size={16} aria-hidden="true" />
         Back to scoring
       </Link>
 
