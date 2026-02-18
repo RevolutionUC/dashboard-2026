@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import {
   categories,
@@ -32,6 +32,7 @@ export default async function JudgingPortalPage({
       name: judges.name,
       judgeGroupId: judges.judgeGroupId,
       categoryId: judges.categoryId,
+      judgingPhase: judges.judgingPhase,
     })
     .from(judges)
     .where(eq(judges.id, judgeID))
@@ -42,6 +43,10 @@ export default async function JudgingPortalPage({
   }
 
   const judgeInfo = judge[0];
+
+  if (judgeInfo.judgingPhase === "finalized") {
+    redirect("/judgingportal/finished");
+  }
 
   // Get category and judge group info
   const [categoryInfo, judgeGroupInfo] = await Promise.all([

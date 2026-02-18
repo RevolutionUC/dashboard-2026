@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { evaluations } from "@/lib/db/schema";
+import { evaluations, judges } from "@/lib/db/schema";
 
 export async function saveRanking(
   judgeId: string,
@@ -54,7 +54,24 @@ export async function resetAllRankings(judgeId: string) {
 }
 
 export async function finalizeRankings(judgeId: string) {
-  return { success: true };
+  try {
+    await db
+      .update(judges)
+      .set({ judgingPhase: "finalized" })
+      .where(eq(judges.id, judgeId));
+
+    revalidatePath(`/judgingportal/${judgeId}`);
+    revalidatePath(`/judgingportal/${judgeId}/ranking`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error finalizing rankings:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to finalize rankings",
+    };
+  }
 }
 
 export async function saveEvaluationScore(

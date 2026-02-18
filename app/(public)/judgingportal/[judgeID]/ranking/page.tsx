@@ -34,6 +34,7 @@ export default async function RankingPage({
       name: judges.name,
       judgeGroupId: judges.judgeGroupId,
       categoryId: judges.categoryId,
+      judgingPhase: judges.judgingPhase,
     })
     .from(judges)
     .where(eq(judges.id, judgeID))
@@ -44,6 +45,10 @@ export default async function RankingPage({
   }
 
   const judgeInfo = judge[0];
+
+  if (judgeInfo.judgingPhase === "finalized") {
+    redirect("/judgingportal/finished");
+  }
 
   const [categoryInfo, judgeGroupInfo] = await Promise.all([
     db
