@@ -67,7 +67,6 @@ export default async function JudgingPortalPage({
   const categoryName = categoryInfo[0]?.name ?? "Unknown";
   const categoryType = categoryInfo[0]?.type ?? "General";
   const judgeGroupName = judgeGroupInfo[0]?.name ?? "Unknown";
-  const isSponsor = categoryType === "Sponsor";
 
   let assignedProjects: ProjectWithScores[] = [];
 
@@ -138,7 +137,6 @@ export default async function JudgingPortalPage({
           <ScoringInterface
             projects={assignedProjects}
             judgeId={judgeID}
-            isSponsor={isSponsor}
             categoryType={categoryType}
           />
         )}

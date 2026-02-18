@@ -16,7 +16,6 @@ interface ProjectWithScores {
 interface ScoringInterfaceProps {
   projects: ProjectWithScores[];
   judgeId: string;
-  isSponsor: boolean;
   categoryType: string;
 }
 
@@ -76,9 +75,11 @@ function StarRating({
 export function ScoringInterface({
   projects,
   judgeId,
-  isSponsor,
   categoryType,
 }: ScoringInterfaceProps) {
+  const isSponsor = categoryType === "Sponsor";
+  const isGeneral = categoryType === "General";
+
   const [saving, setSaving] = useState<string | null>(null);
   const [localScores, setLocalScores] = useState<
     Record<string, (number | null)[]>
@@ -145,8 +146,6 @@ export function ScoringInterface({
       return hasAllScores;
     });
   }, [projects, localScores, localRelevance, isSponsor]);
-
-  const isGeneral = categoryType === "General";
 
   return (
     <>

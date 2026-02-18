@@ -137,7 +137,7 @@ export default async function RankingPage({
         <RankingInterface
           evaluations={evaluationsWithScores}
           judgeId={judgeID}
-          isSponsor={isSponsor}
+          categoryType={categoryType}
         />
       </div>
     </div>

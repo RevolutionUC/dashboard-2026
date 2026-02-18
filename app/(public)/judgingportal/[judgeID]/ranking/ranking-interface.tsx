@@ -19,7 +19,7 @@ interface EvaluationWithScore {
 interface RankingInterfaceProps {
   evaluations: EvaluationWithScore[];
   judgeId: string;
-  isSponsor: boolean;
+  categoryType: string;
 }
 
 const RANK_COLORS: Record<number, string> = {
@@ -41,8 +41,10 @@ const RANK_LABELS: Record<number, string> = {
 export function RankingInterface({
   evaluations: initialEvaluations,
   judgeId,
-  isSponsor,
+  categoryType,
 }: RankingInterfaceProps) {
+  const isSponsor = categoryType === "Sponsor";
+
   // Normally, we requires 5 rankings, but in case there are less assigned projects than 5, we cap at assignedEvaluations.length
   const maxRank = Math.min(5, initialEvaluations.length);
 
@@ -52,10 +54,10 @@ export function RankingInterface({
       initialEvaluations.forEach(({ projectId, categoryBordaScore }) => {
         const rank =
           categoryBordaScore !== null && categoryBordaScore > 0
-          ? maxRank + 1 - categoryBordaScore
-          : 0;
+            ? maxRank + 1 - categoryBordaScore
+            : 0;
 
-        initial[projectId] = (rank >= 1 && rank <= maxRank) ? rank : null;
+        initial[projectId] = rank >= 1 && rank <= maxRank ? rank : null;
       });
 
       return initial;
