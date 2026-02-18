@@ -1,4 +1,13 @@
-import { Home, Inbox, Search } from "lucide-react";
+import {
+  ClipboardList,
+  FolderKanban,
+  Gavel,
+  Home,
+  Inbox,
+  Search,
+  TrendingUp,
+  Trophy,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -10,6 +19,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import Link from "next/link";
 
 // Menu items.
 const items = [
@@ -34,6 +44,31 @@ const items = [
     url: "/plan",
     icon: Search,
   },
+  {
+    title: "Judges & Categories",
+    url: "/judges-and-categories",
+    icon: Gavel,
+  },
+  {
+    title: "Projects",
+    url: "/projects",
+    icon: FolderKanban,
+  },
+  {
+    title: "Assignments",
+    url: "/assignments",
+    icon: ClipboardList,
+  },
+  {
+    title: "General Scorings",
+    url: "/generalScorings",
+    icon: TrendingUp,
+  },
+  {
+    title: "Category Scorings",
+    url: "/cagetoryScorings",
+    icon: Trophy,
+  },
 ];
 
 export function AppSidebar() {
@@ -47,10 +82,10 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

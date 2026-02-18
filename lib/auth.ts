@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { headers } from "next/headers";
 import { db } from "./db";
 import * as schema from "./db/schema";
 
@@ -9,7 +10,9 @@ if (
   !process.env.GITHUB_CLIENT_ID ||
   !process.env.GITHUB_CLIENT_SECRET
 ) {
-  throw new Error("BETTER AUTH SECRET, URL OR GITHUB CLIENT ID OR SECRET MISSING ");
+  throw new Error(
+    "BETTER AUTH SECRET, URL OR GITHUB CLIENT ID OR SECRET MISSING ",
+  );
 }
 
 export const auth = betterAuth({
@@ -26,3 +29,14 @@ export const auth = betterAuth({
     },
   },
 });
+
+/**
+ * Assert that the current request is authenticated.
+ * Throws an error if the user is not logged in.
+ */
+export async function assertAuthorization(): Promise<void> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+}

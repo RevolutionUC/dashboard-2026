@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 // Routes that don't require authentication
-const publicRoutes = ["/sign-in", "/sign-up", "/error"];
+const publicRoutes = ["/sign-in", "/sign-up", "/error", '/judgingportal'];
 
 // API routes that should be accessible without auth
 const publicApiRoutes = ["/api/auth"];
