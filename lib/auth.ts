@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { db } from "./db";
 import * as schema from "./db/schema";
 import { accessRequests } from "./db/schema";
@@ -104,3 +105,14 @@ export const auth = betterAuth({
     },
   },
 });
+
+/**
+ * Assert that the current request is authenticated.
+ * Throws an error if the user is not logged in.
+ */
+export async function assertAuthorization(): Promise<void> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+}
