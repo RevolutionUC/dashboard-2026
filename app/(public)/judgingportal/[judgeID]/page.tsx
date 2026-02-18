@@ -139,6 +139,7 @@ export default async function JudgingPortalPage({
             projects={assignedProjects}
             judgeId={judgeID}
             isSponsor={isSponsor}
+            categoryType={categoryType}
           />
         )}
       </div>

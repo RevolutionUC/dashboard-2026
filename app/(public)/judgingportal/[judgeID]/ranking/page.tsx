@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import {
   categories,
@@ -69,6 +69,10 @@ export default async function RankingPage({
   const categoryType = categoryInfo[0]?.type ?? "General";
   const judgeGroupName = judgeGroupInfo[0]?.name ?? "Unknown";
   const isSponsor = categoryType === "Sponsor";
+
+  if (categoryType === "General") {
+    redirect("/judgingportal/finished");
+  }
 
   const evaluationRows = await db
     .select({
