@@ -14,6 +14,7 @@ import {
   Search,
   ShieldCheck,
   TrendingUp,
+  Trophy,
 } from "lucide-react";
 import {
   Collapsible,
@@ -81,9 +82,14 @@ const planSubItems = [
     icon: ClipboardList,
   },
   {
-    title: "Scorings",
-    url: "/scorings",
+    title: "General Scorings",
+    url: "/generalScorings",
     icon: TrendingUp,
+  },
+  {
+    title: "Category Scorings",
+    url: "/cagetoryScorings",
+    icon: Trophy,
   },
 ];
 
