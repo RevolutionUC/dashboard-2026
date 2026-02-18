@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { evaluations, judges, projects } from "@/lib/db/schema";
@@ -90,18 +90,26 @@ function calculateRankings(data: EvaluationWithJudge[]): RankingEntry[] {
 }
 
 export default async function ScoringsPage() {
-  const evaluationRows = await db
-    .select({
-      projectId: evaluations.projectId,
-      projectName: projects.name,
-      judgeId: evaluations.judgeId,
-      judgeName: judges.name,
-      scores: evaluations.scores,
-    })
-    .from(evaluations)
-    .leftJoin(projects, eq(evaluations.projectId, projects.id))
-    .leftJoin(judges, eq(evaluations.judgeId, judges.id))
-    .orderBy(asc(evaluations.judgeId));
+  const [evaluationRows, judgeCounts] = await Promise.all([
+    db
+      .select({
+        projectId: evaluations.projectId,
+        projectName: projects.name,
+        judgeId: evaluations.judgeId,
+        judgeName: judges.name,
+        scores: evaluations.scores,
+      })
+      .from(evaluations)
+      .leftJoin(projects, eq(evaluations.projectId, projects.id))
+      .leftJoin(judges, eq(evaluations.judgeId, judges.id))
+      .orderBy(asc(evaluations.judgeId)),
+    db
+      .select({
+        finalizedCount: sql<number>`count(*) filter (where ${judges.judgingPhase} = 'finalized')`,
+        totalCount: sql<number>`count(*)`,
+      })
+      .from(judges),
+  ]);
 
   const data: EvaluationWithJudge[] = evaluationRows.map((row) => ({
     projectId: row.projectId,
@@ -134,6 +142,9 @@ export default async function ScoringsPage() {
     projectMap,
   ).sort((a, b) => a.name.localeCompare(b.name));
 
+  const finalizedCount = judgeCounts[0]?.finalizedCount ?? 0;
+  const totalJudges = judgeCounts[0]?.totalCount ?? 0;
+
   return (
     <main className="mx-auto w-full max-w-6xl p-6">
       <div className="mb-6">
@@ -142,6 +153,17 @@ export default async function ScoringsPage() {
           View all project scores by judge
         </p>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Judging Status</span>
+            <span className="text-lg font-medium text-muted-foreground">
+              {finalizedCount}/{totalJudges} judges has finalized
+            </span>
+          </CardTitle>
+        </CardHeader>
+      </Card>
 
       <Card className="mb-6">
         <CardHeader>
