@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { saveCategoryRelevance, saveEvaluationScore } from "./actions";
 
 interface ProjectWithScores {
@@ -130,76 +131,116 @@ export function ScoringInterface({
     setSaving(null);
   };
 
-  return (
-    <ul className="space-y-4">
-      {projects.map((project, index) => (
-        <li key={project.id}>
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600">
-                  {index + 1}
-                </span>
-                <span className="font-semibold text-slate-900">
-                  {project.name}
-                </span>
-              </div>
-              <div className="mt-2 flex items-center gap-1 text-sm text-slate-500">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <span>
-                  {project.location}
-                  {project.location2 ? ` - ${project.location2}` : ""}
-                </span>
-              </div>
-            </div>
+  const allScored = useMemo(() => {
+    return projects.every((project) => {
+      const scores = localScores[project.id];
+      const hasAllScores = scores?.every((s) => s !== null && s >= 1 && s <= 5);
+      if (isSponsor) {
+        const hasRelevance =
+          localRelevance[project.id] >= 1 && localRelevance[project.id] <= 5;
+        return hasAllScores && hasRelevance;
+      }
+      return hasAllScores;
+    });
+  }, [projects, localScores, localRelevance, isSponsor]);
 
-            <div className="space-y-3 border-t border-slate-100 pt-4">
-              {[0, 1, 2].map((scoreIndex) => (
-                <StarRating
-                  key={scoreIndex}
-                  label={`Score ${scoreIndex + 1}`}
-                  score={localScores[project.id]?.[scoreIndex] ?? null}
-                  onChange={(score) =>
-                    handleScoreChange(project.id, scoreIndex, score)
-                  }
-                  disabled={saving === `${project.id}-${scoreIndex}`}
-                />
-              ))}
-              {isSponsor && (
-                <StarRating
-                  label="Relevance"
-                  score={
-                    localRelevance[project.id] > 0
-                      ? localRelevance[project.id]
-                      : null
-                  }
-                  onChange={(score) => handleRelevanceChange(project.id, score)}
-                  disabled={saving === `${project.id}-relevance`}
-                />
-              )}
+  return (
+    <>
+      <ul className="space-y-4">
+        {projects.map((project, index) => (
+          <li key={project.id}>
+            <div className="rounded-lg bg-white p-4 shadow-sm">
+              <div className="mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600">
+                    {index + 1}
+                  </span>
+                  <span className="font-semibold text-slate-900">
+                    {project.name}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center gap-1 text-sm text-slate-500">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  <span>
+                    {project.location}
+                    {project.location2 ? ` - ${project.location2}` : ""}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3 border-t border-slate-100 pt-4">
+                {[0, 1, 2].map((scoreIndex) => (
+                  <StarRating
+                    key={scoreIndex}
+                    label={`Score ${scoreIndex + 1}`}
+                    score={localScores[project.id]?.[scoreIndex] ?? null}
+                    onChange={(score) =>
+                      handleScoreChange(project.id, scoreIndex, score)
+                    }
+                    disabled={saving === `${project.id}-${scoreIndex}`}
+                  />
+                ))}
+                {isSponsor && (
+                  <StarRating
+                    label="Relevance"
+                    score={
+                      localRelevance[project.id] > 0
+                        ? localRelevance[project.id]
+                        : null
+                    }
+                    onChange={(score) =>
+                      handleRelevanceChange(project.id, score)
+                    }
+                    disabled={saving === `${project.id}-relevance`}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-6">
+        <Link
+          href={`./ranking`}
+          className={`block w-full rounded-lg py-3 text-center font-semibold transition-colors ${
+            allScored
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "cursor-not-allowed bg-slate-200 text-slate-400"
+          }`}
+          onClick={(e) => {
+            if (!allScored) {
+              e.preventDefault();
+            }
+          }}
+        >
+          Start ranking
+        </Link>
+        {!allScored && (
+          <p className="mt-2 text-center text-xs text-slate-500">
+            Score all projects to enable ranking
+          </p>
+        )}
+      </div>
+    </>
   );
 }
