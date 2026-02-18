@@ -199,7 +199,7 @@ export function ScoringInterface({
 
       <div className="mt-6">
         <Link
-          href={isGeneral ? "/judgingportal/finished" : "./ranking"}
+          href={isGeneral ? "/judgingportal/finished" : `/judgingportal/${judgeId}/rankings`}
           className={`block w-full rounded-lg py-3 text-center font-semibold transition-colors ${
             allScored
               ? "bg-blue-600 text-white hover:bg-blue-700"
