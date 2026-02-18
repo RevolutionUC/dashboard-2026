@@ -35,6 +35,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
+import Link from "next/link";
 
 // Menu items (without Plan, which has sub-items).
 const items = [
@@ -108,10 +109,10 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
