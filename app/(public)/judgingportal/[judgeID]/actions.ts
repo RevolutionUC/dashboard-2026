@@ -5,6 +5,58 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { evaluations } from "@/lib/db/schema";
 
+export async function saveRanking(
+  judgeId: string,
+  projectId: string,
+  bordaScore: number,
+) {
+  try {
+    await db
+      .update(evaluations)
+      .set({ categoryBordaScore: bordaScore })
+      .where(
+        and(
+          eq(evaluations.judgeId, judgeId),
+          eq(evaluations.projectId, projectId),
+        ),
+      );
+
+    revalidatePath(`/judgingportal/${judgeId}/ranking`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving ranking:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to save ranking",
+    };
+  }
+}
+
+export async function resetAllRankings(judgeId: string) {
+  try {
+    await db
+      .update(evaluations)
+      .set({ categoryBordaScore: 0 })
+      .where(eq(evaluations.judgeId, judgeId));
+
+    revalidatePath(`/judgingportal/${judgeId}/ranking`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error resetting rankings:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to reset rankings",
+    };
+  }
+}
+
+export async function finalizeRankings(judgeId: string) {
+  return { success: true };
+}
+
 export async function saveEvaluationScore(
   judgeId: string,
   projectId: string,
