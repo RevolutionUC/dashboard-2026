@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 // Routes that don't require authentication at all
-const publicRoutes = ["/sign-in", "/sign-up", "/error"];
+const publicRoutes = ["/sign-in", "/sign-up", "/error", '/judgingportal'];
 
 // API routes that should be accessible without auth
 const publicApiRoutes = ["/api/auth"];
