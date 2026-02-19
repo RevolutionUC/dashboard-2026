@@ -7,6 +7,11 @@ export const PARTICIPANT_STATUSES = [
 
 export type ParticipantStatus = (typeof PARTICIPANT_STATUSES)[number];
 
-export function isParticipantStatus(value: unknown): value is ParticipantStatus {
-  return typeof value === "string" && (PARTICIPANT_STATUSES as readonly string[]).includes(value);
+export function isParticipantStatus(
+  value: unknown,
+): value is ParticipantStatus {
+  return (
+    typeof value === "string" &&
+    (PARTICIPANT_STATUSES as readonly string[]).includes(value)
+  );
 }
