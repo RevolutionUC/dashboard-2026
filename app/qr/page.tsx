@@ -53,8 +53,7 @@ export default function QRScannerPage() {
   }, []);
 
   const currentEvents = mode === "workshop" ? events.workshops : events.food;
-  const selectedEvent =
-    currentEvents.find((e) => e.id === selectedEventId) || null;
+  const selectedEvent = currentEvents.find((e) => e.id === selectedEventId) || null;
 
   const handleScan = useCallback(
     async (rawValue: string) => {

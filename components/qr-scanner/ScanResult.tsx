@@ -64,9 +64,7 @@ export function ScanResult({
         <p className="text-green-700 text-lg">
           {participant.firstName} {participant.lastName}
         </p>
-        {selectedEvent && (
-          <p className="text-green-600 text-sm mt-1">{selectedEvent.name}</p>
-        )}
+        {selectedEvent && <p className="text-green-600 text-sm mt-1">{selectedEvent.name}</p>}
         <Button
           onClick={onCancel}
           className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white"
@@ -80,10 +78,8 @@ export function ScanResult({
   // Scanning state - show participant info and confirm button
   if (status === "scanning" && participant) {
     const isBlocked =
-      mode === "checkin" &&
-      (participant.status === "WAITLISTED" || participant.checkedIn);
-    const needsEvent =
-      (mode === "workshop" || mode === "food") && !selectedEvent;
+      mode === "checkin" && (participant.status === "WAITLISTED" || participant.checkedIn);
+    const needsEvent = (mode === "workshop" || mode === "food") && !selectedEvent;
 
     return (
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -125,9 +121,7 @@ export function ScanResult({
         {(participant.shirtSize || participant.dietRestrictions) && (
           <div className="px-4 py-2 bg-gray-50 border-b text-sm text-gray-600">
             {participant.shirtSize && <p>Shirt: {participant.shirtSize}</p>}
-            {participant.dietRestrictions && (
-              <p>Diet: {participant.dietRestrictions}</p>
-            )}
+            {participant.dietRestrictions && <p>Diet: {participant.dietRestrictions}</p>}
           </div>
         )}
 
@@ -162,12 +156,7 @@ export function ScanResult({
             </Button>
           )}
 
-          <Button
-            onClick={onCancel}
-            variant="outline"
-            className="w-full"
-            disabled={isProcessing}
-          >
+          <Button onClick={onCancel} variant="outline" className="w-full" disabled={isProcessing}>
             Cancel
           </Button>
         </div>

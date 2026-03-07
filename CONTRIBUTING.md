@@ -58,7 +58,7 @@ npm exec drizzle-kit migrate
 
 If a database already has tables and enums before migrations are committed, baseline it once so Drizzle does not try to recreate existing objects:
 
-1) Create the migrations table:
+1. Create the migrations table:
 
 ```sql
 CREATE SCHEMA IF NOT EXISTS drizzle;
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
 );
 ```
 
-2) Insert the latest migration tag from `drizzle/meta/_journal.json`:
+2. Insert the latest migration tag from `drizzle/meta/_journal.json`:
 
 ```sql
 INSERT INTO drizzle.__drizzle_migrations (hash, created_at)

@@ -30,10 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch participant info
     if (!user_id) {
-      return NextResponse.json(
-        { error: "Missing participant ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing participant ID" }, { status: 400 });
     }
 
     const [participant] = await db
@@ -52,10 +49,7 @@ export async function GET(request: NextRequest) {
       .limit(1);
 
     if (!participant) {
-      return NextResponse.json(
-        { error: "Participant not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Participant not found" }, { status: 404 });
     }
 
     return NextResponse.json(participant);
@@ -71,10 +65,7 @@ export async function POST(request: NextRequest) {
     const { user_id, mode, eventId } = await request.json();
 
     if (!user_id || !mode) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Find participant
@@ -85,19 +76,13 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!participant) {
-      return NextResponse.json(
-        { error: "Participant not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Participant not found" }, { status: 404 });
     }
 
     // Main check-in
     if (mode === "checkin") {
       if (participant.checkedIn) {
-        return NextResponse.json(
-          { error: "Already checked in" },
-          { status: 409 },
-        );
+        return NextResponse.json({ error: "Already checked in" }, { status: 409 });
       }
 
       await db
@@ -117,18 +102,11 @@ export async function POST(request: NextRequest) {
     // Workshop/Food registration
     if (mode === "workshop" || mode === "food") {
       if (!eventId) {
-        return NextResponse.json(
-          { error: "Event ID required" },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: "Event ID required" }, { status: 400 });
       }
 
       // Check event exists
-      const [event] = await db
-        .select()
-        .from(events)
-        .where(eq(events.id, eventId))
-        .limit(1);
+      const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
 
       if (!event) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
@@ -139,18 +117,12 @@ export async function POST(request: NextRequest) {
         .select()
         .from(eventRegistrations)
         .where(
-          and(
-            eq(eventRegistrations.user_id, user_id),
-            eq(eventRegistrations.eventId, eventId),
-          ),
+          and(eq(eventRegistrations.user_id, user_id), eq(eventRegistrations.eventId, eventId)),
         )
         .limit(1);
 
       if (existing) {
-        return NextResponse.json(
-          { error: "Already registered for this event" },
-          { status: 409 },
-        );
+        return NextResponse.json({ error: "Already registered for this event" }, { status: 409 });
       }
 
       // Check capacity

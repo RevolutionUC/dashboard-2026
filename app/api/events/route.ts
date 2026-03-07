@@ -8,18 +8,12 @@ import { events } from "@/lib/db/schema";
 // GET all events
 export async function GET() {
   try {
-    const allEvents = await db
-      .select()
-      .from(events)
-      .orderBy(desc(events.startTime));
+    const allEvents = await db.select().from(events).orderBy(desc(events.startTime));
 
     return NextResponse.json(allEvents);
   } catch (error) {
     console.error("Error fetching events:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch events" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
   }
 }
 
@@ -36,15 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      name,
-      description,
-      eventType,
-      startTime,
-      endTime,
-      location,
-      capacity,
-    } = body;
+    const { name, description, eventType, startTime, endTime, location, capacity } = body;
 
     // Validate required fields
     if (!name) {
@@ -52,10 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!eventType) {
-      return NextResponse.json(
-        { error: "Event type is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Event type is required" }, { status: 400 });
     }
 
     // Validate event type
@@ -82,10 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newEvent, { status: 201 });
   } catch (error) {
     console.error("Error creating event:", error);
-    return NextResponse.json(
-      { error: "Failed to create event" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
   }
 }
 
@@ -105,16 +85,10 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Event ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
     }
 
-    const [deletedEvent] = await db
-      .delete(events)
-      .where(eq(events.id, id))
-      .returning();
+    const [deletedEvent] = await db.delete(events).where(eq(events.id, id)).returning();
 
     if (!deletedEvent) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
@@ -123,9 +97,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
     console.error("Error deleting event:", error);
-    return NextResponse.json(
-      { error: "Failed to delete event" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete event" }, { status: 500 });
   }
 }

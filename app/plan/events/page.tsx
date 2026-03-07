@@ -23,15 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import {
-  Plus,
-  Trash2,
-  UtensilsCrossed,
-  Presentation,
-  MapPin,
-  Users,
-  Clock,
-} from "lucide-react";
+import { Plus, Trash2, UtensilsCrossed, Presentation, MapPin, Users, Clock } from "lucide-react";
 
 interface Event {
   id: string;
@@ -83,9 +75,7 @@ export default function Events() {
     fetchEvents();
   }, [fetchEvents]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -223,9 +213,7 @@ export default function Events() {
                     <Label htmlFor="eventType">Event Type *</Label>
                     <Select
                       value={formData.eventType}
-                      onValueChange={(value) =>
-                        handleSelectChange("eventType", value)
-                      }
+                      onValueChange={(value) => handleSelectChange("eventType", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select event type" />
@@ -325,9 +313,7 @@ export default function Events() {
           </div>
         ) : events.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">
-              No events yet. Create one to get started.
-            </p>
+            <p className="text-muted-foreground">No events yet. Create one to get started.</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -341,9 +327,7 @@ export default function Events() {
                       ) : (
                         <UtensilsCrossed className="h-4 w-4 text-orange-500 shrink-0" />
                       )}
-                      <CardTitle className="text-base leading-tight">
-                        {event.name}
-                      </CardTitle>
+                      <CardTitle className="text-base leading-tight">{event.name}</CardTitle>
                     </div>
                     {session && (
                       <Button
