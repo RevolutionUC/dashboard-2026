@@ -1,8 +1,5 @@
 # Official RevolutionUC Dasboard
 
-## Todo:
+## Todos:
 
-~~dashboard with live counts~~
-~~search~~
-~~auth layer~~
-~~qr code scanner for organizers~~ workshops and events still remain
+workshops and events still remain
