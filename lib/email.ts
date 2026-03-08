@@ -9,8 +9,7 @@ const mg = mailgun.client({
 });
 
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || "revolutionuc.com";
-const FROM_EMAIL =
-  process.env.MAILGUN_FROM_EMAIL || "RevolutionUC <info@revolutionuc.com>";
+const FROM_EMAIL = process.env.MAILGUN_FROM_EMAIL || "RevolutionUC <info@revolutionuc.com>";
 
 interface EmailOptions {
   to: string;

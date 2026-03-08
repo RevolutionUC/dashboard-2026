@@ -7,10 +7,7 @@ import { accessRequests } from "@/lib/db/schema";
 import { sendAccessRequestEmail } from "@/lib/email";
 
 // Admin emails to notify
-const ADMIN_EMAILS = [
-  "bilwarad@mail.uc.edu",
-  "karthikeya.rachamolla@gmail.com",
-];
+const ADMIN_EMAILS = ["bilwarad@mail.uc.edu", "karthikeya.rachamolla@gmail.com"];
 
 // POST /api/admin/approvals/request - Re-request access (for denied users)
 export async function POST(request: Request) {
@@ -38,10 +35,7 @@ export async function POST(request: Request) {
     .limit(1);
 
   if (!existingRequest) {
-    return NextResponse.json(
-      { error: "No existing request found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "No existing request found" }, { status: 404 });
   }
 
   if (existingRequest.status === "approved") {
@@ -49,10 +43,7 @@ export async function POST(request: Request) {
   }
 
   if (existingRequest.status === "pending") {
-    return NextResponse.json(
-      { error: "Request already pending" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Request already pending" }, { status: 400 });
   }
 
   // Reset to pending
@@ -68,12 +59,8 @@ export async function POST(request: Request) {
 
   // Notify admins
   for (const adminEmail of ADMIN_EMAILS) {
-    sendAccessRequestEmail(
-      adminEmail,
-      session.user.name,
-      session.user.email,
-    ).catch((err: unknown) =>
-      console.error(`Failed to send re-request email to ${adminEmail}:`, err),
+    sendAccessRequestEmail(adminEmail, session.user.name, session.user.email).catch(
+      (err: unknown) => console.error(`Failed to send re-request email to ${adminEmail}:`, err),
     );
   }
 

@@ -75,13 +75,14 @@ export async function PATCH(request: Request) {
   const body = await request.json();
   const { requestId, action } = body as {
     requestId: string;
-    action: "approve" | "deny";
+    action: "approve" | "deny" | "revoke";
   };
 
-  if (!requestId || !["approve", "deny"].includes(action)) {
+  if (!requestId || !["approve", "deny", "revoke"].includes(action)) {
     return NextResponse.json(
       {
-        error: "Invalid request. Provide requestId and action (approve/deny).",
+        error:
+          "Invalid request. Provide requestId and action (approve/deny/revoke).",
       },
       { status: 400 },
     );
