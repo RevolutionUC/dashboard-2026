@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 const DEBOUNCE_MS = 2000;
 
 export default function QRScannerPage() {
-  const [mode, setMode] = useState<ScannerMode>("checkin");
+  const [mode, setModeState] = useState<ScannerMode>("checkin");
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +29,22 @@ export default function QRScannerPage() {
     workshops: [],
     food: [],
   });
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const [selectedEventId, setSelectedEventIdState] = useState("");
+
   const lastScanRef = useRef<{ id: string; time: number } | null>(null);
+  const isLockedRef = useRef(false);
+  const modeRef = useRef<ScannerMode>(mode);
+  const selectedEventIdRef = useRef(selectedEventId);
+
+  const setMode = useCallback((m: ScannerMode) => {
+    modeRef.current = m;
+    setModeState(m);
+  }, []);
+
+  const setSelectedEventId = useCallback((id: string) => {
+    selectedEventIdRef.current = id;
+    setSelectedEventIdState(id);
+  }, []);
 
   // Load events on mount
   useEffect(() => {
@@ -39,40 +53,52 @@ export default function QRScannerPage() {
       .catch((err: Error) => console.error("Failed to load events:", err));
   }, []);
 
-  // Reset when mode changes
-  useEffect(() => {
-    reset();
-    setSelectedEventId("");
-  }, [mode]);
-
   const reset = useCallback(() => {
+    isLockedRef.current = false;
+    lastScanRef.current = null;
     setStatus("idle");
     setParticipant(null);
     setError(null);
     setIsProcessing(false);
   }, []);
 
+  // Reset when mode changes
+  useEffect(() => {
+    reset();
+    setSelectedEventId("");
+  }, [mode, reset, setSelectedEventId]);
+
   const currentEvents = mode === "workshop" ? events.workshops : events.food;
-  const selectedEvent = currentEvents.find((e) => e.id === selectedEventId) || null;
+  const selectedEvent =
+    currentEvents.find((e) => e.id === selectedEventId) || null;
 
   const handleScan = useCallback(
     async (rawValue: string) => {
-      if (isProcessing) return;
+      if (isLockedRef.current) return;
+      isLockedRef.current = true;
+
+      // Read mode and eventId from refs so we never have stale closure values
+      const currentMode = modeRef.current;
+      const currentEventId = selectedEventIdRef.current;
 
       // Require event selection for workshop/food
-      if ((mode === "workshop" || mode === "food") && !selectedEventId) {
-        setError(`Select a ${mode} first`);
+      if (
+        (currentMode === "workshop" || currentMode === "food") &&
+        !currentEventId
+      ) {
+        setError(`Select a ${currentMode} first`);
         setStatus("error");
         return;
       }
 
-      // Debounce duplicate scans
+      // Debounce
       const now = Date.now();
       if (
         lastScanRef.current &&
         lastScanRef.current.id === rawValue &&
         now - lastScanRef.current.time < DEBOUNCE_MS
       ) {
+        isLockedRef.current = false;
         return;
       }
       lastScanRef.current = { id: rawValue, time: now };
@@ -92,8 +118,7 @@ export default function QRScannerPage() {
         setIsProcessing(false);
       }
     },
-    [isProcessing, mode, selectedEventId],
-  );
+    [],);
 
   const handleConfirm = useCallback(async () => {
     if (!participant) return;
@@ -102,12 +127,12 @@ export default function QRScannerPage() {
     try {
       await registerScan(
         participant.user_id,
-        mode,
-        mode !== "checkin" ? selectedEventId : undefined,
+        modeRef.current,
+        modeRef.current !== "checkin" ? selectedEventIdRef.current : undefined,
       );
       setStatus("success");
-      if (mode === "checkin") {
-        setParticipant((p: Participant | null) =>
+      if (modeRef.current === "checkin") {
+        setParticipant((p) =>
           p ? { ...p, checkedIn: true, status: "CHECKED_IN" } : null,
         );
       }
@@ -117,14 +142,15 @@ export default function QRScannerPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [participant, mode, selectedEventId]);
+  }, [participant]);
 
   const handleCancel = useCallback(() => {
     reset();
-    lastScanRef.current = null;
   }, [reset]);
 
   const config = MODE_CONFIG[mode];
+  const scannerDisabled = isProcessing;
+  const scannerLocked = !isProcessing && status !== "idle";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -179,7 +205,11 @@ export default function QRScannerPage() {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col p-4 gap-4">
-        <QRScanner onScan={handleScan} disabled={isProcessing} />
+        <QRScanner
+          onScan={handleScan}
+          disabled={scannerDisabled}
+          locked={scannerLocked}
+        />
 
         <div className="w-full max-w-md mx-auto">
           <ScanResult
