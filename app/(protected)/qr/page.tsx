@@ -31,13 +31,11 @@ export default function QRScannerPage() {
   });
   const [selectedEventId, setSelectedEventIdState] = useState("");
 
-  // Refs — always current, never stale inside callbacks
   const lastScanRef = useRef<{ id: string; time: number } | null>(null);
   const isLockedRef = useRef(false);
   const modeRef = useRef<ScannerMode>(mode);
   const selectedEventIdRef = useRef(selectedEventId);
 
-  // Wrappers that sync state + ref simultaneously (no useEffect lag)
   const setMode = useCallback((m: ScannerMode) => {
     modeRef.current = m;
     setModeState(m);
@@ -76,8 +74,6 @@ export default function QRScannerPage() {
 
   const handleScan = useCallback(
     async (rawValue: string) => {
-      // LOCK — must be the very first check and set. Uses a ref so it is
-      // never stale no matter when this callback was created.
       if (isLockedRef.current) return;
       isLockedRef.current = true;
 
@@ -92,11 +88,10 @@ export default function QRScannerPage() {
       ) {
         setError(`Select a ${currentMode} first`);
         setStatus("error");
-        // leave locked — staff must dismiss the error before scanning again
         return;
       }
 
-      // Debounce: same QR within 2s is a no-op — unlock and bail
+      // Debounce
       const now = Date.now();
       if (
         lastScanRef.current &&
@@ -116,17 +111,14 @@ export default function QRScannerPage() {
         const data = await fetchUser(user_id);
         setParticipant(data);
         setStatus("scanning");
-        // leave locked — participant card is showing, must be confirmed or cancelled
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Invalid QR code");
         setStatus("error");
-        // leave locked — error card must be dismissed via Try Again
       } finally {
         setIsProcessing(false);
       }
     },
-    [], // no dependencies — everything is read from refs
-  );
+    [],);
 
   const handleConfirm = useCallback(async () => {
     if (!participant) return;
@@ -144,11 +136,9 @@ export default function QRScannerPage() {
           p ? { ...p, checkedIn: true, status: "CHECKED_IN" } : null,
         );
       }
-      // leave locked — success card must be dismissed via Scan Next
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
       setStatus("error");
-      // leave locked — error card must be dismissed
     } finally {
       setIsProcessing(false);
     }

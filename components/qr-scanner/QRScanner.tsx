@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
+import type { IDetectedBarcode } from "@yudiel/react-qr-scanner";
 
 interface QRScannerProps {
   onScan: (value: string) => void;
@@ -11,6 +12,26 @@ interface QRScannerProps {
 
 export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
   const [cameraError, setCameraError] = useState<string | null>(null);
+
+  // Keep refs for values that change — so the callback passed to Scanner
+  // never changes reference and the library never restarts its internal
+  // requestAnimationFrame loop.
+  const onScanRef = useRef(onScan);
+  const disabledRef = useRef(disabled);
+
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
+
+  useEffect(() => {
+    disabledRef.current = disabled;
+  }, [disabled]);
+
+  const handleScan = useCallback((codes: IDetectedBarcode[]) => {
+    if (codes.length > 0 && !disabledRef.current) {
+      onScanRef.current(codes[0].rawValue);
+    }
+  }, []);
 
   const handleError = useCallback((error: unknown) => {
     console.error("Scanner error:", error);
@@ -49,14 +70,12 @@ export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
     setCameraError(message);
   }, []);
 
-  // stop all camera streams when this component unmounts
+  // Safety-net: stop all camera streams when this component unmounts
   useEffect(() => {
     return () => {
       navigator.mediaDevices
         ?.enumerateDevices()
         .then(() => {
-          // The Scanner component should clean up its own stream on unmount,
-          // but as a safety net, stop any lingering video tracks.
           const mediaElements = document.querySelectorAll("video");
           mediaElements.forEach((video) => {
             const stream = video.srcObject as MediaStream | null;
@@ -66,17 +85,14 @@ export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
             }
           });
         })
-        .catch(() => {
-          // Silently ignore — we're cleaning up on unmount
-        });
+        .catch(() => {});
     };
   }, []);
 
-  // Camera error state — full overlay with instructions
+  // Camera error state  full overlay with instructions
   if (cameraError) {
     return (
       <div className="relative w-full max-w-md mx-auto aspect-square bg-gray-900 rounded-lg overflow-hidden flex flex-col items-center justify-center p-6 text-center">
-        
         <h3 className="text-white text-lg font-bold mb-2">
           Camera Unavailable
         </h3>
@@ -96,19 +112,14 @@ export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
   return (
     <div className="relative w-full max-w-md mx-auto aspect-square bg-black rounded-lg overflow-hidden">
       <Scanner
-        // do not enable
         sound={false}
-        onScan={(codes) => {
-          if (codes.length > 0 && !disabled) {
-            onScan(codes[0].rawValue);
-          }
-        }}
+        allowMultiple
+        onScan={handleScan}
         onError={handleError}
         styles={{
           container: { width: "100%", height: "100%" },
           video: { width: "100%", height: "100%", objectFit: "cover" },
         }}
-        components={{ finder: true }}
       />
       {disabled && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
