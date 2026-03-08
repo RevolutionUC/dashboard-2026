@@ -57,7 +57,6 @@ export function ScanResult({
   if (status === "success" && participant) {
     return (
       <div className="p-6 bg-green-50 border-2 border-green-500 rounded-lg text-center">
-        <div className="text-5xl mb-3">✓</div>
         <h2 className="text-xl font-bold text-green-800 mb-1">
           {mode === "checkin" ? "Checked In!" : "Registered!"}
         </h2>

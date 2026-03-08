@@ -164,7 +164,7 @@ export const eventRegistrations = pgTable(
   {
     // unique index for evernts regsitration table
     id: uuid("id").primaryKey().defaultRandom(),
-    user_id: uuid("user_id")
+    participant_id: uuid("participant_id")
       .notNull()
       .references(() => participants.user_id, { onDelete: "cascade" }),
     eventId: uuid("event_id")
@@ -173,7 +173,7 @@ export const eventRegistrations = pgTable(
     registeredAt: timestamp("registered_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("event_registrations_participant_idx").on(table.user_id),
+    index("event_registrations_participant_idx").on(table.participant_id),
     index("event_registrations_event_idx").on(table.eventId),
   ],
 );
