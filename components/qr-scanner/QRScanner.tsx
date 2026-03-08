@@ -15,7 +15,7 @@ export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
         // do not enable
         sound={false}
         onScan={(codes) => {
-          if (codes.length > 0 && !disabled && !locked) {
+          if (codes.length > 0 && !disabled) {
             onScan(codes[0].rawValue);
           }
         }}
