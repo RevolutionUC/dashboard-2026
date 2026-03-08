@@ -53,7 +53,8 @@ export default function QRScannerPage() {
   }, []);
 
   const currentEvents = mode === "workshop" ? events.workshops : events.food;
-  const selectedEvent = currentEvents.find((e) => e.id === selectedEventId) || null;
+  const selectedEvent =
+    currentEvents.find((e) => e.id === selectedEventId) || null;
 
   const handleScan = useCallback(
     async (rawValue: string) => {
@@ -179,7 +180,11 @@ export default function QRScannerPage() {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col p-4 gap-4">
-        <QRScanner onScan={handleScan} disabled={isProcessing} />
+        <QRScanner
+          onScan={handleScan}
+          disabled={isProcessing}
+          locked={!isProcessing && status !== "idle"}
+        />
 
         <div className="w-full max-w-md mx-auto">
           <ScanResult

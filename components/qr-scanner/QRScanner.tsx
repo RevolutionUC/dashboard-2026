@@ -5,16 +5,17 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 interface QRScannerProps {
   onScan: (value: string) => void;
   disabled?: boolean;
+  locked?: boolean;
 }
 
-export function QRScanner({ onScan, disabled }: QRScannerProps) {
+export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
   return (
     <div className="relative w-full max-w-md mx-auto aspect-square bg-black rounded-lg overflow-hidden">
       <Scanner
         // do not enable
         sound={false}
         onScan={(codes) => {
-          if (codes.length > 0 && !disabled) {
+          if (codes.length > 0 && !disabled && !locked) {
             onScan(codes[0].rawValue);
           }
         }}
@@ -28,6 +29,15 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
       {disabled && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
+        </div>
+      )}
+      {locked && !disabled && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-3 py-3 flex items-center gap-2">
+          <span className="text-yellow-400 text-lg leading-none">⚠</span>
+          <p className="text-white text-sm font-medium leading-tight">
+            Process the current participant or press Cancel before scanning
+            again.
+          </p>
         </div>
       )}
     </div>
