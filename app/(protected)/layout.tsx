@@ -29,9 +29,13 @@ export default async function ProtectedLayout({
     return (
       <SidebarProvider>
         <AppSidebar />
-        <AuthHeader />
-        <SidebarTrigger />
-        <main className="flex-1">{children}</main>
+        <div className="flex flex-1 flex-col">
+          <header className="flex h-14 items-center justify-between border-b px-4">
+            <SidebarTrigger />
+            <AuthHeader />
+          </header>
+          <main className="flex-1">{children}</main>
+        </div>
       </SidebarProvider>
     );
   }
@@ -50,9 +54,13 @@ export default async function ProtectedLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <AuthHeader />
-      <SidebarTrigger />
-      <main className="flex-1">{children}</main>
+      <div className="flex flex-1 flex-col">
+        <header className="flex h-14 items-center justify-between border-b px-4">
+          <SidebarTrigger />
+          <AuthHeader />
+        </header>
+        <main className="flex-1">{children}</main>
+      </div>
     </SidebarProvider>
   );
 }

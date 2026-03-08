@@ -13,16 +13,11 @@ if (
   !process.env.GITHUB_CLIENT_ID ||
   !process.env.GITHUB_CLIENT_SECRET
 ) {
-  throw new Error(
-    "BETTER AUTH SECRET, URL OR GITHUB CLIENT ID OR SECRET MISSING ",
-  );
+  throw new Error("BETTER AUTH SECRET, URL OR GITHUB CLIENT ID OR SECRET MISSING ");
 }
 
 // Admin emails that automatically get admin role
-const ADMIN_EMAILS = [
-  "bilwarad@mail.uc.edu",
-  "karthikeya.rachamolla@gmail.com",
-];
+const ADMIN_EMAILS = ["bilwarad@mail.uc.edu", "karthikeya.rachamolla@gmail.com"];
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -50,10 +45,7 @@ export const auth = betterAuth({
 
           if (isAdmin) {
             // Auto-approve admins: set role to admin and create an approved access request
-            await db
-              .update(schema.user)
-              .set({ role: "admin" })
-              .where(eq(schema.user.id, user.id));
+            await db.update(schema.user).set({ role: "admin" }).where(eq(schema.user.id, user.id));
 
             await db.insert(accessRequests).values({
               userId: user.id,
@@ -75,12 +67,8 @@ export const auth = betterAuth({
 
             // Notify admin emails about the new access request
             for (const adminEmail of ADMIN_EMAILS) {
-              sendAccessRequestEmail(adminEmail, user.name, user.email).catch(
-                (err: unknown) =>
-                  console.error(
-                    `Failed to send access request email to ${adminEmail}:`,
-                    err,
-                  ),
+              sendAccessRequestEmail(adminEmail, user.name, user.email).catch((err: unknown) =>
+                console.error(`Failed to send access request email to ${adminEmail}:`, err),
               );
             }
           }

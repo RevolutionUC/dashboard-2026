@@ -58,7 +58,7 @@ export default function AdminApprovalsPage() {
 
   const handleAction = async (
     requestId: string,
-    action: "approve" | "deny",
+    action: "approve" | "deny" | "revoke",
   ) => {
     setActionInFlight(requestId);
     try {
@@ -208,6 +208,19 @@ export default function AdminApprovalsPage() {
                         disabled={actionInFlight === request.id}
                       >
                         {actionInFlight === request.id ? "..." : "Deny"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {request.status === "approved" && (
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleAction(request.id, "revoke")}
+                        disabled={actionInFlight === request.id}
+                      >
+                        {actionInFlight === request.id ? "..." : "Revoke"}
                       </Button>
                     </div>
                   )}
