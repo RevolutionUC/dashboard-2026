@@ -32,6 +32,8 @@ export default function QRScannerPage() {
   const [selectedEventId, setSelectedEventId] = useState("");
   const lastScanRef = useRef<{ id: string; time: number } | null>(null);
 
+  const isLockedRef = useRef(false);
+
   // Load events on mount
   useEffect(() => {
     fetchEvents()
@@ -46,6 +48,7 @@ export default function QRScannerPage() {
   }, [mode]);
 
   const reset = useCallback(() => {
+    isLockedRef.current = false;
     setStatus("idle");
     setParticipant(null);
     setError(null);
@@ -58,7 +61,10 @@ export default function QRScannerPage() {
 
   const handleScan = useCallback(
     async (rawValue: string) => {
+      if (isLockedRef.current) return;
       if (isProcessing) return;
+
+      if (isProcessing) { isLockedRef.current = false; return; }
 
       // Require event selection for workshop/food
       if ((mode === "workshop" || mode === "food") && !selectedEventId) {
@@ -74,6 +80,7 @@ export default function QRScannerPage() {
         lastScanRef.current.id === rawValue &&
         now - lastScanRef.current.time < DEBOUNCE_MS
       ) {
+        isLockedRef.current = false;
         return;
       }
       lastScanRef.current = { id: rawValue, time: now };
@@ -126,6 +133,8 @@ export default function QRScannerPage() {
   }, [reset]);
 
   const config = MODE_CONFIG[mode];
+  const scannerDisabled = isProcessing;
+  const scannerLocked = !isProcessing && status !== "idle";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -182,8 +191,8 @@ export default function QRScannerPage() {
       <main className="flex-1 flex flex-col p-4 gap-4">
         <QRScanner
           onScan={handleScan}
-          disabled={isProcessing}
-          locked={!isProcessing && status !== "idle"}
+          disabled={scannerDisabled}
+          locked={scannerLocked}
         />
 
         <div className="w-full max-w-md mx-auto">
