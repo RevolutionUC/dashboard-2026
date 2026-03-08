@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-// Routes that don't require authentication
+// Routes that don't require authentication at all
 const publicRoutes = ["/sign-in", "/sign-up", "/error"];
 
 // API routes that should be accessible without auth
 const publicApiRoutes = ["/api/auth"];
+
+// Routes accessible to authenticated but not-yet-approved users
+const pendingRoutes = ["/pending-approval"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -21,6 +24,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow pending-approval route (authenticated users who aren't approved yet)
+  if (pendingRoutes.some((route) => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+
   // Check for session using Better Auth's cookie helper
   const sessionCookie = getSessionCookie(request);
 
@@ -31,6 +39,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
+  // Session exists - let the request through.
+  // Approval status is checked server-side in the (protected) layout
+  // because middleware can't do DB queries on the Edge.
   return NextResponse.next();
 }
 
