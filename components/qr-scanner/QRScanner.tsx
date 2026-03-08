@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
 
 interface QRScannerProps {
@@ -9,6 +10,89 @@ interface QRScannerProps {
 }
 
 export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  const handleError = useCallback((error: unknown) => {
+    console.error("Scanner error:", error);
+
+    let message = "Camera error. Please reload the page.";
+
+    if (error instanceof DOMException) {
+      switch (error.name) {
+        case "NotAllowedError":
+          message =
+            "Camera access was denied. Please allow camera permissions in your browser settings and reload the page.";
+          break;
+        case "NotFoundError":
+          message =
+            "No camera found on this device. Please connect a camera and reload.";
+          break;
+        case "NotReadableError":
+          message =
+            "Camera is in use by another app. Close the other app and reload.";
+          break;
+        case "OverconstrainedError":
+          message =
+            "Camera does not meet requirements. Try a different device.";
+          break;
+      }
+    } else if (error instanceof Error) {
+      if (
+        error.message.toLowerCase().includes("permission") ||
+        error.message.toLowerCase().includes("denied")
+      ) {
+        message =
+          "Camera access was denied. Please allow camera permissions in your browser settings and reload the page.";
+      }
+    }
+
+    setCameraError(message);
+  }, []);
+
+  // stop all camera streams when this component unmounts
+  useEffect(() => {
+    return () => {
+      navigator.mediaDevices
+        ?.enumerateDevices()
+        .then(() => {
+          // The Scanner component should clean up its own stream on unmount,
+          // but as a safety net, stop any lingering video tracks.
+          const mediaElements = document.querySelectorAll("video");
+          mediaElements.forEach((video) => {
+            const stream = video.srcObject as MediaStream | null;
+            if (stream) {
+              stream.getTracks().forEach((track) => track.stop());
+              video.srcObject = null;
+            }
+          });
+        })
+        .catch(() => {
+          // Silently ignore — we're cleaning up on unmount
+        });
+    };
+  }, []);
+
+  // Camera error state — full overlay with instructions
+  if (cameraError) {
+    return (
+      <div className="relative w-full max-w-md mx-auto aspect-square bg-gray-900 rounded-lg overflow-hidden flex flex-col items-center justify-center p-6 text-center">
+        
+        <h3 className="text-white text-lg font-bold mb-2">
+          Camera Unavailable
+        </h3>
+        <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+          {cameraError}
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors"
+        >
+          Reload Page
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full max-w-md mx-auto aspect-square bg-black rounded-lg overflow-hidden">
       <Scanner
@@ -19,7 +103,7 @@ export function QRScanner({ onScan, disabled, locked }: QRScannerProps) {
             onScan(codes[0].rawValue);
           }
         }}
-        onError={(error) => console.error("Scanner error:", error)}
+        onError={handleError}
         styles={{
           container: { width: "100%", height: "100%" },
           video: { width: "100%", height: "100%", objectFit: "cover" },
