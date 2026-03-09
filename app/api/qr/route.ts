@@ -132,8 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         message: "Checked in successfully",
         participant: {
-          firstName: participant.firstName,
-          lastName: participant.lastName,
+          name: participant.firstName + " " + participant.lastName,
         },
       });
     }
@@ -211,7 +210,11 @@ export async function POST(request: NextRequest) {
         email: session.user.email,
         action: mode === "workshop" ? "WORKSHOP_CHECKIN" : "FOOD_CHECKIN",
         targetId: participant.user_id,
-        details: { eventId: event.id, eventName: event.name },
+        details: {
+          name: participant.firstName + " " + participant.lastName,
+          eventId: event.id,
+          eventName: event.name,
+        },
       });
 
       return NextResponse.json({

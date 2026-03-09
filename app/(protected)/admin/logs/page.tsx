@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -70,8 +71,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   },
   DENY_USER: {
     label: "Deny User",
-    color:
-      "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   },
 };
 
@@ -82,6 +82,7 @@ export default function AdminLogsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -111,6 +112,18 @@ export default function AdminLogsPage() {
     return () => clearInterval(interval);
   }, [fetchLogs]);
 
+  const toggleRow = (id: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
       month: "short",
@@ -121,7 +134,7 @@ export default function AdminLogsPage() {
     });
   };
 
-  const formatDetails = (details: Record<string, unknown> | null) => {
+  const formatDetailsSummary = (details: Record<string, unknown> | null) => {
     if (!details) return null;
     return Object.entries(details)
       .map(([key, value]) => `${key}: ${value}`)
@@ -212,9 +225,6 @@ export default function AdminLogsPage() {
                     User
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                    Target
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                     Details
                   </th>
                 </tr>
@@ -225,56 +235,90 @@ export default function AdminLogsPage() {
                     label: log.action,
                     color: "bg-muted text-muted-foreground",
                   };
-                  const details = formatDetails(log.details);
+                  const summary = formatDetailsSummary(log.details);
+                  const isExpanded = expandedRows.has(log.id);
+                  const hasDetails =
+                    !!log.details && Object.keys(log.details).length > 0;
 
                   return (
-                    <tr
-                      key={log.id}
-                      className="border-b last:border-b-0 transition-colors hover:bg-muted/30"
-                    >
-                      <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground tabular-nums">
-                        {formatTime(log.event_time)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${actionInfo.color}`}
-                        >
-                          {actionInfo.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium truncate max-w-48">
-                            {log.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate max-w-48">
-                            {log.email}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {log.target_id ? (
-                          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
-                            {log.target_id.slice(0, 8)}…
-                          </code>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            —
+                    <>
+                      <tr
+                        key={log.id}
+                        className="border-b transition-colors hover:bg-muted/30"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground tabular-nums align-top">
+                          {formatTime(log.event_time)}
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${actionInfo.color}`}
+                          >
+                            {actionInfo.label}
                           </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {details ? (
-                          <span className="text-xs text-muted-foreground max-w-64 truncate block">
-                            {details}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <div>
+                            <p className="font-medium truncate max-w-48">
+                              {log.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate max-w-48">
+                              {log.email}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          {hasDetails ? (
+                            <div className="flex items-start gap-1.5">
+                              <button
+                                onClick={() => toggleRow(log.id)}
+                                className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="size-3.5" />
+                                ) : (
+                                  <ChevronRight className="size-3.5" />
+                                )}
+                              </button>
+                              <div className="min-w-0">
+                                {isExpanded ? (
+                                  <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                                    {Object.entries(log.details!).map(
+                                      ([key, value]) => (
+                                        <>
+                                          <span
+                                            key={`${key}-label`}
+                                            className="text-xs font-medium text-muted-foreground whitespace-nowrap"
+                                          >
+                                            {key}
+                                          </span>
+                                          <span
+                                            key={`${key}-value`}
+                                            className="text-xs text-foreground break-all"
+                                          >
+                                            {typeof value === "object" &&
+                                            value !== null
+                                              ? JSON.stringify(value, null, 2)
+                                              : String(value ?? "—")}
+                                          </span>
+                                        </>
+                                      ),
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground truncate max-w-56 block">
+                                    {summary}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              —
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    </>
                   );
                 })}
               </tbody>
