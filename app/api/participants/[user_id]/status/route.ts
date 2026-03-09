@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { participants } from "@/lib/db/schema";
 import { isParticipantStatus } from "@/lib/participant-status";
+import { logAction } from "@/lib/audit";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ user_id: string }> }) {
   const session = await auth.api.getSession({
@@ -30,6 +31,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ user_i
     return NextResponse.json({ message: "Invalid status" }, { status: 400 });
   }
 
+  // Fetch the current status before updating so we can log the transition
+  const [current] = await db
+    .select({ status: participants.status })
+    .from(participants)
+    .where(eq(participants.user_id, user_id))
+    .limit(1);
+
+  if (!current) {
+    return NextResponse.json(
+      { message: "Participant not found" },
+      { status: 404 },
+    );
+  }
+
+  const previousStatus = current.status;
+
   const checkedIn = nextStatus === "CHECKED_IN";
 
   const updated = await db
@@ -44,8 +61,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ user_i
     .then((r) => r[0]);
 
   if (!updated) {
-    return NextResponse.json({ message: "Participant not found" }, { status: 404 });
+    return NextResponse.json(
+      { message: "Participant not found" },
+      { status: 404 },
+    );
   }
+
+  await logAction({
+    userId: session.user.id,
+    name: session.user.name,
+    email: session.user.email,
+    action: "UPDATE_STATUS",
+    targetId: user_id,
+    details: { from: previousStatus, to: nextStatus },
+  });
 
   return NextResponse.json({ ok: true });
 }
