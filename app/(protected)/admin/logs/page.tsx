@@ -82,6 +82,7 @@ export default function AdminLogsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [userFilter, setUserFilter] = useState<string>("all");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const fetchLogs = useCallback(async () => {
@@ -134,6 +135,21 @@ export default function AdminLogsPage() {
     });
   };
 
+  const uniqueUsers = Array.from(
+    new Map(
+      logs.map((log) => [
+        log.user_id,
+        { id: log.user_id, name: log.name, email: log.email },
+      ]),
+    ).values(),
+  ).sort((a, b) => a.name.localeCompare(b.name));
+
+  const filteredLogs = logs.filter((log) => {
+    const matchesAction = actionFilter === "all" || log.action === actionFilter;
+    const matchesUser = userFilter === "all" || log.user_id === userFilter;
+    return matchesAction && matchesUser;
+  });
+
   const formatDetailsSummary = (details: Record<string, unknown> | null) => {
     if (!details) return null;
     return Object.entries(details)
@@ -161,19 +177,34 @@ export default function AdminLogsPage() {
             )}
           </p>
         </div>
-        <Select value={actionFilter} onValueChange={setActionFilter}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Filter by action" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All actions</SelectItem>
-            {Object.entries(ACTION_LABELS).map(([key, { label }]) => (
-              <SelectItem key={key} value={key}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={userFilter} onValueChange={setUserFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Filter by user" />
+            </SelectTrigger>
+            <SelectContent position="popper" sideOffset={4}>
+              <SelectItem value="all">All users</SelectItem>
+              {uniqueUsers.map(({ id, name, email }) => (
+                <SelectItem key={id} value={id}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={actionFilter} onValueChange={setActionFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Filter by action" />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectItem value="all">All actions</SelectItem>
+              {Object.entries(ACTION_LABELS).map(([key, { label }]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error && (
@@ -203,9 +234,9 @@ export default function AdminLogsPage() {
         <Card>
           <CardContent className="py-8 text-center">
             <p className="text-muted-foreground">
-              {actionFilter === "all"
+              {actionFilter === "all" && userFilter === "all"
                 ? "No audit logs yet"
-                : `No ${ACTION_LABELS[actionFilter]?.label ?? actionFilter} logs`}
+                : "No logs match the selected filters"}
             </p>
           </CardContent>
         </Card>
@@ -230,7 +261,7 @@ export default function AdminLogsPage() {
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => {
+                {filteredLogs.map((log) => {
                   const actionInfo = ACTION_LABELS[log.action] ?? {
                     label: log.action,
                     color: "bg-muted text-muted-foreground",
