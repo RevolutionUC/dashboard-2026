@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Fragment } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -272,17 +272,14 @@ export default function AdminLogsPage() {
                     !!log.details && Object.keys(log.details).length > 0;
 
                   return (
-                    <>
-                      <tr
-                        key={log.id}
-                        className="border-b transition-colors hover:bg-muted/30"
-                      >
+                    <Fragment key={log.id}>
+                      <tr className="border-b transition-colors hover:bg-muted/30">
                         <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground tabular-nums align-top">
                           {formatTime(log.event_time)}
                         </td>
                         <td className="px-4 py-3 align-top">
                           <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${actionInfo.color}`}
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${actionInfo.color}`}
                           >
                             {actionInfo.label}
                           </span>
@@ -315,23 +312,17 @@ export default function AdminLogsPage() {
                                   <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
                                     {Object.entries(log.details!).map(
                                       ([key, value]) => (
-                                        <>
-                                          <span
-                                            key={`${key}-label`}
-                                            className="text-xs font-medium text-muted-foreground whitespace-nowrap"
-                                          >
+                                        <Fragment key={key}>
+                                          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
                                             {key}
                                           </span>
-                                          <span
-                                            key={`${key}-value`}
-                                            className="text-xs text-foreground break-all"
-                                          >
+                                          <span className="text-xs text-foreground break-all">
                                             {typeof value === "object" &&
                                             value !== null
                                               ? JSON.stringify(value, null, 2)
                                               : String(value ?? "—")}
                                           </span>
-                                        </>
+                                        </Fragment>
                                       ),
                                     )}
                                   </div>
@@ -349,7 +340,7 @@ export default function AdminLogsPage() {
                           )}
                         </td>
                       </tr>
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
