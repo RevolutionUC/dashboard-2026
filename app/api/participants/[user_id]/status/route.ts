@@ -33,7 +33,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ user_i
 
   // Fetch the current status before updating so we can log the transition
   const [current] = await db
-    .select({ status: participants.status })
+    .select({
+      status: participants.status,
+      firstName: participants.firstName,
+      lastName: participants.lastName,
+    })
     .from(participants)
     .where(eq(participants.user_id, user_id))
     .limit(1);
@@ -73,7 +77,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ user_i
     email: session.user.email,
     action: "UPDATE_STATUS",
     targetId: user_id,
-    details: { from: previousStatus, to: nextStatus },
+    details: {
+      name: current.firstName + " " + current.lastName,
+      from: previousStatus,
+      to: nextStatus,
+    },
   });
 
   return NextResponse.json({ ok: true });
