@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { logAction } from "@/lib/audit";
 
 // GET /api/qr - Get participant info or events list
 export async function GET(request: NextRequest) {
@@ -116,6 +117,18 @@ export async function POST(request: NextRequest) {
         .set({ checkedIn: true, status: "CHECKED_IN", updatedAt: new Date() })
         .where(eq(participants.user_id, user_id));
 
+      await logAction({
+        userId: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        action: "CHECKIN",
+        targetId: participant.user_id,
+        details: {
+          firstName: participant.firstName,
+          lastName: participant.lastName,
+        },
+      });
+
       return NextResponse.json({
         message: "Checked in successfully",
         participant: {
@@ -191,6 +204,15 @@ export async function POST(request: NextRequest) {
       await db
         .insert(eventRegistrations)
         .values({ participant_id: user_id, eventId });
+
+      await logAction({
+        userId: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        action: mode === "workshop" ? "WORKSHOP_CHECKIN" : "FOOD_CHECKIN",
+        targetId: participant.user_id,
+        details: { eventId: event.id, eventName: event.name },
+      });
 
       return NextResponse.json({
         message: `Registered for ${event.name}`,
