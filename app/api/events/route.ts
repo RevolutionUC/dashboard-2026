@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
+import { logAction } from "@/lib/audit";
 
 // GET all events
 export async function GET() {
@@ -61,6 +62,15 @@ export async function POST(request: NextRequest) {
         capacity: capacity ? Number.parseInt(capacity, 10) : null,
       })
       .returning();
+    
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "CREATE_EVENT",
+      targetId: newEvent.id,
+      details: { name: newEvent.name },
+    });
 
     return NextResponse.json(newEvent, { status: 201 });
   } catch (error) {
