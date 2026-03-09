@@ -7,10 +7,15 @@ import {
   Home,
   Inbox,
   NotepadText,
+  ScrollText,
   Search,
   ShieldCheck,
 } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -121,6 +126,14 @@ export function AppSidebar() {
                     <a href="/admin/approvals">
                       <ShieldCheck />
                       <span>Approvals</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a href="/admin/logs">
+                      <ScrollText />
+                      <span>Audit Logs</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

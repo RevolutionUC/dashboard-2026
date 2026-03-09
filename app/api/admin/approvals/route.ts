@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { accessRequests, user as userTable } from "@/lib/db/schema";
 import { sendApprovalEmail, sendDenialEmail } from "@/lib/email";
+import { logAction } from "@/lib/audit";
 
 async function getAdminSession() {
   const session = await auth.api.getSession({
@@ -117,6 +118,28 @@ export async function PATCH(request: Request) {
       .update(userTable)
       .set({ banned: false })
       .where(eq(userTable.id, existingRequest.userId));
+
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "APPROVE_USER",
+      details: {
+        targetName: existingRequest.name,
+        targetEmail: existingRequest.email,
+      },
+    });
+  } else {
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "DENY_USER",
+      details: {
+        targetName: existingRequest.name,
+        targetEmail: existingRequest.email,
+      },
+    });
   }
 
   // Send notification email (fire-and-forget)

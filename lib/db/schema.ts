@@ -2,6 +2,7 @@ import {
   boolean,
   index,
   integer,
+  json,
   pgEnum,
   pgTable,
   text,
@@ -11,7 +12,10 @@ import {
 import { PARTICIPANT_STATUSES } from "@/lib/participant-status";
 
 // Event visibility enum for day-of schedule
-export const scheduleVisibility = pgEnum("schedule_visibility", ["internal", "public"]);
+export const scheduleVisibility = pgEnum("schedule_visibility", [
+  "internal",
+  "public",
+]);
 
 // Access request status enum
 export const accessRequestStatus = pgEnum("access_request_status", [
@@ -20,14 +24,32 @@ export const accessRequestStatus = pgEnum("access_request_status", [
   "denied",
 ]);
 
+export const actions = pgEnum("actions", [
+  "SIGNED_IN",
+  "CHECKIN",
+  "WORKSHOP_CHECKIN",
+  "FOOD_CHECKIN",
+  "UPDATE_STATUS",
+  "CREATE_EVENT",
+  "DELETE_EVENT",
+  "CREATE_SCHEDULE",
+  "DELETE_SCHEDULE",
+  "APPROVE_USER",
+  "DENY_USER",
+]);
+
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull(),
   image: text("image"),
-  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
   // better-auth admin plugin fields
   role: text("role").default("user"),
   banned: boolean("banned").default(false),
@@ -41,7 +63,9 @@ export const session = pgTable(
     id: text("id").primaryKey(),
     expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull(),
     ipAddress: text("ipAddress"),
     userAgent: text("userAgent"),
@@ -74,7 +98,9 @@ export const account = pgTable(
     }),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
@@ -87,8 +113,12 @@ export const verification = pgTable(
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
@@ -97,7 +127,9 @@ export const verification = pgTable(
 // RevolutionUC Application Tables
 // ============================================
 
-export const participantStatus = pgEnum("participant_status", [...PARTICIPANT_STATUSES]);
+export const participantStatus = pgEnum("participant_status", [
+  ...PARTICIPANT_STATUSES,
+]);
 
 export const participants = pgTable(
   "participants",
@@ -126,8 +158,12 @@ export const participants = pgTable(
     qrBase64: text("qr_base64"),
     status: participantStatus("status").notNull().default("REGISTERED"),
     checkedIn: boolean("checked_in").default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("participants_email_idx").on(table.email),
@@ -147,8 +183,12 @@ export const events = pgTable(
     endTime: timestamp("end_time", { withTimezone: true }),
     location: text("location"),
     capacity: integer("capacity"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("events_type_idx").on(table.eventType)],
 );
@@ -167,8 +207,12 @@ export const dayOfSchedule = pgTable(
     createdBy: text("created_by").references(() => user.id, {
       onDelete: "set null",
     }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [index("day_of_schedule_visibility_idx").on(table.visibility)],
 );
@@ -184,7 +228,9 @@ export const eventRegistrations = pgTable(
     eventId: uuid("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
-    registeredAt: timestamp("registered_at", { withTimezone: true }).notNull().defaultNow(),
+    registeredAt: timestamp("registered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("event_registrations_participant_idx").on(table.participant_id),
@@ -193,7 +239,7 @@ export const eventRegistrations = pgTable(
 );
 
 // ============================================
-// Access Requests Table
+// Admin Related Tables
 // ============================================
 
 export const accessRequests = pgTable(
@@ -207,7 +253,9 @@ export const accessRequests = pgTable(
     name: text("name").notNull(),
     image: text("image"),
     status: accessRequestStatus("status").notNull().default("pending"),
-    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+    requestedAt: timestamp("requested_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     reviewedBy: text("reviewed_by").references(() => user.id, {
       onDelete: "set null",
@@ -216,5 +264,31 @@ export const accessRequests = pgTable(
   (table) => [
     index("access_requests_userId_idx").on(table.userId),
     index("access_requests_status_idx").on(table.status),
+  ],
+);
+
+export const auditLogs = pgTable(
+  "audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    session_id: text("session_id").references(() => session.id, {
+      onDelete: "set null",
+    }),
+    user_id: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    action: actions("action").notNull(),
+    target_id: uuid("target_id"),
+    details: json("details"),
+    event_time: timestamp("event_time", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("audit_logs_user_id_idx").on(table.user_id),
+    index("audit_logs_action_idx").on(table.action),
+    index("audit_logs_event_time_idx").on(table.event_time),
   ],
 );

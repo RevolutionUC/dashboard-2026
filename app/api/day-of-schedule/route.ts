@@ -4,6 +4,7 @@ import { dayOfSchedule, user } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { desc, eq } from "drizzle-orm";
+import { logAction } from "@/lib/audit";
 
 // GET all day-of schedule events with creator info
 export async function GET() {
@@ -75,6 +76,15 @@ export async function POST(request: NextRequest) {
         createdBy: session.user.id,
       })
       .returning();
+    
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "CREATE_SCHEDULE",
+      targetId: newScheduleItem.id,
+      details: { name: newScheduleItem.name },
+    });
 
     return NextResponse.json(newScheduleItem, { status: 201 });
   } catch (error) {
@@ -110,6 +120,15 @@ export async function DELETE(request: NextRequest) {
     if (!deletedItem) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
+    
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "DELETE_SCHEDULE",
+      targetId: deletedItem.id,
+      details: { name: deletedItem.name },
+    });
 
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {

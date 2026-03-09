@@ -6,6 +6,7 @@ import { db } from "./db";
 import * as schema from "./db/schema";
 import { accessRequests } from "./db/schema";
 import { sendAccessRequestEmail } from "./email";
+import { logAction } from "./audit";
 
 if (
   !process.env.BETTER_AUTH_SECRET ||
@@ -38,6 +39,32 @@ export const auth = betterAuth({
     }),
   ],
   databaseHooks: {
+    session: {
+      create: {
+        after: async (session) => {
+          // Look up the user to get name + email for the audit log
+          const [usr] = await db
+            .select({
+              id: schema.user.id,
+              name: schema.user.name,
+              email: schema.user.email,
+            })
+            .from(schema.user)
+            .where(eq(schema.user.id, session.userId))
+            .limit(1);
+
+          if (usr) {
+            await logAction({
+              userId: usr.id,
+              name: usr.name,
+              email: usr.email,
+              action: "SIGNED_IN",
+              sessionId: session.id,
+            });
+          }
+        },
+      },
+    },
     user: {
       create: {
         after: async (user) => {
