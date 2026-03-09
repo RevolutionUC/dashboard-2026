@@ -103,7 +103,16 @@ export async function DELETE(request: NextRequest) {
     if (!deletedEvent) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
-
+    
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "DELETE_EVENT",
+      targetId: deletedEvent.id,
+      details: { name: deletedEvent.name },
+    });
+    
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
     console.error("Error deleting event:", error);
