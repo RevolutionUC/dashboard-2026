@@ -1,8 +1,14 @@
 "use client";
 
-import { MapPin, Star } from 'lucide-react';
+import { Info, MapPin, Star } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { saveCategoryRelevance, saveEvaluationScore } from "./actions";
 
 interface ProjectWithScores {
@@ -10,6 +16,8 @@ interface ProjectWithScores {
   name: string;
   location: string;
   location2: string;
+  url: string | null;
+  status: string;
   scores: (number | null)[];
   categoryRelevance: number;
 }
@@ -54,8 +62,7 @@ function StarRating({
                   : "fill-gray-200 text-gray-200"
               }`}
               strokeWidth={1}
-            >
-            </Star>
+            ></Star>
           </button>
         ))}
         {disabled && (
@@ -94,6 +101,9 @@ export function ScoringInterface({
       return initial;
     },
   );
+
+  const [selectedProject, setSelectedProject] =
+    useState<ProjectWithScores | null>(null);
 
   const handleScoreChange = async (
     projectId: string,
@@ -155,6 +165,14 @@ export function ScoringInterface({
                   <span className="font-semibold text-slate-900">
                     {project.name}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProject(project)}
+                    className="ml-auto rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    title="View project details"
+                  >
+                    <Info size={18} />
+                  </button>
                 </div>
                 <div className="mt-2 flex items-center gap-1 text-sm text-slate-500">
                   <MapPin size={16} />
@@ -197,9 +215,83 @@ export function ScoringInterface({
         ))}
       </ul>
 
+      {selectedProject && (
+        <Sheet
+          open={!!selectedProject}
+          onOpenChange={() => setSelectedProject(null)}
+        >
+          <SheetContent
+            side="bottom"
+            className="max-w-sm rounded-t-xl h-[75vh] p-4"
+          >
+            <SheetHeader>
+              <SheetTitle>Project Details</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-3">
+              <p className="font-semibold text-slate-900">
+                {selectedProject.name}
+              </p>
+              <p className="flex items-center gap-1 text-sm text-slate-600">
+                <MapPin size={14} />
+                {selectedProject.location}
+                {selectedProject.location2
+                  ? ` - ${selectedProject.location2}`
+                  : ""}
+              </p>
+              {selectedProject.url && (
+                <a
+                  href={selectedProject.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-sm text-blue-600 hover:underline"
+                >
+                  {selectedProject.url}
+                </a>
+              )}
+            </div>
+            <div className="mt-6 space-y-4 border-t pt-4">
+              <p className="text-sm font-medium text-slate-700">Scores</p>
+              <div className="space-y-3">
+                {[0, 1, 2].map((scoreIndex) => (
+                  <StarRating
+                    key={scoreIndex}
+                    label={`Score ${scoreIndex + 1}`}
+                    score={
+                      localScores[selectedProject.id]?.[scoreIndex] ?? null
+                    }
+                    onChange={(score) =>
+                      handleScoreChange(selectedProject.id, scoreIndex, score)
+                    }
+                    disabled={saving === `${selectedProject.id}-${scoreIndex}`}
+                  />
+                ))}
+                {isSponsor && (
+                  <StarRating
+                    label="Relevance"
+                    score={
+                      localRelevance[selectedProject.id] > 0
+                        ? localRelevance[selectedProject.id]
+                        : null
+                    }
+                    onChange={(score) =>
+                      handleRelevanceChange(selectedProject.id, score)
+                    }
+                    disabled={saving === `${selectedProject.id}-relevance`}
+                  />
+                )}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+
       <div className="mt-6">
         <Link
-          href={isGeneral ? "/judgingportal/finished" : `/judgingportal/${judgeId}/rankings`}
+          href={
+            isGeneral
+              ? "/judgingportal/finished"
+              : `/judgingportal/${judgeId}/rankings`
+          }
           className={`block w-full rounded-lg py-3 text-center font-semibold transition-colors ${
             allScored
               ? "bg-blue-600 text-white hover:bg-blue-700"

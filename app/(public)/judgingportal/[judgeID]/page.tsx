@@ -15,6 +15,8 @@ interface ProjectWithScores {
   name: string;
   location: string;
   location2: string;
+  url: string | null;
+  status: string;
   scores: (number | null)[];
   categoryRelevance: number;
 }
@@ -82,6 +84,8 @@ export default async function JudgingPortalPage({
       projectName: projects.name,
       projectLocation: projects.location,
       projectLocation2: projects.location2,
+      projectUrl: projects.url,
+      projectStatus: projects.status,
       scores: evaluations.scores,
       categoryRelevance: evaluations.categoryRelevance,
     })
@@ -95,6 +99,8 @@ export default async function JudgingPortalPage({
     name: row.projectName,
     location: row.projectLocation,
     location2: row.projectLocation2,
+    url: row.projectUrl,
+    status: row.projectStatus,
     scores: row.scores || [null, null, null],
     categoryRelevance: row.categoryRelevance,
   }));
