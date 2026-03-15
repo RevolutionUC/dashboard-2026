@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/table";
 import { db } from "@/lib/db";
 import { categories, judgeGroups, judges } from "@/lib/db/schema";
+import { AssignJudgesToGroupsButton } from "./assign-judges-button";
 import { EditCategoryModal } from "./edit-category-modal";
 import { EditJudgeModal } from "./edit-judge-modal";
+import { LoginAsJudgeButton } from "./login-as-judge-button";
 import { NewCategoryModal } from "./new-category-modal";
 import { NewJudgeModal } from "./new-judge-modal";
-import { AssignJudgesToGroupsButton } from "./assign-judges-button";
 
 export default async function JudgeAndCategoriesPage() {
   const [allCategories, allJudges, allJudgeGroups] = await Promise.all([
@@ -133,7 +134,7 @@ export default async function JudgeAndCategoriesPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Group</TableHead>
-                    <TableHead className="w-20">Actions</TableHead>
+                    <TableHead className="w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -185,10 +186,16 @@ export default async function JudgeAndCategoriesPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <EditJudgeModal
-                            judge={judge}
-                            categories={allCategories}
-                          />
+                          <div className="flex items-center gap-1">
+                            <EditJudgeModal
+                              judge={judge}
+                              categories={allCategories}
+                            />
+                            <LoginAsJudgeButton
+                              judgeId={judge.id}
+                              judgeName={judge.name}
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
