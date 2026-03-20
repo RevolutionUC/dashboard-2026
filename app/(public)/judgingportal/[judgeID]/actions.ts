@@ -80,6 +80,10 @@ export async function saveEvaluationScore(
   scoreIndex: number,
   score: number,
 ) {
+  if (scoreIndex < 0 || scoreIndex > 2 || score < 1 || score > 5) {
+    return { success: false, error: "Invalid score or scoreIndex" };
+  }
+
   try {
     // Get existing evaluation
     const existingEval = await db
