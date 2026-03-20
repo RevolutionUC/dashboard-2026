@@ -44,6 +44,10 @@ class RotatingQueue<T> {
     this.index = (this.index + 1) % this._items.length;
     return item;
   }
+
+  add(item: T): void {
+    this._items.push(item);
+  }
 }
 
 interface JudgeGroupWithCount {
@@ -127,7 +131,7 @@ export async function assignProjectsToJudgeGroups() {
       if (!acc.has(group.categoryId)) {
         acc.set(group.categoryId, new RotatingQueue<JudgeGroupWithCount>([]));
       }
-      acc.get(group.categoryId)!.items.push(group);
+      acc.get(group.categoryId)!.add(group);
       return acc;
     }, new Map<string, RotatingQueue<JudgeGroupWithCount>>());
 
