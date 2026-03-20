@@ -290,7 +290,7 @@ export function ScoringInterface({
           href={
             isGeneral
               ? "/judgingportal/finished"
-              : `/judgingportal/${judgeId}/rankings`
+              : `/judgingportal/${judgeId}/ranking`
           }
           className={`block w-full rounded-lg py-3 text-center font-semibold transition-colors ${
             allScored
