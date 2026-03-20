@@ -93,9 +93,6 @@ export async function assignProjectsToJudgeGroups() {
       };
     }
 
-    // Delete existing assignments
-    await db.delete(assignments);
-
     // Fetch all submissions with category info
     const allSubmissions = await db
       .select({
@@ -273,8 +270,6 @@ export async function assignProjectsToJudgeGroups() {
       };
     }
 
-    await db.insert(assignments).values(assignmentsToInsert);
-
     // Create evaluation records for each judge-project pair
     // First, get all judges in the assigned groups with their categories
     const judgeGroupIds = [
@@ -322,13 +317,14 @@ export async function assignProjectsToJudgeGroups() {
       }
     }
 
-    // Delete existing evaluations to avoid conflicts
-    await db.delete(evaluations);
-
-    // Insert new evaluation records
-    if (evaluationsToInsert.length > 0) {
-      await db.insert(evaluations).values(evaluationsToInsert);
-    }
+    await db.transaction(async (tx) => {
+      await tx.delete(assignments);
+      await tx.insert(assignments).values(assignmentsToInsert);
+      await tx.delete(evaluations);
+      if (evaluationsToInsert.length > 0) {
+        await tx.insert(evaluations).values(evaluationsToInsert);
+      }
+    });
 
     revalidatePath("/assignments");
 
