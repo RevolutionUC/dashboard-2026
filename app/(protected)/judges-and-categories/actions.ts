@@ -272,25 +272,33 @@ export async function assignJudgesToGroups() {
       group.name = `${firstChar}${secondChar}`;
     }
 
-    // Delete existing judge groups
-    await db.delete(judgeGroups);
+    await db.transaction(async (tx) => {
+      await tx.delete(judgeGroups);
 
-    // Create new judge groups and assign judges
-    for (const g of judgeGroupsToCreate) {
-      const [{ id: createdGroupId }] = await db
+      const groupValues = judgeGroupsToCreate.map((g) => ({
+        name: g.name,
+        categoryId: g.categoryId,
+      }));
+
+      const createdGroups = await tx
         .insert(judgeGroups)
-        .values({
-          name: g.name,
-          categoryId: g.categoryId,
-        })
-        .returning({ id: judgeGroups.id });
+        .values(groupValues)
+        .returning({ id: judgeGroups.id, name: judgeGroups.name });
 
-      const judgeIds = g.members.map((j) => j.id);
-      await db
-        .update(judges)
-        .set({ judgeGroupId: createdGroupId })
-        .where(inArray(judges.id, judgeIds));
-    }
+      const createdGroupsByName = new Map(createdGroups.map((g) => [g.name, g.id]));
+
+      // After inserting judge group, we assign the created judgeGroupId back to the correct individual judges
+      for (const group of judgeGroupsToCreate) {
+        const createdGroupId = createdGroupsByName.get(group.name);
+        if (!createdGroupId) continue;
+
+        const membersOfThisGroup = group.members.map((j) => j.id);
+        await tx
+          .update(judges)
+          .set({ judgeGroupId: createdGroupId })
+          .where(inArray(judges.id, membersOfThisGroup));
+      }
+    });
 
     revalidatePath("/judges-and-categories");
     return {
