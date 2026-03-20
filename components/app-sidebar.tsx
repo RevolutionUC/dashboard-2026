@@ -37,7 +37,7 @@ import {
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
-// Menu items (without Plan, which has sub-items).
+// Menu items (without Plan and Judging, which have sub-items).
 const items = [
   {
     title: "Dashboard",
@@ -67,6 +67,9 @@ const planSubItems = [
     url: "/plan/events",
     icon: CalendarRange,
   },
+];
+
+const judgingSubItems = [
   {
     title: "Judges & Categories",
     url: "/judges-and-categories",
@@ -89,7 +92,7 @@ const planSubItems = [
   },
   {
     title: "Category Scorings",
-    url: "/cagetoryScorings",
+    url: "/categoryScorings",
     icon: Trophy,
   },
 ];
@@ -132,10 +135,37 @@ export function AppSidebar() {
                       {planSubItems.map((item) => (
                         <SidebarMenuSubItem key={item.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={item.url}>
+                            <Link href={item.url}>
                               <item.icon />
                               <span>{item.title}</span>
-                            </a>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Judging with collapsible sub-menu */}
+              <Collapsible defaultOpen className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                      <Gavel />
+                      <span>Judging</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {judgingSubItems.map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton asChild>
+                            <Link href={item.url}>
+                              <item.icon />
+                              <span>{item.title}</span>
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
