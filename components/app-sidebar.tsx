@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Home,
   Inbox,
+  QrCode,
   NotepadText,
   ScrollText,
   Search,
@@ -41,7 +42,7 @@ const items = [
   {
     title: "QR",
     url: "/qr",
-    icon: Inbox,
+    icon: QrCode,
   },
   {
     title: "Emails",
