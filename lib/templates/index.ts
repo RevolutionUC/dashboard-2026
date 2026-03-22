@@ -13,6 +13,7 @@ import { InfoEmail3 } from "./InfoEmail3";
 import { InfoEmail4 } from "./InfoEmail4";
 import { InfoEmailWaitlist } from "./InfoEmailWaitlist";
 import { InfoEmailWaitlist2 } from "./InfoEmailWaitlist2";
+import { InfoEmailWaitlistPass1 } from "./InfoEmailWaitlistPass1";
 import { InfoEmailCTF } from "./InfoEmailCTF";
 import { InfoEmailJudges } from "./InfoEmailJudges";
 import { LatticeResetPassword } from "./LatticeResetPassword";
@@ -124,6 +125,13 @@ export const emailTemplates: EmailTemplateMeta[] = [
         subject: "RevolutionUC Waitlist Update",
         description: "Follow up email for waitlisted registrants",
         component: InfoEmailWaitlist2,
+    },
+    {
+        id: "info-email-waitlist-pass-1",
+        name: "Waitlist Pass 1 Notification",
+        subject: "RevolutionUC Waitlist Information",
+        description: "Initial waitlist email explaining the two-pass system",
+        component: InfoEmailWaitlistPass1,
     },
     {
         id: "info-email-ctf",
@@ -271,6 +279,7 @@ export {
     InfoEmail4,
     InfoEmailWaitlist,
     InfoEmailWaitlist2,
+    InfoEmailWaitlistPass1,
     InfoEmailCTF,
     InfoEmailJudges,
     LatticeResetPassword,
