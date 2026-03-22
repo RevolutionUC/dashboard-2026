@@ -269,6 +269,27 @@ export const accessRequests = pgTable(
   ],
 );
 
+export const confirmTokens = pgTable(
+  "confirm_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    token: text("token").notNull().unique(),
+    participantId: uuid("participant_id")
+      .notNull()
+      .references(() => participants.user_id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("confirm_tokens_token_idx").on(table.token),
+    index("confirm_tokens_participant_idx").on(table.participantId),
+  ],
+);
+
 export const auditLogs = pgTable(
   "audit_log",
   {
