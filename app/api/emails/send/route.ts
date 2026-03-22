@@ -158,6 +158,28 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Reject templates whose required props cannot be satisfied by this route
+        if (template.requiredProps && template.requiredProps.length > 0) {
+            const providedProps: Record<string, unknown> = {
+                subject: subject || template.subject,
+                body,
+                firstName: true,
+                ...(templateId === CONFIRM_ATTENDANCE_ID && {
+                    yesConfirmationUrl: true,
+                    noConfirmationUrl: true,
+                }),
+            };
+            const unsatisfied = template.requiredProps.filter(
+                (prop) => !(prop in providedProps) || !providedProps[prop],
+            );
+            if (unsatisfied.length > 0) {
+                return NextResponse.json(
+                    { error: `Template requires props that are not provided: ${unsatisfied.join(", ")}` },
+                    { status: 400 },
+                );
+            }
+        }
+
         // Validate email addresses
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const invalidEmails = recipients.filter(
