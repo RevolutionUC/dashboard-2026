@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
 
         const emailSubject = subject || template.subject;
         const isConfirmAttendance = templateId === CONFIRM_ATTENDANCE_ID;
-        const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+        const baseUrl = "https://revolutionuc.com";
 
         // Render template once with Mailgun recipient-variable placeholders.
         // Mailgun substitutes %recipient.X% per delivery, so each recipient
@@ -231,8 +231,8 @@ export async function POST(request: NextRequest) {
                 firstName: participant?.firstName ?? "Hacker",
             };
             if (isConfirmAttendance && participant) {
-                vars.yesUrl = `${baseUrl}/api/confirm?id=${participant.userId}&response=yes`;
-                vars.noUrl = `${baseUrl}/api/confirm?id=${participant.userId}&response=no`;
+                vars.yesUrl = `${baseUrl}/confirm?token=${participant.userId}&response=yes`;
+                vars.noUrl = `${baseUrl}/confirm?token=${participant.userId}&response=no`;
             }
             recipientVariables[email] = vars;
         }
