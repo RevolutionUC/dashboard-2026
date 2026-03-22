@@ -9,8 +9,9 @@ import {
 import formData from "form-data";
 import Mailgun from "mailgun.js";
 import { db } from "@/lib/db";
-import { accessRequests, participants } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { accessRequests, confirmTokens, participants } from "@/lib/db/schema";
+import { eq, inArray, isNull, and } from "drizzle-orm";
+import { randomBytes } from "crypto";
 
 type RecipientType = "all" | "status" | "specific";
 
@@ -192,6 +193,52 @@ export async function POST(request: NextRequest) {
         const isConfirmAttendance = templateId === CONFIRM_ATTENDANCE_ID;
         const baseUrl = "https://revolutionuc.com";
 
+        // Generate short-lived confirmation tokens for confirm-attendance emails
+        const tokenMap = new Map<string, string>(); // participantId → token
+        if (isConfirmAttendance) {
+            const participantIds = Array.from(participantMap.values())
+                .map((p) => p.userId)
+                .filter(Boolean);
+
+            if (participantIds.length > 0) {
+                // Invalidate existing unused tokens for these participants
+                await db
+                    .update(confirmTokens)
+                    .set({ usedAt: new Date() })
+                    .where(
+                        and(
+                            inArray(confirmTokens.participantId, participantIds),
+                            isNull(confirmTokens.usedAt),
+                        ),
+                    );
+
+                // Generate and insert new tokens
+                const expiresAt = new Date();
+                expiresAt.setDate(expiresAt.getDate() + 7);
+
+                const newTokens = Array.from(participantMap.entries()).map(
+                    ([email, p]) => ({
+                        token: randomBytes(32).toString("base64url"),
+                        participantId: p.userId,
+                        email,
+                        expiresAt,
+                    }),
+                );
+
+                const inserted = await db
+                    .insert(confirmTokens)
+                    .values(newTokens)
+                    .returning({
+                        token: confirmTokens.token,
+                        participantId: confirmTokens.participantId,
+                    });
+
+                for (const row of inserted) {
+                    tokenMap.set(row.participantId, row.token);
+                }
+            }
+        }
+
         // Render template once with Mailgun recipient-variable placeholders.
         // Mailgun substitutes %recipient.X% per delivery, so each recipient
         // sees their own personalized content with a single render + API call.
@@ -223,8 +270,15 @@ export async function POST(request: NextRequest) {
                 firstName: participant?.firstName ?? "Hacker",
             };
             if (isConfirmAttendance && participant) {
-                vars.yesUrl = `${baseUrl}/confirm?token=${participant.userId}&response=yes`;
-                vars.noUrl = `${baseUrl}/confirm?token=${participant.userId}&response=no`;
+                const confirmToken = tokenMap.get(participant.userId);
+                if (confirmToken) {
+                    vars.yesUrl = `${baseUrl}/confirm?token=${confirmToken}&response=yes`;
+                    vars.noUrl = `${baseUrl}/confirm?token=${confirmToken}&response=no`;
+                } else {
+                    // Fallback if token generation failed for this participant
+                    vars.yesUrl = `${baseUrl}/confirm?response=yes`;
+                    vars.noUrl = `${baseUrl}/confirm?response=no`;
+                }
             }
             recipientVariables[email] = vars;
         }
