@@ -95,6 +95,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
+            return NextResponse.json(
+                { error: "Mailgun configuration is missing" },
+                { status: 500 },
+            );
+        }
+
         // Fetch recipients and build personalization map (email → {firstName, userId})
         let recipients: string[] = [];
         const participantMap = new Map<string, { firstName: string; userId: string }>();
@@ -212,20 +219,12 @@ export async function POST(request: NextRequest) {
         const mailgun = new Mailgun(formData);
         const mg = mailgun.client({
             username: "api",
-            key: process.env.MAILGUN_API_KEY || "",
+            key: process.env.MAILGUN_API_KEY,
         });
 
-        const mailgunDomain = process.env.MAILGUN_DOMAIN || "";
+        const mailgunDomain = process.env.MAILGUN_DOMAIN;
         const fromEmail =
             process.env.MAILGUN_FROM_EMAIL || "info@revolutionuc.com";
-
-        // Validate Mailgun configuration
-        if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
-            return NextResponse.json(
-                { error: "Mailgun configuration is missing" },
-                { status: 500 },
-            );
-        }
 
         // Send in batches of 1000 (Mailgun's limit)
         const BATCH_SIZE = 1000;
