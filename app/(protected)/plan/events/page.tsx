@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import { Plus, Trash2, UtensilsCrossed, Presentation, MapPin, Users, Clock } from "lucide-react";
+import { Plus, Trash2, Pencil, UtensilsCrossed, Presentation, MapPin, Users, Clock } from "lucide-react";
 
 interface Event {
   id: string;
@@ -44,10 +44,24 @@ export default function Events() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { data: session } = authClient.useSession();
 
   const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    eventType: "WORKSHOP",
+    startTime: "",
+    endTime: "",
+    location: "",
+    capacity: "",
+  });
+
+  const [editForm, setEditForm] = useState({
     name: "",
     description: "",
     eventType: "WORKSHOP",
@@ -119,20 +133,71 @@ export default function Events() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    setDeletingId(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      const response = await fetch(`/api/events?id=${id}`, {
+      const response = await fetch(`/api/events?id=${deleteTarget.id}`, {
         method: "DELETE",
       });
-
       if (response.ok) {
+        setDeleteTarget(null);
         fetchEvents();
       }
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
-      setDeletingId(null);
+      setIsDeleting(false);
+    }
+  };
+
+  const openEdit = (event: Event) => {
+    setEditingEvent(event);
+    setEditError(null);
+    setEditForm({
+      name: event.name,
+      description: event.description || "",
+      eventType: event.eventType,
+      startTime: event.startTime ? event.startTime.slice(0, 16) : "",
+      endTime: event.endTime ? event.endTime.slice(0, 16) : "",
+      location: event.location || "",
+      capacity: event.capacity?.toString() || "",
+    });
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSelectChange = (name: string, value: string) => {
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+    setIsSaving(true);
+    setEditError(null);
+
+    try {
+      const response = await fetch(`/api/events?id=${editingEvent.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to update event");
+      }
+
+      setEditingEvent(null);
+      fetchEvents();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -332,15 +397,24 @@ export default function Events() {
                       <CardTitle className="text-base leading-tight">{event.name}</CardTitle>
                     </div>
                     {session && (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-muted-foreground hover:text-destructive shrink-0"
-                        onClick={() => handleDelete(event.id)}
-                        disabled={deletingId === event.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={() => openEdit(event)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeleteTarget(event)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                   <span
@@ -382,6 +456,171 @@ export default function Events() {
           </div>
         )}
       </div>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+        <DialogContent className="sm:max-w-125 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>
+              Update the event details below.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit}>
+            <div className="grid gap-4 py-4">
+              {editError && (
+                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
+                  {editError}
+                </div>
+              )}
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Event Name *</Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  placeholder="Enter event name"
+                  required
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  name="description"
+                  value={editForm.description}
+                  onChange={handleEditChange}
+                  placeholder="Enter event description"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-eventType">Event Type *</Label>
+                <Select
+                  value={editForm.eventType}
+                  onValueChange={(value) => handleEditSelectChange("eventType", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select event type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WORKSHOP">
+                      <span className="flex items-center gap-2">
+                        <Presentation className="h-3.5 w-3.5 text-violet-500" />
+                        Workshop
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="FOOD">
+                      <span className="flex items-center gap-2">
+                        <UtensilsCrossed className="h-3.5 w-3.5 text-orange-500" />
+                        Food
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className={`grid gap-4 ${editForm.eventType === "WORKSHOP" ? "grid-cols-2" : ""}`}>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-startTime">Start Time</Label>
+                  <Input
+                    id="edit-startTime"
+                    name="startTime"
+                    type="datetime-local"
+                    value={editForm.startTime}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                {editForm.eventType === "WORKSHOP" && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-endTime">End Time</Label>
+                    <Input
+                      id="edit-endTime"
+                      name="endTime"
+                      type="datetime-local"
+                      value={editForm.endTime}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-location">Location</Label>
+                  <Input
+                    id="edit-location"
+                    name="location"
+                    value={editForm.location}
+                    onChange={handleEditChange}
+                    placeholder="Enter location"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-capacity">Capacity</Label>
+                  <Input
+                    id="edit-capacity"
+                    name="capacity"
+                    type="number"
+                    min="1"
+                    value={editForm.capacity}
+                    onChange={handleEditChange}
+                    placeholder="Max attendees"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingEvent(null)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
