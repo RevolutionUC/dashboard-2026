@@ -79,7 +79,7 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
             <Text style={signature}>
               Best Regards,
               <br />
-              Karthik &amp; Amaan
+             The RevolutionUC Team
             </Text>
           </Section>
 
