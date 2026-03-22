@@ -34,7 +34,6 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
   const [formData, setFormData] = useState({
     name: "",
     startTime: "",
-    endTime: "",
     location: "",
     capacity: "",
     visibility: "public",
@@ -63,7 +62,6 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
       setFormData({
         name: "",
         startTime: "",
-        endTime: "",
         location: "",
         capacity: "",
         visibility: "public",
@@ -147,28 +145,15 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input
-                  id="startTime"
-                  name="startTime"
-                  type="datetime-local"
-                  value={formData.startTime}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  name="endTime"
-                  type="datetime-local"
-                  value={formData.endTime}
-                  onChange={handleInputChange}
-                />
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="startTime">Start Time</Label>
+              <Input
+                id="startTime"
+                name="startTime"
+                type="datetime-local"
+                value={formData.startTime}
+                onChange={handleInputChange}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
