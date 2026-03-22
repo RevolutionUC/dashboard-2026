@@ -5,19 +5,17 @@ import { EmailText } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
 interface LatticeResetPasswordProps {
-    firstName?: string;
     resetToken?: string;
 }
 
 export const LatticeResetPassword: React.FC<LatticeResetPasswordProps> = ({
-    firstName = "Hacker",
     resetToken = "",
 }) => {
     const resetUrl = `https://lattice.revolutionuc.com/auth/reset/${resetToken}`;
 
     return (
         <EmailLayout preview="Reset your Lattice password">
-            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
+            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
 
             <EmailText>
                 We have received a password reset request for your Lattice account.

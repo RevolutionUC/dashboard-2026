@@ -3,13 +3,11 @@ import * as React from "react";
 import { EmailLayout } from "./components/EmailLayout";
 
 interface CustomEmailProps {
-  name: string;
   subject?: string;
   body?: string;
 }
 
 export const CustomEmail: React.FC<CustomEmailProps> = ({
-  name = "Hacker",
   subject = "A Message from RevolutionUC",
   body = "This is a custom message from the RevolutionUC team.",
 }) => {
@@ -20,7 +18,7 @@ export const CustomEmail: React.FC<CustomEmailProps> = ({
     <EmailLayout preview={subject}>
       <Text style={heading}>{subject}</Text>
 
-      <Text style={paragraph}>Hi {name},</Text>
+      <Text style={paragraph}>Hi Hacker,</Text>
 
       {paragraphs.map((p, index) => (
         <Text key={index} style={paragraph}>

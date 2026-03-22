@@ -3,16 +3,10 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
-interface InfoEmailCTFProps {
-    firstName?: string;
-}
-
-export const InfoEmailCTF: React.FC<InfoEmailCTFProps> = ({
-    firstName = "Hacker",
-}) => {
+export const InfoEmailCTF: React.FC = () => {
     return (
         <EmailLayout preview="RevolutionUC CTF Challenge Information">
-            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
+            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
 
             <EmailText>
                 Get ready for the RevolutionUC Capture The Flag (CTF) challenge! Whether

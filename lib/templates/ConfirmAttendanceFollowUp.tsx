@@ -12,16 +12,10 @@ import {
     TravelReimbursementPartial,
 } from "./components/partials";
 
-interface ConfirmAttendanceFollowUpProps {
-    firstName?: string;
-}
-
-export const ConfirmAttendanceFollowUp: React.FC<
-    ConfirmAttendanceFollowUpProps
-> = ({ firstName = "Hacker" }) => {
+export const ConfirmAttendanceFollowUp: React.FC = () => {
     return (
         <EmailLayout preview="Thanks for confirming your attendance for RevolutionUC!">
-            <EmailHeading as="h2">Hi, {firstName}!</EmailHeading>
+            <EmailHeading as="h2">Hi, Hacker!</EmailHeading>
 
             <EmailText>
                 Thanks for confirming your attendance for RevolutionUC! Here's what you

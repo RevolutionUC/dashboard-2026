@@ -4,16 +4,10 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-interface PostEventJudgeEmailProps {
-    firstName?: string;
-}
-
-export const PostEventJudgeEmail: React.FC<PostEventJudgeEmailProps> = ({
-    firstName = "Judge",
-}) => {
+export const PostEventJudgeEmail: React.FC = () => {
     return (
         <EmailLayout preview="Thank you for judging at RevolutionUC!">
-            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
+            <EmailHeading as="h1">Hey, Judge!</EmailHeading>
 
             <EmailText>
                 Thank you so much for taking the time to judge at RevolutionUC! Your

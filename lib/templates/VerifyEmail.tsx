@@ -5,13 +5,11 @@ import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
 interface VerifyEmailProps {
-    firstName?: string;
     verificationUrl?: string;
     waitlist?: boolean;
 }
 
 export const VerifyEmail: React.FC<VerifyEmailProps> = ({
-    firstName = "Hacker",
     verificationUrl = "#",
     waitlist = false,
 }) => {
@@ -19,7 +17,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({
         <EmailLayout
             preview={`Verify your ${waitlist ? "waitlist " : ""}registration for RevolutionUC`}
         >
-            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
+            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
 
             <EmailText>
                 To complete your {waitlist ? "waitlist " : ""}registration for

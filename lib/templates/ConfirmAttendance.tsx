@@ -6,21 +6,19 @@ import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
 interface ConfirmAttendanceProps {
-    firstName?: string;
     yesConfirmationUrl?: string;
     noConfirmationUrl?: string;
     offWaitlist?: boolean;
 }
 
 export const ConfirmAttendance: React.FC<ConfirmAttendanceProps> = ({
-    firstName = "Hacker",
     yesConfirmationUrl = "#",
     noConfirmationUrl = "#",
     offWaitlist = false,
 }) => {
     return (
         <EmailLayout preview="Confirm your attendance for RevolutionUC">
-            <EmailHeading as="h1">Hi, {firstName}!</EmailHeading>
+            <EmailHeading as="h1">Hi, Hacker!</EmailHeading>
 
             {offWaitlist ? (
                 <EmailText>

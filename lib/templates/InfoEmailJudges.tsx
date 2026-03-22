@@ -3,16 +3,10 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
-interface InfoEmailJudgesProps {
-    firstName?: string;
-}
-
-export const InfoEmailJudges: React.FC<InfoEmailJudgesProps> = ({
-    firstName = "Judge",
-}) => {
+export const InfoEmailJudges: React.FC = () => {
     return (
         <EmailLayout preview="RevolutionUC Judge Information">
-            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
+            <EmailHeading as="h1">Hey, Judge!</EmailHeading>
 
             <EmailText>
                 Thank you for volunteering to be a judge at RevolutionUC! Your expertise

@@ -47,10 +47,9 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
           <Section style={header}>
             <Link href="https://revolutionuc.com" target="_blank">
               <Img
-                src="https://revolutionuc.com/favicon.png"
+                src={process.env.NEXT_PUBLIC_LOGO_URL ?? `${process.env.BETTER_AUTH_URL}/revuc_2026_logo.png`}
                 alt="RevolutionUC logo"
                 width="100"
-                height="117"
                 style={logoImage}
               />
             </Link>
