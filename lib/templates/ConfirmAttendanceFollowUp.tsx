@@ -12,6 +12,13 @@ import {
     TravelReimbursementPartial,
 } from "./components/partials";
 
+export const meta = {
+    id: "confirm-attendance-follow-up",
+    name: "Confirm Attendance Follow Up",
+    subject: "Thanks for confirming your attendance!",
+    description: "Sent after a registrant confirms their attendance",
+};
+
 interface ConfirmAttendanceFollowUpProps {
     firstName?: string;
 }

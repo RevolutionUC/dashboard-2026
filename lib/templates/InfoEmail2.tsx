@@ -11,6 +11,13 @@ import {
     WaiverPartial,
 } from "./components/partials";
 
+export const meta = {
+    id: "info-email-2",
+    name: "Info Email 2 (2 weeks out)",
+    subject: "RevolutionUC is less than 2 weeks away!",
+    description: "Second informational email sent 2 weeks before the event",
+};
+
 interface InfoEmail2Props {
     firstName?: string;
 }

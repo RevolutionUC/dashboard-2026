@@ -3,6 +3,13 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
+export const meta = {
+    id: "info-email-ctf",
+    name: "CTF Challenge Info",
+    subject: "RevolutionUC CTF Challenge Information",
+    description: "Information about the Capture The Flag challenge",
+};
+
 interface InfoEmailCTFProps {
     firstName?: string;
 }

@@ -4,6 +4,13 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "submission-reminder",
+    name: "Submission Reminder",
+    subject: "Don't forget to submit your hack!",
+    description: "Reminder to submit projects before deadline",
+};
+
 interface SubmissionReminderProps {
     firstName?: string;
 }

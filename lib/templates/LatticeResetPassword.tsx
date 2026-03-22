@@ -4,6 +4,14 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "lattice-reset-password",
+    name: "Lattice Password Reset",
+    subject: "Reset your Lattice password",
+    description: "Password reset email for Lattice app",
+    requiredProps: ["resetToken"],
+};
+
 interface LatticeResetPasswordProps {
     resetToken?: string;
 }

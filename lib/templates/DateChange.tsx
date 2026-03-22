@@ -3,6 +3,13 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
+export const meta = {
+    id: "date-change",
+    name: "Date Change Notice",
+    subject: "Important: RevolutionUC Date Change",
+    description: "Notification about event date changes",
+};
+
 interface DateChangeProps {
     firstName?: string;
 }

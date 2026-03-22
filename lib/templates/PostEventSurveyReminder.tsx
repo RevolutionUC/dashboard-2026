@@ -4,6 +4,13 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "post-event-survey-reminder",
+    name: "Survey Reminder",
+    subject: "Don't forget to fill out the RevolutionUC survey!",
+    description: "Reminder to fill out post-event survey",
+};
+
 interface PostEventSurveyReminderProps {
     firstName?: string;
 }

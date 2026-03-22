@@ -1,32 +1,6 @@
 import * as React from "react";
 import { render } from "@react-email/render";
 
-// Import email templates
-import { CustomEmail } from "./CustomEmail";
-import { WelcomeEmail } from "./WelcomeEmail";
-import { VerifyEmail } from "./VerifyEmail";
-import { ConfirmAttendance } from "./ConfirmAttendance";
-import { ConfirmAttendanceFollowUp } from "./ConfirmAttendanceFollowUp";
-import { InfoEmail1 } from "./InfoEmail1";
-import { InfoEmail2 } from "./InfoEmail2";
-import { InfoEmail3 } from "./InfoEmail3";
-import { InfoEmail4 } from "./InfoEmail4";
-import { InfoEmailWaitlist } from "./InfoEmailWaitlist";
-import { InfoEmailWaitlist2 } from "./InfoEmailWaitlist2";
-import { InfoEmailWaitlistPass1 } from "./InfoEmailWaitlistPass1";
-import { InfoEmailCTF } from "./InfoEmailCTF";
-import { InfoEmailJudges } from "./InfoEmailJudges";
-import { LatticeResetPassword } from "./LatticeResetPassword";
-import { PostEventEmail } from "./PostEventEmail";
-import { PostEventJudgeEmail } from "./PostEventJudgeEmail";
-import { PostEventSurveyReminder } from "./PostEventSurveyReminder";
-import { SubmissionReminder } from "./SubmissionReminder";
-import { DateChange } from "./DateChange";
-import { WaiverUpdate } from "./WaiverUpdate";
-import { RegistrationOpen } from "./RegistrationOpen";
-import { MarketingEmail } from "./MarketingEmail";
-import { GeneralEmail } from "./GeneralEmail";
-
 export interface SharedEmailProps {
     firstName?: string;
 }
@@ -40,14 +14,12 @@ export interface CustomEmailProps {
     body?: string;
 }
 
-// Union type for all template props
 export type EmailTemplateProps =
     | SharedEmailProps
     | GeneralEmailProps
     | CustomEmailProps
     | Record<string, never>;
 
-// Template metadata interface
 export interface EmailTemplateMeta {
     id: string;
     name: string;
@@ -57,244 +29,60 @@ export interface EmailTemplateMeta {
     requiredProps?: string[];
 }
 
-// Template registry
-export const emailTemplates: EmailTemplateMeta[] = [
-    {
-        id: "welcome",
-        name: "Welcome Email",
-        subject: "Welcome to RevolutionUC!",
-        description: "Sent to new registrants after they sign up",
-        component: WelcomeEmail,
-    },
-    {
-        id: "verify-email",
-        name: "Verify Email",
-        subject: "Verify your email for RevolutionUC",
-        description: "Sent to verify a registrant's email address",
-        component: VerifyEmail,
-        requiredProps: ["verificationUrl"],
-    },
-    {
-        id: "confirm-attendance",
-        name: "Confirm Attendance",
-        subject: "Confirm your attendance for RevolutionUC",
-        description: "Sent to ask registrants to confirm their attendance",
-        component: ConfirmAttendance,
-        requiredProps: ["yesConfirmationUrl", "noConfirmationUrl"],
-    },
-    {
-        id: "confirm-attendance-follow-up",
-        name: "Confirm Attendance Follow Up",
-        subject: "Thanks for confirming your attendance!",
-        description: "Sent after a registrant confirms their attendance",
-        component: ConfirmAttendanceFollowUp,
-    },
-    {
-        id: "info-email-1",
-        name: "Info Email 1 (3 weeks out)",
-        subject: "RevolutionUC is less than 3 weeks away!",
-        description: "First informational email sent 3 weeks before the event",
-        component: InfoEmail1,
-    },
-    {
-        id: "info-email-2",
-        name: "Info Email 2 (2 weeks out)",
-        subject: "RevolutionUC is less than 2 weeks away!",
-        description: "Second informational email sent 2 weeks before the event",
-        component: InfoEmail2,
-    },
-    {
-        id: "info-email-3",
-        name: "Info Email 3 (weekend of)",
-        subject: "RevolutionUC is this weekend!",
-        description: "Third informational email sent the week of the event",
-        component: InfoEmail3,
-    },
-    {
-        id: "info-email-4",
-        name: "Info Email 4 (day before)",
-        subject: "RevolutionUC starts TOMORROW!",
-        description: "Final informational email sent the day before the event",
-        component: InfoEmail4,
-    },
-    {
-        id: "info-email-waitlist",
-        name: "Waitlist Notification",
-        subject: "RevolutionUC Waitlist Information",
-        description: "Sent to registrants placed on the waitlist",
-        component: InfoEmailWaitlist,
-    },
-    {
-        id: "info-email-waitlist-2",
-        name: "Waitlist Follow Up",
-        subject: "RevolutionUC Waitlist Update",
-        description: "Follow up email for waitlisted registrants",
-        component: InfoEmailWaitlist2,
-    },
-    {
-        id: "info-email-waitlist-pass-1",
-        name: "Waitlist Pass 1 Notification",
-        subject: "RevolutionUC Waitlist Information",
-        description: "Initial waitlist email explaining the two-pass system",
-        component: InfoEmailWaitlistPass1,
-    },
-    {
-        id: "info-email-ctf",
-        name: "CTF Challenge Info",
-        subject: "RevolutionUC CTF Challenge Information",
-        description: "Information about the Capture The Flag challenge",
-        component: InfoEmailCTF,
-    },
-    {
-        id: "info-email-judges",
-        name: "Judge Information",
-        subject: "RevolutionUC Judge Information",
-        description: "Information for event judges",
-        component: InfoEmailJudges,
-    },
-    {
-        id: "lattice-reset-password",
-        name: "Lattice Password Reset",
-        subject: "Reset your Lattice password",
-        description: "Password reset email for Lattice app",
-        component: LatticeResetPassword,
-        requiredProps: ["resetToken"],
-    },
-    {
-        id: "post-event",
-        name: "Post Event Email",
-        subject: "Thank you for attending RevolutionUC!",
-        description: "Thank you email sent after the event",
-        component: PostEventEmail,
-    },
-    {
-        id: "post-event-judge",
-        name: "Post Event Judge Email",
-        subject: "Thank you for judging at RevolutionUC!",
-        description: "Thank you email sent to judges after the event",
-        component: PostEventJudgeEmail,
-    },
-    {
-        id: "post-event-survey-reminder",
-        name: "Survey Reminder",
-        subject: "Don't forget to fill out the RevolutionUC survey!",
-        description: "Reminder to fill out post-event survey",
-        component: PostEventSurveyReminder,
-    },
-    {
-        id: "submission-reminder",
-        name: "Submission Reminder",
-        subject: "Don't forget to submit your hack!",
-        description: "Reminder to submit projects before deadline",
-        component: SubmissionReminder,
-    },
-    {
-        id: "date-change",
-        name: "Date Change Notice",
-        subject: "Important: RevolutionUC Date Change",
-        description: "Notification about event date changes",
-        component: DateChange,
-    },
-    {
-        id: "waiver-update",
-        name: "Waiver Update",
-        subject: "RevolutionUC Waiver Update",
-        description: "Notification about waiver updates",
-        component: WaiverUpdate,
-    },
-    {
-        id: "registration-open",
-        name: "Registration Open",
-        subject: "Registration is now open for RevolutionUC!",
-        description: "Announcement that registration is open",
-        component: RegistrationOpen,
-    },
-    {
-        id: "marketing",
-        name: "Marketing Email",
-        subject: "Join us at RevolutionUC!",
-        description: "General marketing/promotional email",
-        component: MarketingEmail,
-    },
-    {
-        id: "general",
-        name: "General Email",
-        subject: "A message from RevolutionUC",
-        description: "Generic template for custom content",
-        component: GeneralEmail,
-    },
-    {
-        id: "custom",
-        name: "Custom Email",
-        subject: "",
-        description: "A blank template for custom messages",
-        component: CustomEmail,
-    },
-];
+export interface TemplateMeta {
+    id: string;
+    name: string;
+    subject: string;
+    description: string;
+    requiredProps?: string[];
+}
 
-// Get template by ID
+interface TemplateModule {
+    meta?: TemplateMeta;
+    default?: React.ComponentType<any>;
+}
+
+// Auto-discover all template files in this directory.
+// Any .tsx file that exports `meta` and a default component is registered automatically.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ctx = (require as any).context("./", false, /\.tsx$/);
+
+export const emailTemplates: EmailTemplateMeta[] = (ctx.keys() as string[])
+    .map((key: string) => {
+        const mod = ctx(key) as TemplateModule;
+        if (!mod.meta || !mod.default) return null;
+        return { ...mod.meta, component: mod.default };
+    })
+    .filter((t): t is EmailTemplateMeta => t !== null);
+
 export function getTemplateById(id: string): EmailTemplateMeta | undefined {
     return emailTemplates.find((template) => template.id === id);
 }
 
-// Get all templates
 export function getAllTemplates(): EmailTemplateMeta[] {
     return emailTemplates;
 }
 
-// Render props - generic type for flexibility
 export interface RenderEmailProps {
     [key: string]: any;
 }
 
-// Render template to HTML
 export async function renderTemplateToHtml(
     templateId: string,
     props: RenderEmailProps,
 ): Promise<string | null> {
     const template = getTemplateById(templateId);
     if (!template) return null;
-
     const element = React.createElement(template.component, props);
     return await render(element);
 }
 
-// Render template to plain text
 export async function renderTemplateToText(
     templateId: string,
     props: RenderEmailProps,
 ): Promise<string | null> {
     const template = getTemplateById(templateId);
     if (!template) return null;
-
     const element = React.createElement(template.component, props);
     return await render(element, { plainText: true });
 }
-
-// Export all templates individually for direct imports
-export {
-    CustomEmail,
-    WelcomeEmail,
-    VerifyEmail,
-    ConfirmAttendance,
-    ConfirmAttendanceFollowUp,
-    InfoEmail1,
-    InfoEmail2,
-    InfoEmail3,
-    InfoEmail4,
-    InfoEmailWaitlist,
-    InfoEmailWaitlist2,
-    InfoEmailWaitlistPass1,
-    InfoEmailCTF,
-    InfoEmailJudges,
-    LatticeResetPassword,
-    PostEventEmail,
-    PostEventJudgeEmail,
-    PostEventSurveyReminder,
-    SubmissionReminder,
-    DateChange,
-    WaiverUpdate,
-    RegistrationOpen,
-    MarketingEmail,
-    GeneralEmail,
-};

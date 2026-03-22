@@ -3,6 +3,13 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 
+export const meta = {
+    id: "info-email-waitlist-2",
+    name: "Waitlist Follow Up",
+    subject: "RevolutionUC Waitlist Update",
+    description: "Follow up email for waitlisted registrants",
+};
+
 interface InfoEmailWaitlist2Props {
     firstName?: string;
 }

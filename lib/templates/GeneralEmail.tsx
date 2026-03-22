@@ -3,6 +3,13 @@ import { Section } from "@react-email/components";
 import { EmailLayout } from "./components/EmailLayout";
 import { EmailText } from "./components/EmailText";
 
+export const meta = {
+    id: "general",
+    name: "General Email",
+    subject: "A message from RevolutionUC",
+    description: "Generic template for custom content",
+};
+
 interface GeneralEmailProps {
     body?: string;
 }

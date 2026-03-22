@@ -4,6 +4,13 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "post-event-judge",
+    name: "Post Event Judge Email",
+    subject: "Thank you for judging at RevolutionUC!",
+    description: "Thank you email sent to judges after the event",
+};
+
 export const PostEventJudgeEmail: React.FC = () => {
     return (
         <EmailLayout preview="Thank you for judging at RevolutionUC!">

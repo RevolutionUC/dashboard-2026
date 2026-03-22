@@ -5,6 +5,14 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "confirm-attendance",
+    name: "Confirm Attendance",
+    subject: "Confirm your attendance for RevolutionUC",
+    description: "Sent to ask registrants to confirm their attendance",
+    requiredProps: ["yesConfirmationUrl", "noConfirmationUrl"],
+};
+
 interface ConfirmAttendanceProps {
     firstName?: string;
     yesConfirmationUrl?: string;

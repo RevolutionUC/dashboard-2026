@@ -3,6 +3,13 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
+export const meta = {
+    id: "info-email-judges",
+    name: "Judge Information",
+    subject: "RevolutionUC Judge Information",
+    description: "Information for event judges",
+};
+
 export const InfoEmailJudges: React.FC = () => {
     return (
         <EmailLayout preview="RevolutionUC Judge Information">

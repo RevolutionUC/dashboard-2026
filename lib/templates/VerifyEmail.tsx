@@ -4,6 +4,14 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "verify-email",
+    name: "Verify Email",
+    subject: "Verify your email for RevolutionUC",
+    description: "Sent to verify a registrant's email address",
+    requiredProps: ["verificationUrl"],
+};
+
 interface VerifyEmailProps {
     firstName?: string;
     verificationUrl?: string;

@@ -4,6 +4,13 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "marketing",
+    name: "Marketing Email",
+    subject: "Join us at RevolutionUC!",
+    description: "General marketing/promotional email",
+};
+
 interface MarketingEmailProps {
     firstName?: string;
 }

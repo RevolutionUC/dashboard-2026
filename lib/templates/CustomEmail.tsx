@@ -2,6 +2,13 @@ import { Text, Section } from "@react-email/components";
 import * as React from "react";
 import { EmailLayout } from "./components/EmailLayout";
 
+export const meta = {
+    id: "custom",
+    name: "Custom Email",
+    subject: "",
+    description: "A blank template for custom messages",
+};
+
 interface CustomEmailProps {
   subject?: string;
   body?: string;

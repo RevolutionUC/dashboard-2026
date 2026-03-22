@@ -3,6 +3,13 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 
+export const meta = {
+    id: "welcome",
+    name: "Welcome Email",
+    subject: "Welcome to RevolutionUC!",
+    description: "Sent to new registrants after they sign up",
+};
+
 interface WelcomeEmailProps {
     firstName?: string;
 }

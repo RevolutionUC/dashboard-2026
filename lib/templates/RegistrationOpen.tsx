@@ -4,6 +4,13 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
+export const meta = {
+    id: "registration-open",
+    name: "Registration Open",
+    subject: "Registration is now open for RevolutionUC!",
+    description: "Announcement that registration is open",
+};
+
 interface RegistrationOpenProps {
     firstName?: string;
 }

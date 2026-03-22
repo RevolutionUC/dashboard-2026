@@ -14,6 +14,13 @@ import {
     SocialsPartial,
 } from "./components/partials";
 
+export const meta = {
+    id: "info-email-4",
+    name: "Info Email 4 (day before)",
+    subject: "RevolutionUC starts TOMORROW!",
+    description: "Final informational email sent the day before the event",
+};
+
 interface InfoEmail4Props {
     firstName?: string;
 }

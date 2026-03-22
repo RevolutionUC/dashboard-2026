@@ -3,6 +3,13 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 
+export const meta = {
+    id: "info-email-waitlist-pass-1",
+    name: "Waitlist Pass 1 Notification",
+    subject: "RevolutionUC Waitlist Information",
+    description: "Initial waitlist email explaining the two-pass system",
+};
+
 interface InfoEmailWaitlistPass1Props {
     firstName?: string;
 }

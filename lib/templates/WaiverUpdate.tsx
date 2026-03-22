@@ -3,6 +3,13 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
+export const meta = {
+    id: "waiver-update",
+    name: "Waiver Update",
+    subject: "RevolutionUC Waiver Update",
+    description: "Notification about waiver updates",
+};
+
 interface WaiverUpdateProps {
     firstName?: string;
 }
