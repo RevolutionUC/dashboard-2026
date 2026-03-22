@@ -1,5 +1,29 @@
 import * as React from "react";
 import { render } from "@react-email/render";
+import * as ConfirmAttendance from "./ConfirmAttendance";
+import * as ConfirmAttendanceFollowUp from "./ConfirmAttendanceFollowUp";
+import * as CustomEmail from "./CustomEmail";
+import * as DateChange from "./DateChange";
+import * as GeneralEmail from "./GeneralEmail";
+import * as InfoEmail1 from "./InfoEmail1";
+import * as InfoEmail2 from "./InfoEmail2";
+import * as InfoEmail3 from "./InfoEmail3";
+import * as InfoEmail4 from "./InfoEmail4";
+import * as InfoEmailCTF from "./InfoEmailCTF";
+import * as InfoEmailJudges from "./InfoEmailJudges";
+import * as InfoEmailWaitlist from "./InfoEmailWaitlist";
+import * as InfoEmailWaitlist2 from "./InfoEmailWaitlist2";
+import * as InfoEmailWaitlistPass1 from "./InfoEmailWaitlistPass1";
+import * as LatticeResetPassword from "./LatticeResetPassword";
+import * as MarketingEmail from "./MarketingEmail";
+import * as PostEventEmail from "./PostEventEmail";
+import * as PostEventJudgeEmail from "./PostEventJudgeEmail";
+import * as PostEventSurveyReminder from "./PostEventSurveyReminder";
+import * as RegistrationOpen from "./RegistrationOpen";
+import * as SubmissionReminder from "./SubmissionReminder";
+import * as VerifyEmail from "./VerifyEmail";
+import * as WaiverUpdate from "./WaiverUpdate";
+import * as WelcomeEmail from "./WelcomeEmail";
 
 export interface SharedEmailProps {
     firstName?: string;
@@ -42,18 +66,18 @@ interface TemplateModule {
     default?: React.ComponentType<any>;
 }
 
-// Auto-discover all template files in this directory.
-// Any .tsx file that exports `meta` and a default component is registered automatically.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ctx = (require as any).context("./", false, /\.tsx$/);
+const modules: TemplateModule[] = [
+    ConfirmAttendance, ConfirmAttendanceFollowUp, CustomEmail, DateChange,
+    GeneralEmail, InfoEmail1, InfoEmail2, InfoEmail3, InfoEmail4,
+    InfoEmailCTF, InfoEmailJudges, InfoEmailWaitlist, InfoEmailWaitlist2,
+    InfoEmailWaitlistPass1, LatticeResetPassword, MarketingEmail,
+    PostEventEmail, PostEventJudgeEmail, PostEventSurveyReminder,
+    RegistrationOpen, SubmissionReminder, VerifyEmail, WaiverUpdate, WelcomeEmail,
+];
 
-export const emailTemplates: EmailTemplateMeta[] = (ctx.keys() as string[])
-    .map((key: string) => {
-        const mod = ctx(key) as TemplateModule;
-        if (!mod.meta || !mod.default) return null;
-        return { ...mod.meta, component: mod.default };
-    })
-    .filter((t): t is EmailTemplateMeta => t !== null);
+export const emailTemplates: EmailTemplateMeta[] = modules
+    .filter((m): m is Required<TemplateModule> => !!m.meta && !!m.default)
+    .map((m) => ({ ...m.meta!, component: m.default! }));
 
 export function getTemplateById(id: string): EmailTemplateMeta | undefined {
     return emailTemplates.find((template) => template.id === id);

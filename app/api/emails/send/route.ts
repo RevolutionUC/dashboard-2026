@@ -23,9 +23,11 @@ interface SendEmailRequest {
     specificEmails?: string[];
 }
 
+// Templates that use per-recipient confirmation URLs
+const CONFIRM_ATTENDANCE_ID = "confirm-attendance";
+
 export async function POST(request: NextRequest) {
     try {
-        // Check authentication
         const session = await auth.api.getSession({
             headers: await headers(),
         });
@@ -80,25 +82,36 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Fetch recipients from database based on type
+        // Fetch recipients and build personalization map (email → {firstName, userId})
         let recipients: string[] = [];
+        const participantMap = new Map<string, { firstName: string; userId: string }>();
 
         try {
             if (recipientType === "all") {
-                // Get all participants
                 const allParticipants = await db
-                    .select({ email: participants.email })
+                    .select({ email: participants.email, firstName: participants.firstName, userId: participants.user_id })
                     .from(participants);
+                for (const p of allParticipants) {
+                    participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
+                }
                 recipients = allParticipants.map((p) => p.email);
             } else if (recipientType === "status") {
-                // Get participants with specific status
                 const statusParticipants = await db
-                    .select({ email: participants.email })
+                    .select({ email: participants.email, firstName: participants.firstName, userId: participants.user_id })
                     .from(participants)
                     .where(eq(participants.status, status as any));
+                for (const p of statusParticipants) {
+                    participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
+                }
                 recipients = statusParticipants.map((p) => p.email);
             } else if (recipientType === "specific") {
-                // Use the provided email list
+                // Look up any matching participants for personalization
+                const knownParticipants = await db
+                    .select({ email: participants.email, firstName: participants.firstName, userId: participants.user_id })
+                    .from(participants);
+                for (const p of knownParticipants) {
+                    participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
+                }
                 recipients = specificEmails || [];
             }
         } catch (dbError) {
@@ -140,6 +153,47 @@ export async function POST(request: NextRequest) {
         }
 
         const emailSubject = subject || template.subject;
+        const isConfirmAttendance = templateId === CONFIRM_ATTENDANCE_ID;
+        const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+
+        // Render template once with Mailgun recipient-variable placeholders.
+        // Mailgun substitutes %recipient.X% per delivery, so each recipient
+        // sees their own personalized content with a single render + API call.
+        const templateProps: Record<string, string | boolean | undefined> = {
+            subject: emailSubject,
+            body,
+            firstName: "%recipient.firstName%",
+            ...(isConfirmAttendance && {
+                yesConfirmationUrl: "%recipient.yesUrl%",
+                noConfirmationUrl: "%recipient.noUrl%",
+            }),
+        };
+
+        const [html, text] = await Promise.all([
+            renderTemplateToHtml(templateId, templateProps),
+            renderTemplateToText(templateId, templateProps),
+        ]);
+
+        if (!html || !text) {
+            return NextResponse.json(
+                { error: "Failed to render email template" },
+                { status: 500 },
+            );
+        }
+
+        // Build per-recipient variable map for Mailgun substitution
+        const recipientVariables: Record<string, Record<string, string>> = {};
+        for (const email of recipients) {
+            const participant = participantMap.get(email);
+            const vars: Record<string, string> = {
+                firstName: participant?.firstName ?? "Hacker",
+            };
+            if (isConfirmAttendance && participant) {
+                vars.yesUrl = `${baseUrl}/api/confirm?id=${participant.userId}&response=yes`;
+                vars.noUrl = `${baseUrl}/api/confirm?id=${participant.userId}&response=no`;
+            }
+            recipientVariables[email] = vars;
+        }
 
         // Initialize Mailgun
         const mailgun = new Mailgun(formData);
@@ -160,47 +214,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Render template once using Mailgun recipient variable placeholder
-        const [html, text] = await Promise.all([
-            renderTemplateToHtml(templateId, {
-                name: "%recipient.name%",
-                firstName: "%recipient.name%",
-                subject: emailSubject,
-                body,
-            }),
-            renderTemplateToText(templateId, {
-                name: "%recipient.name%",
-                firstName: "%recipient.name%",
-                subject: emailSubject,
-                body,
-            }),
-        ]);
-
-        if (!html || !text) {
-            return NextResponse.json(
-                { error: "Failed to render email template" },
-                { status: 500 },
-            );
-        }
-
-        // Build recipient variables map
-        const recipientVariables: Record<string, { name: string }> = {};
-        for (const recipient of recipients) {
-            recipientVariables[recipient] = {
-                name: extractNameFromEmail(recipient),
-            };
-        }
-
         // Send in batches of 1000 (Mailgun's limit)
         const BATCH_SIZE = 1000;
         const results = [];
 
         for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
             const batch = recipients.slice(i, i + BATCH_SIZE);
-            const batchVariables: Record<string, { name: string }> = {};
-            for (const email of batch) {
-                batchVariables[email] = recipientVariables[email];
-            }
+            const batchVars = Object.fromEntries(
+                batch.map((email) => [
+                    email,
+                    recipientVariables[email] ?? { firstName: "Hacker" },
+                ]),
+            );
 
             try {
                 const response = await mg.messages.create(mailgunDomain, {
@@ -209,7 +234,7 @@ export async function POST(request: NextRequest) {
                     subject: emailSubject,
                     html: html,
                     text: text,
-                    "recipient-variables": JSON.stringify(batchVariables),
+                    "recipient-variables": JSON.stringify(batchVars),
                 });
 
                 console.log(
@@ -244,12 +269,20 @@ export async function POST(request: NextRequest) {
             recipientType,
             status: recipientType === "status" ? status : undefined,
             recipientCount: recipients.length,
-            sentBy: session.user.email,
+            sentBy: "authenticated-user",
+            results,
         });
 
+        const successCount = results.filter((r) => r.success).length;
+        const failedCount = results.length - successCount;
+
         return NextResponse.json({
-            success: true,
-            message: `Emails queued for ${recipients.length} recipient(s)`,
+            success: failedCount === 0,
+            message: `Sent to ${recipients.length} recipient(s)`,
+            results,
+            recipientCount: recipients.length,
+            successCount,
+            failedCount,
         });
     } catch (error) {
         console.error("Error sending emails:", error);
@@ -258,18 +291,4 @@ export async function POST(request: NextRequest) {
             { status: 500 },
         );
     }
-}
-
-// Extract name from email address
-function extractNameFromEmail(email: string): string {
-    const localPart = email.split("@")[0];
-    const parts = localPart.split(/[._-]/);
-
-    if (parts.length >= 2) {
-        return parts
-            .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-            .join(" ");
-    }
-
-    return localPart.charAt(0).toUpperCase() + localPart.slice(1);
 }
