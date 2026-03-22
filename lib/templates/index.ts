@@ -13,6 +13,7 @@ import * as InfoEmailJudges from "./InfoEmailJudges";
 import * as InfoEmailWaitlist from "./InfoEmailWaitlist";
 import * as InfoEmailWaitlist2 from "./InfoEmailWaitlist2";
 import * as InfoEmailWaitlistPass1 from "./InfoEmailWaitlistPass1";
+import * as IgnorePreviousEmail from "./IgnorePreviousEmail";
 import * as LatticeResetPassword from "./LatticeResetPassword";
 import * as MarketingEmail from "./MarketingEmail";
 import * as PostEventEmail from "./PostEventEmail";
@@ -63,7 +64,7 @@ const modules: TemplateModule[] = [
     ConfirmAttendance, ConfirmAttendanceFollowUp, DateChange,
     GeneralEmail, InfoEmail1, InfoEmail2, InfoEmail3, InfoEmail4,
     InfoEmailCTF, InfoEmailJudges, InfoEmailWaitlist, InfoEmailWaitlist2,
-    InfoEmailWaitlistPass1, LatticeResetPassword, MarketingEmail,
+    InfoEmailWaitlistPass1, IgnorePreviousEmail, LatticeResetPassword, MarketingEmail,
     PostEventEmail, PostEventJudgeEmail, PostEventSurveyReminder,
     RegistrationOpen, SubmissionReminder, VerifyEmail, WaiverUpdate, WelcomeEmail,
 ];
