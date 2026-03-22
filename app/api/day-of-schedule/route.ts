@@ -93,6 +93,69 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH update a day-of schedule event
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { name, startTime, endTime, location, capacity, visibility } = body;
+
+    if (visibility && !["internal", "public"].includes(visibility)) {
+      return NextResponse.json(
+        { error: "Visibility must be 'internal' or 'public'" },
+        { status: 400 },
+      );
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null;
+    if (endTime !== undefined) updateData.endTime = endTime ? new Date(endTime) : null;
+    if (location !== undefined) updateData.location = location || null;
+    if (capacity !== undefined) updateData.capacity = capacity ? Number.parseInt(capacity, 10) : null;
+    if (visibility !== undefined) updateData.visibility = visibility;
+    updateData.updatedAt = new Date();
+
+    const [updatedItem] = await db
+      .update(dayOfSchedule)
+      .set(updateData)
+      .where(eq(dayOfSchedule.id, id))
+      .returning();
+
+    if (!updatedItem) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "UPDATE_SCHEDULE",
+      targetId: updatedItem.id,
+      details: { name: updatedItem.name },
+    });
+
+    return NextResponse.json(updatedItem);
+  } catch (error) {
+    console.error("Error updating schedule item:", error);
+    return NextResponse.json({ error: "Failed to update schedule item" }, { status: 500 });
+  }
+}
+
 // DELETE a day-of schedule event
 export async function DELETE(request: NextRequest) {
   try {
