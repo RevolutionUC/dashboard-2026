@@ -2,7 +2,6 @@ import * as React from "react";
 import { render } from "@react-email/render";
 import * as ConfirmAttendance from "./ConfirmAttendance";
 import * as ConfirmAttendanceFollowUp from "./ConfirmAttendanceFollowUp";
-import * as CustomEmail from "./CustomEmail";
 import * as DateChange from "./DateChange";
 import * as GeneralEmail from "./GeneralEmail";
 import * as InfoEmail1 from "./InfoEmail1";
@@ -33,15 +32,9 @@ export interface GeneralEmailProps extends SharedEmailProps {
     body?: string;
 }
 
-export interface CustomEmailProps {
-    subject?: string;
-    body?: string;
-}
-
 export type EmailTemplateProps =
     | SharedEmailProps
     | GeneralEmailProps
-    | CustomEmailProps
     | Record<string, never>;
 
 export interface EmailTemplateMeta {
@@ -67,7 +60,7 @@ interface TemplateModule {
 }
 
 const modules: TemplateModule[] = [
-    ConfirmAttendance, ConfirmAttendanceFollowUp, CustomEmail, DateChange,
+    ConfirmAttendance, ConfirmAttendanceFollowUp, DateChange,
     GeneralEmail, InfoEmail1, InfoEmail2, InfoEmail3, InfoEmail4,
     InfoEmailCTF, InfoEmailJudges, InfoEmailWaitlist, InfoEmailWaitlist2,
     InfoEmailWaitlistPass1, LatticeResetPassword, MarketingEmail,

@@ -16,8 +16,6 @@ type RecipientType = "all" | "status" | "specific";
 
 interface SendEmailRequest {
     templateId: string;
-    subject?: string;
-    body?: string;
     recipientType: RecipientType;
     status?: string;
     specificEmails?: string[];
@@ -54,8 +52,6 @@ export async function POST(request: NextRequest) {
 
         const {
             templateId,
-            subject,
-            body,
             recipientType,
             status,
             specificEmails,
@@ -161,8 +157,6 @@ export async function POST(request: NextRequest) {
         // Reject templates whose required props cannot be satisfied by this route
         if (template.requiredProps && template.requiredProps.length > 0) {
             const providedProps: Record<string, unknown> = {
-                subject: subject || template.subject,
-                body,
                 firstName: true,
                 ...(templateId === CONFIRM_ATTENDANCE_ID && {
                     yesConfirmationUrl: true,
@@ -194,7 +188,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const emailSubject = subject || template.subject;
+        const emailSubject = template.subject;
         const isConfirmAttendance = templateId === CONFIRM_ATTENDANCE_ID;
         const baseUrl = "https://revolutionuc.com";
 
@@ -202,8 +196,6 @@ export async function POST(request: NextRequest) {
         // Mailgun substitutes %recipient.X% per delivery, so each recipient
         // sees their own personalized content with a single render + API call.
         const templateProps: Record<string, string | boolean | undefined> = {
-            subject: emailSubject,
-            body,
             firstName: "%recipient.firstName%",
             ...(isConfirmAttendance && {
                 yesConfirmationUrl: "%recipient.yesUrl%",
