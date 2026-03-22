@@ -9,7 +9,7 @@ import {
 import formData from "form-data";
 import Mailgun from "mailgun.js";
 import { db } from "@/lib/db";
-import { participants } from "@/lib/db/schema";
+import { accessRequests, participants } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 type RecipientType = "all" | "status" | "specific";
@@ -37,6 +37,19 @@ export async function POST(request: NextRequest) {
                 { error: "Unauthorized" },
                 { status: 401 },
             );
+        }
+
+        const userRole = (session.user as { role?: string }).role;
+        if (userRole !== "admin") {
+            const [request] = await db
+                .select({ status: accessRequests.status })
+                .from(accessRequests)
+                .where(eq(accessRequests.userId, session.user.id))
+                .limit(1);
+
+            if (!request || request.status !== "approved") {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
         }
 
         const {
