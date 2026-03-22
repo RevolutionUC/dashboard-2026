@@ -18,6 +18,14 @@ import { Eye, Send } from "lucide-react";
 import { emailTemplates } from "@/lib/templates";
 import { render } from "@react-email/render";
 import { PARTICIPANT_STATUSES } from "@/lib/participant-status";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type RecipientType = "all" | "status" | "specific";
 
@@ -119,6 +127,7 @@ function SendEmailsTab() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [specificEmails, setSpecificEmails] = useState<string>("");
   const [isSending, setIsSending] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -146,6 +155,11 @@ function SendEmailsTab() {
       return;
     }
 
+    setShowConfirmDialog(true);
+  };
+
+  const confirmSendEmails = async () => {
+    setShowConfirmDialog(false);
     setIsSending(true);
     setStatusMessage(null);
 
@@ -190,6 +204,24 @@ function SendEmailsTab() {
       });
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const selectedTemplate = emailTemplates.find(
+    (t) => t.id === selectedTemplateId
+  );
+
+  const getRecipientDescription = () => {
+    switch (recipientType) {
+      case "all":
+        return "all participants";
+      case "status":
+        return `participants with status "${selectedStatus.charAt(0) + selectedStatus.slice(1).toLowerCase().replace(/_/g, " ")}"`;
+      case "specific":
+        const count = specificEmails.split(",").filter((e) => e.trim()).length;
+        return `${count} specific email${count !== 1 ? "s" : ""}`;
+      default:
+        return "";
     }
   };
 
@@ -293,6 +325,36 @@ function SendEmailsTab() {
       >
         {isSending ? "Sending..." : "Send emails"}
       </Button>
+
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm email send</DialogTitle>
+            <DialogDescription>
+              You are about to send the{" "}
+              <span className="font-medium text-foreground">
+                {selectedTemplate?.name}
+              </span>{" "}
+              email to{" "}
+              <span className="font-medium text-foreground">
+                {getRecipientDescription()}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmSendEmails} disabled={isSending}>
+              {isSending ? "Sending..." : "Confirm send"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
