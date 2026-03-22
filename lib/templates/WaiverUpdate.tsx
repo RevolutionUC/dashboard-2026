@@ -3,10 +3,14 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
-export const WaiverUpdate: React.FC = () => {
+interface WaiverUpdateProps {
+    firstName?: string;
+}
+
+export const WaiverUpdate: React.FC<WaiverUpdateProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="RevolutionUC Waiver Update">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 We've made some updates to the RevolutionUC event waiver. Please review

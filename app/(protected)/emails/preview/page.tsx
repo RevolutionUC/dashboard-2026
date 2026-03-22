@@ -23,7 +23,6 @@ export default function EmailPreviewPage() {
                 const html = await render(
                     <EmailComponent
                         firstName="Hacker"
-                        name="John Hacker"
                         subject="Welcome to RevolutionUC!"
                         body="We're excited to have you join us. RevolutionUC 2026 is going to be amazing!\n\nLooking forward to seeing you there."
                         verificationUrl="https://example.com/verify"

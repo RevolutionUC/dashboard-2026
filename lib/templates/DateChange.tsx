@@ -3,10 +3,14 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 
-export const DateChange: React.FC = () => {
+interface DateChangeProps {
+    firstName?: string;
+}
+
+export const DateChange: React.FC<DateChangeProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="Important: RevolutionUC Date Change">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 <strong>Important Update:</strong> We have an update regarding the

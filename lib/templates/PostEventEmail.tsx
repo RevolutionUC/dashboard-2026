@@ -4,10 +4,14 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const PostEventEmail: React.FC = () => {
+interface PostEventEmailProps {
+    firstName?: string;
+}
+
+export const PostEventEmail: React.FC<PostEventEmailProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="Thank you for attending RevolutionUC!">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 Thank you for attending RevolutionUC! Below is important information on

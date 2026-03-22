@@ -11,10 +11,14 @@ import {
     WaiverPartial,
 } from "./components/partials";
 
-export const InfoEmail2: React.FC = () => {
+interface InfoEmail2Props {
+    firstName?: string;
+}
+
+export const InfoEmail2: React.FC<InfoEmail2Props> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="RevolutionUC is less than 2 weeks away!">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 We're less than 2 weeks away from RevolutionUC Spring 2026! Here are

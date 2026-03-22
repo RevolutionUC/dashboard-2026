@@ -27,7 +27,11 @@ import { RegistrationOpen } from "./RegistrationOpen";
 import { MarketingEmail } from "./MarketingEmail";
 import { GeneralEmail } from "./GeneralEmail";
 
-export interface GeneralEmailProps {
+export interface SharedEmailProps {
+    firstName?: string;
+}
+
+export interface GeneralEmailProps extends SharedEmailProps {
     body?: string;
 }
 
@@ -38,6 +42,7 @@ export interface CustomEmailProps {
 
 // Union type for all template props
 export type EmailTemplateProps =
+    | SharedEmailProps
     | GeneralEmailProps
     | CustomEmailProps
     | Record<string, never>;

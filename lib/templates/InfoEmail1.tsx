@@ -9,10 +9,14 @@ import {
     SocialsPartial,
 } from "./components/partials";
 
-export const InfoEmail1: React.FC = () => {
+interface InfoEmail1Props {
+    firstName?: string;
+}
+
+export const InfoEmail1: React.FC<InfoEmail1Props> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="RevolutionUC is less than 3 weeks away!">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 We're less than 3 weeks away from RevolutionUC Spring 2026! Here are

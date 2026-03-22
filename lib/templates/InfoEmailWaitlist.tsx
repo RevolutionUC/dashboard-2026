@@ -3,10 +3,14 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 
-export const InfoEmailWaitlist: React.FC = () => {
+interface InfoEmailWaitlistProps {
+    firstName?: string;
+}
+
+export const InfoEmailWaitlist: React.FC<InfoEmailWaitlistProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="RevolutionUC Waitlist Information">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 Thank you for registering for RevolutionUC. We've received an

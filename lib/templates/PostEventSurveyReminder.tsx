@@ -4,10 +4,14 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const PostEventSurveyReminder: React.FC = () => {
+interface PostEventSurveyReminderProps {
+    firstName?: string;
+}
+
+export const PostEventSurveyReminder: React.FC<PostEventSurveyReminderProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="Don't forget to fill out the RevolutionUC survey!">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 We hope you had an amazing time at RevolutionUC! We noticed you haven't

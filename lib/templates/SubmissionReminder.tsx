@@ -4,10 +4,14 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const SubmissionReminder: React.FC = () => {
+interface SubmissionReminderProps {
+    firstName?: string;
+}
+
+export const SubmissionReminder: React.FC<SubmissionReminderProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="Don't forget to submit your hack!">
-            <EmailHeading as="h1">Hey, Hacker!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
 
             <EmailText>
                 Hacking ends soon! Don't forget to submit your project to Devpost before

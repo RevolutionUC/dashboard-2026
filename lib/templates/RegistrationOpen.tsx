@@ -4,10 +4,15 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const RegistrationOpen: React.FC = () => {
+interface RegistrationOpenProps {
+    firstName?: string;
+}
+
+export const RegistrationOpen: React.FC<RegistrationOpenProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="Registration is now open for RevolutionUC!">
-            <EmailHeading as="h1">Registration is Now Open!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
+            <EmailHeading as="h2">Registration is Now Open!</EmailHeading>
 
             <EmailText>
                 We're excited to announce that registration for RevolutionUC Spring 2026

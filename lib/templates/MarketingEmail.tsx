@@ -4,10 +4,15 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const MarketingEmail: React.FC = () => {
+interface MarketingEmailProps {
+    firstName?: string;
+}
+
+export const MarketingEmail: React.FC<MarketingEmailProps> = ({ firstName = "Hacker" }) => {
     return (
         <EmailLayout preview="Join us at RevolutionUC!">
-            <EmailHeading as="h1">RevolutionUC is Coming!</EmailHeading>
+            <EmailHeading as="h1">Hey, {firstName}!</EmailHeading>
+            <EmailHeading as="h2">RevolutionUC is Coming!</EmailHeading>
 
             <EmailText>
                 Are you ready to hack? RevolutionUC, the University of Cincinnati's
