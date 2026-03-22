@@ -10,7 +10,7 @@ import formData from "form-data";
 import Mailgun from "mailgun.js";
 import { db } from "@/lib/db";
 import { accessRequests, participants } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 type RecipientType = "all" | "status" | "specific";
 
@@ -125,10 +125,10 @@ export async function POST(request: NextRequest) {
                 }
                 recipients = statusParticipants.map((p) => p.email);
             } else if (recipientType === "specific") {
-                // Look up any matching participants for personalization
                 const knownParticipants = await db
                     .select({ email: participants.email, firstName: participants.firstName, userId: participants.user_id })
-                    .from(participants);
+                    .from(participants)
+                    .where(inArray(participants.email, specificEmails ?? []));
                 for (const p of knownParticipants) {
                     participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
                 }
