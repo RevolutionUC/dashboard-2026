@@ -25,14 +25,7 @@ export const InfoEmailWaitlistPass1: React.FC<InfoEmailWaitlistPass1Props> = ({ 
                 this, you have been placed on our waitlist.
             </EmailText>
 
-            <EmailText>
-                This year, we will have two passes to move people from the waitlist to
-                confirmed participants. The first pass will happen one week before the
-                event. You will receive an email and must confirm your spot to be added.
-                If you miss this email, don't worry, we will have another pass on the
-                day of the event. The second pass will happen on the day of the event,
-                where we will move people from the waitlist to confirmed if space is
-                available.
+            <EmailText>This year, we will send two confirmation emails to move participants from the waitlist to the confirmed list. The first email will be sent today, and you must confirm your spot to be added. If you miss this email, don’t worry, you will have another opportunity to confirm your spot when the second email is sent. Look out for our emails!
             </EmailText>
 
             <EmailText>
