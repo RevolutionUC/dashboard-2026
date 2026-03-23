@@ -24,6 +24,15 @@ import {
 } from "@/components/ui/dialog";
 import { authClient } from "@/lib/auth-client";
 
+function toISOStringWithTimezone(datetimeLocal: string): string {
+  const date = new Date(datetimeLocal);
+  const offset = -date.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, "0");
+  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
+  return `${datetimeLocal}:00${sign}${offsetHours}:${offsetMinutes}`;
+}
+
 interface DbEvent {
   id: string;
   name: string;
@@ -179,10 +188,15 @@ export default function DayOfSchedule() {
     setEditError(null);
 
     try {
+      const payload = {
+        ...editForm,
+        startTime: editForm.startTime ? toISOStringWithTimezone(editForm.startTime) : "",
+        endTime: editForm.endTime ? toISOStringWithTimezone(editForm.endTime) : "",
+      };
       const response = await fetch(`/api/day-of-schedule?id=${editingItem.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

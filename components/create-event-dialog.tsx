@@ -22,6 +22,15 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 
+function toISOStringWithTimezone(datetimeLocal: string): string {
+  const date = new Date(datetimeLocal);
+  const offset = -date.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, "0");
+  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
+  return `${datetimeLocal}:00${sign}${offsetHours}:${offsetMinutes}`;
+}
+
 interface CreateEventDialogProps {
   onEventCreated: () => void;
 }
@@ -46,12 +55,17 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
     setError(null);
 
     try {
+      const payload = {
+        ...formData,
+        startTime: formData.startTime ? toISOStringWithTimezone(formData.startTime) : "",
+        endTime: formData.endTime ? toISOStringWithTimezone(formData.endTime) : "",
+      };
       const response = await fetch("/api/day-of-schedule", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

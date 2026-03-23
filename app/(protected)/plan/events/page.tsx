@@ -25,6 +25,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { Plus, Trash2, Pencil, UtensilsCrossed, Presentation, MapPin, Users, Clock } from "lucide-react";
 
+function toISOStringWithTimezone(datetimeLocal: string): string {
+  const date = new Date(datetimeLocal);
+  const offset = -date.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, "0");
+  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
+  return `${datetimeLocal}:00${sign}${offsetHours}:${offsetMinutes}`;
+}
+
 interface Event {
   id: string;
   name: string;
@@ -104,10 +113,15 @@ export default function Events() {
     setError(null);
 
     try {
+      const payload = {
+        ...formData,
+        startTime: formData.startTime ? toISOStringWithTimezone(formData.startTime) : "",
+        endTime: formData.endTime ? toISOStringWithTimezone(formData.endTime) : "",
+      };
       const response = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -181,10 +195,15 @@ export default function Events() {
     setEditError(null);
 
     try {
+      const payload = {
+        ...editForm,
+        startTime: editForm.startTime ? toISOStringWithTimezone(editForm.startTime) : "",
+        endTime: editForm.endTime ? toISOStringWithTimezone(editForm.endTime) : "",
+      };
       const response = await fetch(`/api/events?id=${editingEvent.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
