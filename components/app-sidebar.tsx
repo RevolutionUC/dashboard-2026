@@ -12,6 +12,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -72,9 +73,18 @@ const planSubItems = [
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
-  const userRole = (session?.user as { role?: string; dashboardRole?: string } | undefined)?.role;
-  const dashboardRole = (session?.user as { role?: string; dashboardRole?: string } | undefined)?.dashboardRole;
-  const isAdmin = userRole === "admin" || dashboardRole === "admin";
+  const [dashboardRole, setDashboardRole] = useState<string>("lead");
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch("/api/user/role")
+        .then((res) => res.json())
+        .then((data) => setDashboardRole(data.dashboardRole || "lead"))
+        .catch(() => setDashboardRole("lead"));
+    }
+  }, [session?.user]);
+
+  const isAdmin = dashboardRole === "admin";
   const isOrganizer = dashboardRole === "organizer";
 
   return (
