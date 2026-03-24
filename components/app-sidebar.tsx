@@ -12,6 +12,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -48,6 +49,7 @@ const items = [
     title: "Emails",
     url: "/emails",
     icon: Inbox,
+    roles: ["admin", "lead"],
   },
   {
     title: "Search",
@@ -71,17 +73,37 @@ const planSubItems = [
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
-  const userRole = (session?.user as { role?: string } | undefined)?.role;
-  const isAdmin = userRole === "admin";
+  const [dashboardRole, setDashboardRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch("/api/user/role")
+        .then((res) => res.json())
+        .then((data) => setDashboardRole(data.dashboardRole || "lead"))
+        .catch(() => setDashboardRole("lead"));
+    }
+  }, [session?.user]);
+
+  const isAdmin = dashboardRole === "admin";
+  const isOrganizer = dashboardRole === "organizer";
+  const isLoading = dashboardRole === null;
 
   return (
     <Sidebar>
       <SidebarContent>
+        {isLoading ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Loading...</SidebarGroupLabel>
+          </SidebarGroup>
+        ) : (
+        <>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {items
+                .filter((item) => !item.roles || item.roles.includes(dashboardRole || ""))
+                .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
@@ -92,7 +114,8 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
 
-              {/* Plan with collapsible sub-menu */}
+              {/* Plan with collapsible sub-menu - not for organizers */}
+              {!isOrganizer && (
               <Collapsible defaultOpen className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -118,6 +141,7 @@ export function AppSidebar() {
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -146,6 +170,8 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+        )}
+        </>
         )}
       </SidebarContent>
     </Sidebar>

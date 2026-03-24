@@ -19,6 +19,7 @@ interface AccessRequest {
   name: string;
   image: string | null;
   status: "pending" | "approved" | "denied";
+  role: string | null;
   requestedAt: string;
   reviewedAt: string | null;
   reviewedBy: string | null;
@@ -30,6 +31,7 @@ export default function AdminApprovalsPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [actionInFlight, setActionInFlight] = useState<string | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<Record<string, string>>({});
 
   const fetchRequests = async (status?: string) => {
     try {
@@ -62,10 +64,14 @@ export default function AdminApprovalsPage() {
   ) => {
     setActionInFlight(requestId);
     try {
+      const body: Record<string, unknown> = { requestId, action };
+      if (action === "approve") {
+        body.role = selectedRoles[requestId] || "lead";
+      }
       const response = await fetch("/api/admin/approvals", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, action }),
+        body: JSON.stringify(body),
       });
       if (!response.ok) {
         throw new Error(`Failed to ${action} request`);
@@ -193,7 +199,22 @@ export default function AdminApprovalsPage() {
                   </div>
 
                   {request.status === "pending" && (
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Select
+                        value={selectedRoles[request.id] || "lead"}
+                        onValueChange={(value) =>
+                          setSelectedRoles((prev) => ({ ...prev, [request.id]: value }))
+                        }
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue placeholder="Role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lead">Lead</SelectItem>
+                          <SelectItem value="organizer">Organizer</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Button
                         size="sm"
                         onClick={() => handleAction(request.id, "approve")}
@@ -213,7 +234,8 @@ export default function AdminApprovalsPage() {
                   )}
 
                   {request.status === "approved" && (
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <StatusBadge status={request.role || "lead"} />
                       <Button
                         size="sm"
                         variant="destructive"

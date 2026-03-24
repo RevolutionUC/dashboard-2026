@@ -15,7 +15,8 @@ type AuditAction =
   | "UPDATE_SCHEDULE"
   | "DELETE_SCHEDULE"
   | "APPROVE_USER"
-  | "DENY_USER";
+  | "DENY_USER"
+  | "REVOKE_USER";
 
 interface LogActionParams {
   userId: string;

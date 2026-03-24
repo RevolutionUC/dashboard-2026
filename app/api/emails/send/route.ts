@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSessionWithRole } from "@/lib/auth";
 import {
     getTemplateById,
     renderTemplateToHtml,
@@ -27,19 +26,26 @@ const CONFIRM_ATTENDANCE_ID = "confirm-attendance";
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
+        const sessionInfo = await getSessionWithRole();
 
-        if (!session) {
+        if (!sessionInfo) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 },
             );
         }
 
-        const userRole = (session.user as { role?: string }).role;
-        if (userRole !== "admin") {
+        const { session, dashboardRole } = sessionInfo;
+
+        // Block organizers from sending emails
+        if (dashboardRole === "organizer") {
+            return NextResponse.json(
+                { error: "Forbidden - insufficient permissions" },
+                { status: 403 },
+            );
+        }
+
+        if (dashboardRole !== "admin") {
             const [request] = await db
                 .select({ status: accessRequests.status })
                 .from(accessRequests)
