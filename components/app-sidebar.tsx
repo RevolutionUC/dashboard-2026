@@ -48,6 +48,7 @@ const items = [
     title: "Emails",
     url: "/emails",
     icon: Inbox,
+    roles: ["admin", "lead"],
   },
   {
     title: "Search",
@@ -71,8 +72,10 @@ const planSubItems = [
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
-  const userRole = (session?.user as { role?: string } | undefined)?.role;
-  const isAdmin = userRole === "admin";
+  const userRole = (session?.user as { role?: string; dashboardRole?: string } | undefined)?.role;
+  const dashboardRole = (session?.user as { role?: string; dashboardRole?: string } | undefined)?.dashboardRole;
+  const isAdmin = userRole === "admin" || dashboardRole === "admin";
+  const isOrganizer = dashboardRole === "organizer";
 
   return (
     <Sidebar>
@@ -81,7 +84,9 @@ export function AppSidebar() {
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {items
+                .filter((item) => !item.roles || item.roles.includes(dashboardRole || ""))
+                .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
@@ -92,7 +97,8 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
 
-              {/* Plan with collapsible sub-menu */}
+              {/* Plan with collapsible sub-menu - not for organizers */}
+              {!isOrganizer && (
               <Collapsible defaultOpen className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -118,6 +124,7 @@ export function AppSidebar() {
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

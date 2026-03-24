@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { dayOfSchedule, user } from "@/lib/db/schema";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSessionWithRole } from "@/lib/auth";
 import { desc, eq } from "drizzle-orm";
 import { logAction } from "@/lib/audit";
 
@@ -39,12 +38,17 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const sessionInfo = await getSessionWithRole();
 
-    if (!session?.user) {
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { session, dashboardRole } = sessionInfo;
+
+    // Block organizers from creating schedule items
+    if (dashboardRole === "organizer") {
+      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -96,12 +100,17 @@ export async function POST(request: NextRequest) {
 // PATCH update a day-of schedule event
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const sessionInfo = await getSessionWithRole();
 
-    if (!session?.user) {
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { session, dashboardRole } = sessionInfo;
+
+    // Block organizers from updating schedule items
+    if (dashboardRole === "organizer") {
+      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -160,12 +169,17 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const sessionInfo = await getSessionWithRole();
 
-    if (!session?.user) {
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { session, dashboardRole } = sessionInfo;
+
+    // Block organizers from deleting schedule items
+    if (dashboardRole === "organizer") {
+      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

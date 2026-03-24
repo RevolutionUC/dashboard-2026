@@ -54,6 +54,8 @@ export const user = pgTable("user", {
     .defaultNow(),
   // better-auth admin plugin fields
   role: text("role").default("user"),
+  // Dashboard role: admin, lead, organizer
+  dashboardRole: text("dashboard_role").default("lead"),
   banned: boolean("banned").default(false),
   banReason: text("banReason"),
   banExpires: timestamp("banExpires", { withTimezone: true }),
@@ -255,6 +257,7 @@ export const accessRequests = pgTable(
     name: text("name").notNull(),
     image: text("image"),
     status: accessRequestStatus("status").notNull().default("pending"),
+    role: text("role").default("lead"),
     requestedAt: timestamp("requested_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

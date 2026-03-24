@@ -42,6 +42,7 @@ export async function GET(request: Request) {
       name: accessRequests.name,
       image: accessRequests.image,
       status: accessRequests.status,
+      role: accessRequests.role,
       requestedAt: accessRequests.requestedAt,
       reviewedAt: accessRequests.reviewedAt,
       reviewedBy: accessRequests.reviewedBy,
@@ -74,9 +75,10 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const { requestId, action } = body as {
+  const { requestId, action, role } = body as {
     requestId: string;
     action: "approve" | "deny" | "revoke";
+    role?: string;
   };
 
   if (!requestId || !["approve", "deny", "revoke"].includes(action)) {
@@ -88,6 +90,17 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   }
+
+  // Validate role if approving
+  const validRoles = ["lead", "organizer", "admin"];
+  if (action === "approve" && role && !validRoles.includes(role)) {
+    return NextResponse.json(
+      { error: "Invalid role. Must be lead, organizer, or admin." },
+      { status: 400 },
+    );
+  }
+
+  const assignedRole = action === "approve" ? (role || "lead") : undefined;
 
   // Get the access request
   const [existingRequest] = await db
@@ -107,16 +120,25 @@ export async function PATCH(request: Request) {
     .update(accessRequests)
     .set({
       status: newStatus,
+      ...(assignedRole && { role: assignedRole }),
       reviewedAt: new Date(),
       reviewedBy: session.user.id,
     })
     .where(eq(accessRequests.id, requestId));
 
-  // If approved, also update the user role to "user" (ensure not banned etc.)
+  // If approved, also update the user role and dashboard role
   if (action === "approve") {
+    const updateData: { banned: false; dashboardRole: string; role?: string } = {
+      banned: false,
+      dashboardRole: assignedRole!,
+    };
+    // Also set better-auth role to "admin" if assigned role is admin
+    if (assignedRole === "admin") {
+      updateData.role = "admin";
+    }
     await db
       .update(userTable)
-      .set({ banned: false })
+      .set(updateData)
       .where(eq(userTable.id, existingRequest.userId));
 
     await logAction({
@@ -127,6 +149,7 @@ export async function PATCH(request: Request) {
       details: {
         targetName: existingRequest.name,
         targetEmail: existingRequest.email,
+        assignedRole: assignedRole,
       },
     });
   } else {
