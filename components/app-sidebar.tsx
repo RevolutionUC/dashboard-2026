@@ -73,7 +73,7 @@ const planSubItems = [
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
-  const [dashboardRole, setDashboardRole] = useState<string>("lead");
+  const [dashboardRole, setDashboardRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (session?.user) {
@@ -86,10 +86,17 @@ export function AppSidebar() {
 
   const isAdmin = dashboardRole === "admin";
   const isOrganizer = dashboardRole === "organizer";
+  const isLoading = dashboardRole === null;
 
   return (
     <Sidebar>
       <SidebarContent>
+        {isLoading ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Loading...</SidebarGroupLabel>
+          </SidebarGroup>
+        ) : (
+        <>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -163,6 +170,8 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+        )}
+        </>
         )}
       </SidebarContent>
     </Sidebar>

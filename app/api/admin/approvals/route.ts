@@ -126,13 +126,12 @@ export async function PATCH(request: Request) {
     })
     .where(eq(accessRequests.id, requestId));
 
-  // If approved, also update the user role and dashboard role
+  // If approved, update the user role and dashboard role
   if (action === "approve") {
     const updateData: { banned: false; dashboardRole: string; role?: string } = {
       banned: false,
       dashboardRole: assignedRole!,
     };
-    // Also set better-auth role to "admin" if assigned role is admin
     if (assignedRole === "admin") {
       updateData.role = "admin";
     }
@@ -152,7 +151,25 @@ export async function PATCH(request: Request) {
         assignedRole: assignedRole,
       },
     });
+  } else if (action === "revoke") {
+    // Revoke: clear dashboard role and ban the user
+    await db
+      .update(userTable)
+      .set({ dashboardRole: null, banned: true, banReason: "Access revoked by admin" })
+      .where(eq(userTable.id, existingRequest.userId));
+
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "REVOKE_USER",
+      details: {
+        targetName: existingRequest.name,
+        targetEmail: existingRequest.email,
+      },
+    });
   } else {
+    // Deny
     await logAction({
       userId: session.user.id,
       name: session.user.name,
@@ -165,12 +182,12 @@ export async function PATCH(request: Request) {
     });
   }
 
-  // Send notification email (fire-and-forget)
+  // Send notification email (fire-and-forget) - only for approve/deny, not revoke
   if (action === "approve") {
     sendApprovalEmail(existingRequest.email, existingRequest.name).catch(
       (err: unknown) => console.error("Failed to send approval email:", err),
     );
-  } else {
+  } else if (action === "deny") {
     sendDenialEmail(existingRequest.email, existingRequest.name).catch(
       (err: unknown) => console.error("Failed to send denial email:", err),
     );

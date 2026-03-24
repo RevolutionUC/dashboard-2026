@@ -38,6 +38,7 @@ export const actions = pgEnum("actions", [
   "DELETE_SCHEDULE",
   "APPROVE_USER",
   "DENY_USER",
+  "REVOKE_USER",
 ]);
 
 export const user = pgTable("user", {
