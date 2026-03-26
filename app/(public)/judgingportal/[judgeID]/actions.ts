@@ -142,6 +142,10 @@ export async function saveCategoryRelevance(
   projectId: string,
   relevance: number,
 ) {
+  if (relevance < 1 || relevance > 5) {
+    return { success: false, error: "Invalid relevance value" };
+  }
+
   try {
     // Update the evaluation with category relevance
     await db
