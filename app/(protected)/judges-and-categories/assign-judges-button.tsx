@@ -3,20 +3,26 @@
 import { Users } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { assignJudgesToGroups } from "./actions";
 
 export function AssignJudgesToGroupsButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
 
-  const handleClick = async () => {
-    if (!confirm("This will clear all existing groups and create new ones. Continue?")) {
-      return;
-    }
-
+  const handleConfirm = async () => {
+    setIsOpen(false);
     setIsLoading(true);
     setResult(null);
 
@@ -42,10 +48,28 @@ export function AssignJudgesToGroupsButton() {
 
   return (
     <div className="flex items-center gap-2">
-      <Button onClick={handleClick} disabled={isLoading} variant="outline">
+      <Button onClick={() => setIsOpen(true)} disabled={isLoading} variant="outline">
         <Users className="mr-2 h-4 w-4" />
         {isLoading ? "Assigning..." : "Assign Judges to Groups"}
       </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Judges to Groups</DialogTitle>
+            <DialogDescription>
+              This will clear all existing groups and create new ones. Continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirm}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {result && (
         <span className={`text-sm ${result.success ? "text-green-600" : "text-red-600"}`}>
           {result.message}
