@@ -8,18 +8,8 @@ import {
   judges,
   projects,
 } from "@/lib/db/schema";
+import type { EvaluationWithScore } from "../../types";
 import { RankingInterface } from "./ranking-interface";
-
-interface EvaluationWithScore {
-  projectId: string;
-  projectName: string;
-  projectLocation: string;
-  projectLocation2: string;
-  scores: number[];
-  categoryRelevance: number;
-  categoryBordaScore: number | null;
-  calculatedScore: number;
-}
 
 export default async function RankingPage({
   params,

@@ -5,17 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { finalizeRankings, resetAllRankings, saveRanking } from "../actions";
 import { ChevronLeft } from "lucide-react";
-
-interface EvaluationWithScore {
-  projectId: string;
-  projectName: string;
-  projectLocation: string;
-  projectLocation2: string;
-  scores: number[];
-  categoryRelevance: number;
-  categoryBordaScore: number | null;
-  calculatedScore: number;
-}
+import type { EvaluationWithScore } from "../../types";
 
 interface RankingInterfaceProps {
   evaluations: EvaluationWithScore[];

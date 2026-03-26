@@ -3,22 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { evaluations, judges, projects } from "@/lib/db/schema";
 import { ScoringsTable } from "./scorings-table";
-
-interface EvaluationWithJudge {
-  projectId: string;
-  projectName: string | null;
-  judgeId: string;
-  judgeName: string | null;
-  score1: number | null;
-  score2: number | null;
-  score3: number | null;
-}
-
-interface ProjectWithEvaluations {
-  id: string;
-  name: string;
-  evaluations: EvaluationWithJudge[];
-}
+import type { EvaluationWithJudge, ProjectWithEvaluations } from "./types";
 
 interface RankingEntry {
   rank: number;
