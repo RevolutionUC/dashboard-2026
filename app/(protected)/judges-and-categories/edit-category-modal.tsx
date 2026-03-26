@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { type CategoryType, updateCategory } from "./actions";
 
 const CATEGORY_TYPES: CategoryType[] = ["Sponsor", "Inhouse", "General"];
@@ -109,22 +110,15 @@ export function EditCategoryModal({ category }: EditCategoryModalProps) {
             </Select>
           </div>
 
-          {error && <div className="text-sm text-red-500">{error}</div>}
-          {success && <div className="text-sm text-green-500">{success}</div>}
+          {error && <FormMessage error={error} />}
+          {success && <FormMessage success={success} />}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
+          <FormFooter
+            isLoading={isLoading}
+            onCancel={() => setOpen(false)}
+            submitLabel="Save Changes"
+            loadingLabel="Saving..."
+          />
         </form>
       </DialogContent>
     </Dialog>
