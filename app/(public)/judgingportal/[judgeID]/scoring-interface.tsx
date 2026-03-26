@@ -73,6 +73,50 @@ function StarRating({
   );
 }
 
+function ProjectScoreForm({
+  projectId,
+  isSponsor,
+  localScores,
+  localRelevance,
+  saving,
+  onScoreChange,
+  onRelevanceChange,
+}: {
+  projectId: string;
+  isSponsor: boolean;
+  localScores: Record<string, (number | null)[]>;
+  localRelevance: Record<string, number>;
+  saving: string | null;
+  onScoreChange: (projectId: string, scoreIndex: number, score: number) => void;
+  onRelevanceChange: (projectId: string, score: number) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {[0, 1, 2].map((scoreIndex) => (
+        <StarRating
+          key={scoreIndex}
+          label={`Score ${scoreIndex + 1}`}
+          score={localScores[projectId]?.[scoreIndex] ?? null}
+          onChange={(score) => onScoreChange(projectId, scoreIndex, score)}
+          disabled={saving === `${projectId}-${scoreIndex}`}
+        />
+      ))}
+      {isSponsor && (
+        <StarRating
+          label="Relevance"
+          score={
+            localRelevance[projectId] > 0
+              ? localRelevance[projectId]
+              : null
+          }
+          onChange={(score) => onRelevanceChange(projectId, score)}
+          disabled={saving === `${projectId}-relevance`}
+        />
+      )}
+    </div>
+  );
+}
+
 export function ScoringInterface({
   projects,
   judgeId,
@@ -184,31 +228,15 @@ export function ScoringInterface({
               </div>
 
               <div className="space-y-3 border-t border-slate-100 pt-4">
-                {[0, 1, 2].map((scoreIndex) => (
-                  <StarRating
-                    key={scoreIndex}
-                    label={`Score ${scoreIndex + 1}`}
-                    score={localScores[project.id]?.[scoreIndex] ?? null}
-                    onChange={(score) =>
-                      handleScoreChange(project.id, scoreIndex, score)
-                    }
-                    disabled={saving === `${project.id}-${scoreIndex}`}
-                  />
-                ))}
-                {isSponsor && (
-                  <StarRating
-                    label="Relevance"
-                    score={
-                      localRelevance[project.id] > 0
-                        ? localRelevance[project.id]
-                        : null
-                    }
-                    onChange={(score) =>
-                      handleRelevanceChange(project.id, score)
-                    }
-                    disabled={saving === `${project.id}-relevance`}
-                  />
-                )}
+                <ProjectScoreForm
+                  projectId={project.id}
+                  isSponsor={isSponsor}
+                  localScores={localScores}
+                  localRelevance={localRelevance}
+                  saving={saving}
+                  onScoreChange={handleScoreChange}
+                  onRelevanceChange={handleRelevanceChange}
+                />
               </div>
             </div>
           </li>
@@ -251,35 +279,15 @@ export function ScoringInterface({
             </div>
             <div className="mt-6 space-y-4 border-t pt-4">
               <p className="text-sm font-medium text-slate-700">Scores</p>
-              <div className="space-y-3">
-                {[0, 1, 2].map((scoreIndex) => (
-                  <StarRating
-                    key={scoreIndex}
-                    label={`Score ${scoreIndex + 1}`}
-                    score={
-                      localScores[selectedProject.id]?.[scoreIndex] ?? null
-                    }
-                    onChange={(score) =>
-                      handleScoreChange(selectedProject.id, scoreIndex, score)
-                    }
-                    disabled={saving === `${selectedProject.id}-${scoreIndex}`}
-                  />
-                ))}
-                {isSponsor && (
-                  <StarRating
-                    label="Relevance"
-                    score={
-                      localRelevance[selectedProject.id] > 0
-                        ? localRelevance[selectedProject.id]
-                        : null
-                    }
-                    onChange={(score) =>
-                      handleRelevanceChange(selectedProject.id, score)
-                    }
-                    disabled={saving === `${selectedProject.id}-relevance`}
-                  />
-                )}
-              </div>
+              <ProjectScoreForm
+                projectId={selectedProject.id}
+                isSponsor={isSponsor}
+                localScores={localScores}
+                localRelevance={localRelevance}
+                saving={saving}
+                onScoreChange={handleScoreChange}
+                onRelevanceChange={handleRelevanceChange}
+              />
             </div>
           </SheetContent>
         </Sheet>
