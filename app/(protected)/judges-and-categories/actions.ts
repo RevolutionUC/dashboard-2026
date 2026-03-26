@@ -3,6 +3,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { assertAuthorization } from "@/lib/auth";
+import { withAuth } from "@/lib/action-wrapper";
 import { db } from "@/lib/db";
 import { categories, judgeGroups, judges } from "@/lib/db/schema";
 
@@ -14,27 +15,18 @@ interface CreateCategoryInput {
   type: CategoryType;
 }
 
-export async function createCategory(data: CreateCategoryInput) {
-  try {
-    await assertAuthorization();
-
+export const createCategory = withAuth(
+  async (data: CreateCategoryInput) => {
     await db.insert(categories).values({
       id: data.id,
       name: data.name,
       type: data.type,
     });
-
-    revalidatePath("/judges-and-categories");
-    return { success: true };
-  } catch (error) {
-    console.error("Error creating category:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to create category",
-    };
-  }
-}
+    return {};
+  },
+  "create category",
+  "/judges-and-categories",
+);
 
 interface BulkCreateCategoryInput {
   id: string;
@@ -42,23 +34,14 @@ interface BulkCreateCategoryInput {
   type: CategoryType;
 }
 
-export async function createCategoriesBulk(data: BulkCreateCategoryInput[]) {
-  try {
-    await assertAuthorization();
-
+export const createCategoriesBulk = withAuth(
+  async (data: BulkCreateCategoryInput[]) => {
     await db.insert(categories).values(data);
-
-    revalidatePath("/judges-and-categories");
-    return { success: true, count: data.length };
-  } catch (error) {
-    console.error("Error creating categories:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to create categories",
-    };
-  }
-}
+    return { count: data.length };
+  },
+  "create categories",
+  "/judges-and-categories",
+);
 
 interface UpdateCategoryInput {
   id: string;
@@ -67,10 +50,8 @@ interface UpdateCategoryInput {
   type: CategoryType;
 }
 
-export async function updateCategory(data: UpdateCategoryInput) {
-  try {
-    await assertAuthorization();
-
+export const updateCategory = withAuth(
+  async (data: UpdateCategoryInput) => {
     await db
       .update(categories)
       .set({
@@ -79,18 +60,11 @@ export async function updateCategory(data: UpdateCategoryInput) {
         type: data.type,
       })
       .where(eq(categories.id, data.id));
-
-    revalidatePath("/judges-and-categories");
-    return { success: true, newId: data.newId || data.id };
-  } catch (error) {
-    console.error("Error updating category:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to update category",
-    };
-  }
-}
+    return { newId: data.newId || data.id };
+  },
+  "update category",
+  "/judges-and-categories",
+);
 
 interface CreateJudgeInput {
   name: string;
@@ -98,26 +72,18 @@ interface CreateJudgeInput {
   categoryId: string;
 }
 
-export async function createJudge(data: CreateJudgeInput) {
-  try {
-    await assertAuthorization();
-
+export const createJudge = withAuth(
+  async (data: CreateJudgeInput) => {
     await db.insert(judges).values({
       name: data.name,
       email: data.email,
       categoryId: data.categoryId,
     });
-
-    revalidatePath("/judges-and-categories");
-    return { success: true };
-  } catch (error) {
-    console.error("Error creating judge:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to create judge",
-    };
-  }
-}
+    return {};
+  },
+  "create judge",
+  "/judges-and-categories",
+);
 
 interface BulkCreateJudgeInput {
   name: string;
@@ -125,22 +91,14 @@ interface BulkCreateJudgeInput {
   categoryId: string;
 }
 
-export async function createJudgesBulk(data: BulkCreateJudgeInput[]) {
-  try {
-    await assertAuthorization();
-
+export const createJudgesBulk = withAuth(
+  async (data: BulkCreateJudgeInput[]) => {
     await db.insert(judges).values(data);
-
-    revalidatePath("/judges-and-categories");
-    return { success: true, count: data.length };
-  } catch (error) {
-    console.error("Error creating judges:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to create judges",
-    };
-  }
-}
+    return { count: data.length };
+  },
+  "create judges",
+  "/judges-and-categories",
+);
 
 export async function updateJudgeAction(
   prevState: { success?: boolean; error?: string } | null,
