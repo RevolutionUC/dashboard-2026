@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { FormFooter, FormMessage } from "@/components/form-dialog";
+import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createCategoriesBulk, createCategory } from "./actions";
 
 const CATEGORY_TYPES: CategoryType[] = ["Sponsor", "Inhouse", "General"];
@@ -74,52 +76,31 @@ export function NewCategoryModal() {
     setError(null);
     setSuccess(null);
 
-    const formData = new FormData(e.currentTarget);
-    const csvText = formData.get("csv") as string;
+    const csvText = new FormData(e.currentTarget).get("csv") as string;
 
-    // Parse CSV: id,name,type (no header)
-    const lines = csvText.trim().split("\n");
-    const categories: { id: string; name: string; type: CategoryType }[] = [];
+    const result_ = parseCSV(
+      csvText,
+      [
+        { name: "id" },
+        { name: "name" },
+        {
+          name: "type",
+          validate: (value, lineNum) =>
+            CATEGORY_TYPES.includes(value as CategoryType)
+              ? null
+              : `Line ${lineNum} has invalid type "${value}". Must be one of: ${CATEGORY_TYPES.join(", ")}`,
+        },
+      ],
+      ([id, name, type]) => ({ id, name, type: type as CategoryType }),
+    );
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      const parts = line.split(",");
-      if (parts.length < 3) {
-        setError(`Line ${i + 1} is invalid: expected id,name,type`);
-        setIsLoading(false);
-        return;
-      }
-
-      const id = parts[0].trim();
-      const name = parts[1].trim();
-      const type = parts[2].trim() as CategoryType;
-
-      if (!id || !name) {
-        setError(`Line ${i + 1} is missing id or name`);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!CATEGORY_TYPES.includes(type)) {
-        setError(
-          `Line ${i + 1} has invalid type "${type}". Must be one of: ${CATEGORY_TYPES.join(", ")}`,
-        );
-        setIsLoading(false);
-        return;
-      }
-
-      categories.push({ id, name, type });
-    }
-
-    if (categories.length === 0) {
-      setError("No valid categories found in CSV");
+    if (result_.error) {
+      setError(result_.error);
       setIsLoading(false);
       return;
     }
 
-    const result = await createCategoriesBulk(categories);
+    const result = await createCategoriesBulk(result_.data);
 
     setIsLoading(false);
 
@@ -187,22 +168,15 @@ export function NewCategoryModal() {
                 </Select>
               </div>
 
-              {error && <div className="text-sm text-red-500">{error}</div>}
-              {success && <div className="text-sm text-green-500">{success}</div>}
+              {error && <FormMessage error={error} />}
+              {success && <FormMessage success={success} />}
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Creating..." : "Create Category"}
-                </Button>
-              </div>
+              <FormFooter
+                isLoading={isLoading}
+                onCancel={() => setOpen(false)}
+                submitLabel="Create Category"
+                loadingLabel="Creating..."
+              />
             </form>
           </TabsContent>
 
@@ -233,23 +207,15 @@ INHOUSE_01,Innovation Award,Inhouse`}
                 </ul>
               </div>
 
-              {error && <div className="text-sm text-red-500">{error}</div>}
-              {success && <div className="text-sm text-green-500">{success}</div>}
+              {error && <FormMessage error={error} />}
+              {success && <FormMessage success={success} />}
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {isLoading ? "Importing..." : "Import CSV"}
-                </Button>
-              </div>
+              <FormFooter
+                isLoading={isLoading}
+                onCancel={() => setOpen(false)}
+                submitLabel="Import CSV"
+                loadingLabel="Importing..."
+              />
             </form>
           </TabsContent>
         </Tabs>

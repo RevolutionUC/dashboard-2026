@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { FormFooter, FormMessage } from "@/components/form-dialog";
+import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createJudge, createJudgesBulk } from "./actions";
 
 interface NewJudgeModalProps {
@@ -86,52 +88,31 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
     setError(null);
     setSuccess(null);
 
-    const formData = new FormData(e.currentTarget);
-    const csvText = formData.get("csv") as string;
+    const csvText = new FormData(e.currentTarget).get("csv") as string;
 
-    // Parse CSV: name,email,categoryId (no header)
-    const lines = csvText.trim().split("\n");
-    const judges: { name: string; email: string; categoryId: string }[] = [];
+    const result_ = parseCSV(
+      csvText,
+      [
+        { name: "name" },
+        { name: "email" },
+        {
+          name: "categoryId",
+          validate: (value, lineNum) =>
+            categories.some((c) => c.id === value)
+              ? null
+              : `Line ${lineNum}: Category "${value}" does not exist`,
+        },
+      ],
+      ([name, email, categoryId]) => ({ name, email, categoryId }),
+    );
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      const parts = line.split(",");
-      if (parts.length < 3) {
-        setError(`Line ${i + 1} is invalid: expected name,email,categoryId`);
-        setIsLoading(false);
-        return;
-      }
-
-      const name = parts[0].trim();
-      const email = parts[1].trim();
-      const categoryId = parts[2].trim();
-
-      if (!name || !email || !categoryId) {
-        setError(`Line ${i + 1} is missing name, email, or categoryId`);
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate category exists
-      const categoryExists = categories.some((c) => c.id === categoryId);
-      if (!categoryExists) {
-        setError(`Line ${i + 1}: Category "${categoryId}" does not exist`);
-        setIsLoading(false);
-        return;
-      }
-
-      judges.push({ name, email, categoryId });
-    }
-
-    if (judges.length === 0) {
-      setError("No valid judges found in CSV");
+    if (result_.error) {
+      setError(result_.error);
       setIsLoading(false);
       return;
     }
 
-    const result = await createJudgesBulk(judges);
+    const result = await createJudgesBulk(result_.data);
 
     setIsLoading(false);
 
@@ -201,22 +182,15 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
                 </Select>
               </div>
 
-              {error && <div className="text-sm text-red-500">{error}</div>}
-              {success && <div className="text-sm text-green-500">{success}</div>}
+              {error && <FormMessage error={error} />}
+              {success && <FormMessage success={success} />}
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Creating..." : "Create Judge"}
-                </Button>
-              </div>
+              <FormFooter
+                isLoading={isLoading}
+                onCancel={() => setOpen(false)}
+                submitLabel="Create Judge"
+                loadingLabel="Creating..."
+              />
             </form>
           </TabsContent>
 
@@ -249,23 +223,15 @@ Bob Wilson,bob@example.com,SPONSOR_02`}
                 </ul>
               </div>
 
-              {error && <div className="text-sm text-red-500">{error}</div>}
-              {success && <div className="text-sm text-green-500">{success}</div>}
+              {error && <FormMessage error={error} />}
+              {success && <FormMessage success={success} />}
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {isLoading ? "Importing..." : "Import CSV"}
-                </Button>
-              </div>
+              <FormFooter
+                isLoading={isLoading}
+                onCancel={() => setOpen(false)}
+                submitLabel="Import CSV"
+                loadingLabel="Importing..."
+              />
             </form>
           </TabsContent>
         </Tabs>
