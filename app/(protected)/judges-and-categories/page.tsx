@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { db } from "@/lib/db";
 import { categories, judgeGroups, judges } from "@/lib/db/schema";
+import { CategoryBadge } from "@/components/category-badge";
 import { AssignJudgesToGroupsButton } from "./assign-judges-button";
 import { EditCategoryModal } from "./edit-category-modal";
 import { EditJudgeModal } from "./edit-judge-modal";
@@ -95,17 +96,7 @@ export default async function JudgeAndCategoriesPage() {
                           {category.name}
                         </TableCell>
                         <TableCell>
-                          <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              category.type === "Sponsor"
-                                ? "bg-blue-100 text-blue-800"
-                                : category.type === "Inhouse"
-                                  ? "bg-purple-100 text-purple-800"
-                                  : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {category.type}
-                          </span>
+                          <CategoryBadge type={category.type} />
                         </TableCell>
                         <TableCell>
                           <EditCategoryModal category={category} />
@@ -160,17 +151,7 @@ export default async function JudgeAndCategoriesPage() {
                               {judge.categoryName}
                             </span>
                             {judge.categoryType && (
-                              <span
-                                className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium ${
-                                  judge.categoryType === "Sponsor"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : judge.categoryType === "Inhouse"
-                                      ? "bg-purple-100 text-purple-800"
-                                      : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {judge.categoryType}
-                              </span>
+                              <CategoryBadge type={judge.categoryType} />
                             )}
                           </div>
                         </TableCell>
@@ -232,17 +213,7 @@ export default async function JudgeAndCategoriesPage() {
                           <h3 className="font-mono text-lg font-semibold tracking-tight">
                             {group.name}
                           </h3>
-                          <span
-                            className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium ${
-                              group.categoryType === "Sponsor"
-                                ? "bg-blue-100 text-blue-800"
-                                : group.categoryType === "Inhouse"
-                                  ? "bg-purple-100 text-purple-800"
-                                  : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {group.categoryType}
-                          </span>
+                          <CategoryBadge type={group.categoryType} />
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {group.categoryName}
