@@ -109,60 +109,61 @@ export async function importProjectsFromDevpost(
     const csvText = await csvFile.text();
     const projectsInput = await parseDevPostProjectsCsv(csvText);
 
-    // Delete all current projects and submissions, and insert new ones obtained from the CSV
-    await db.delete(submissions);
-    await db.delete(projects);
-
     let importedCount = 0;
     let skippedCount = 0;
 
-    for (const p of projectsInput) {
-      if (p.status.toLowerCase() === "draft") {
-        skippedCount++;
-        continue; // Skip 'Draft' projects
+    await db.transaction(async (tx) => {
+      await tx.delete(submissions);
+      await tx.delete(projects);
+
+      for (const p of projectsInput) {
+        if (p.status.toLowerCase() === "draft") {
+          skippedCount++;
+          continue; // Skip 'Draft' projects
+        }
+
+        const [{ id: insertedProjectId }] = await tx
+          .insert(projects)
+          .values({
+            name: p.title,
+            location: p.location,
+            location2: "",
+            url: p.url,
+            status: "created",
+          })
+          .returning({ id: projects.id });
+
+        importedCount++;
+
+        const submittedCategories = p.categoriesCsv.split(",");
+        if (!submittedCategories.includes("General")) {
+          submittedCategories.push("General");
+        }
+
+        const submittedCategoryIds = submittedCategories
+          .map((individualCategoryName: string) => {
+            const trimmedCategoryName = individualCategoryName.trim();
+            if (!trimmedCategoryName) return null;
+            if (!(trimmedCategoryName in categoryNameToIdMap)) {
+              console.log(
+                `Project: '${p.title}': Category '${trimmedCategoryName}' doesn't exist. Skipping submission to this category.`,
+              );
+              return null;
+            }
+            return categoryNameToIdMap[trimmedCategoryName];
+          })
+          .filter((id: string | null): id is string => id !== null);
+
+        if (submittedCategoryIds.length > 0) {
+          await tx.insert(submissions).values(
+            submittedCategoryIds.map((categoryId: string) => ({
+              categoryId,
+              projectId: insertedProjectId,
+            })),
+          );
+        }
       }
-
-      const [{ id: insertedProjectId }] = await db
-        .insert(projects)
-        .values({
-          name: p.title,
-          location: p.location,
-          location2: "",
-          url: p.url,
-          status: "created",
-        })
-        .returning({ id: projects.id });
-
-      importedCount++;
-
-      const submittedCategories = p.categoriesCsv.split(",");
-      if (!submittedCategories.includes("General")) {
-        submittedCategories.push("General");
-      }
-
-      const submittedCategoryIds = submittedCategories
-        .map((individualCategoryName: string) => {
-          const trimmedCategoryName = individualCategoryName.trim();
-          if (!trimmedCategoryName) return null;
-          if (!(trimmedCategoryName in categoryNameToIdMap)) {
-            console.log(
-              `Project: '${p.title}': Category '${trimmedCategoryName}' doesn't exist. Skipping submission to this category.`,
-            );
-            return null;
-          }
-          return categoryNameToIdMap[trimmedCategoryName];
-        })
-        .filter((id: string | null): id is string => id !== null);
-
-      if (submittedCategoryIds.length > 0) {
-        await db.insert(submissions).values(
-          submittedCategoryIds.map((categoryId: string) => ({
-            categoryId,
-            projectId: insertedProjectId,
-          })),
-        );
-      }
-    }
+    });
 
     revalidatePath("/projects");
     return {
