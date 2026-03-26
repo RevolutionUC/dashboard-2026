@@ -12,6 +12,7 @@ import {
   judges,
   submissions,
 } from "@/lib/db/schema";
+import { RotatingQueue } from "@/lib/rotating-queue";
 
 const MINIMUM_JUDGES_PER_PROJECT = 6;
 
@@ -21,34 +22,6 @@ const SUGGESTED_JUDGE_GROUP_COUNT_PER_SUBMISSION_BASED_ON_CATEGORY_TYPE = {
   Sponsor: 1,
   MLH: 0,
 } as const;
-
-// Rotating queue to evenly distribute assignments
-class RotatingQueue<T> {
-  private _items: T[];
-  private index = 0;
-
-  constructor(items: T[]) {
-    this._items = [...items];
-  }
-
-  get length() {
-    return this._items.length;
-  }
-
-  get items(): T[] {
-    return this._items;
-  }
-
-  getNext(): T {
-    const item = this._items[this.index];
-    this.index = (this.index + 1) % this._items.length;
-    return item;
-  }
-
-  add(item: T): void {
-    this._items.push(item);
-  }
-}
 
 interface JudgeGroupWithCount {
   id: number;
