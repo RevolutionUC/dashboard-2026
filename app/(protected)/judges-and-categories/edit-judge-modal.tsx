@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,6 +40,7 @@ interface EditJudgeModalProps {
 export function EditJudgeModal({ judge, categories }: EditJudgeModalProps) {
   const [state, formAction, pending] = useActionState(updateJudgeAction, null);
   const [showMessage, setShowMessage] = useState(false);
+  const id = useId();
 
   useEffect(() => {
     if (state?.error || state?.success) {
@@ -76,9 +77,9 @@ export function EditJudgeModal({ judge, categories }: EditJudgeModalProps) {
           <input type="hidden" name="id" value={judge.id} />
 
           <div className="space-y-2">
-            <Label htmlFor="edit-judge-name">Name</Label>
+            <Label htmlFor={`${id}-name`}>Name</Label>
             <Input
-              id="edit-judge-name"
+              id={`${id}-name`}
               name="name"
               defaultValue={judge.name}
               required
@@ -86,9 +87,9 @@ export function EditJudgeModal({ judge, categories }: EditJudgeModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-judge-email">Email</Label>
+            <Label htmlFor={`${id}-email`}>Email</Label>
             <Input
-              id="edit-judge-email"
+              id={`${id}-email`}
               name="email"
               type="email"
               defaultValue={judge.email}
@@ -97,9 +98,9 @@ export function EditJudgeModal({ judge, categories }: EditJudgeModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-judge-category">Category</Label>
+            <Label htmlFor={`${id}-category`}>Category</Label>
             <Select name="categoryId" defaultValue={judge.categoryId}>
-              <SelectTrigger id="edit-judge-category">
+              <SelectTrigger id={`${id}-category`}>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>

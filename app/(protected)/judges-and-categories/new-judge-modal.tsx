@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,6 +39,7 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const id = useId();
 
   const singleFormRef = useRef<HTMLFormElement>(null);
   const bulkFormRef = useRef<HTMLFormElement>(null);
@@ -151,14 +152,14 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
           <TabsContent value="single" className="mt-4">
             <form ref={singleFormRef} onSubmit={handleSingleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="judge-name">Name</Label>
-                <Input id="judge-name" name="name" placeholder="e.g., John Doe" required />
+                <Label htmlFor={`${id}-name`}>Name</Label>
+                <Input id={`${id}-name`} name="name" placeholder="e.g., John Doe" required />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="judge-email">Email</Label>
+                <Label htmlFor={`${id}-email`}>Email</Label>
                 <Input
-                  id="judge-email"
+                  id={`${id}-email`}
                   name="email"
                   type="email"
                   placeholder="e.g., john@example.com"
@@ -167,9 +168,9 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="judge-category">Category</Label>
+                <Label htmlFor={`${id}-category`}>Category</Label>
                 <Select value={categoryValue} onValueChange={setCategoryValue} name="categoryId">
-                  <SelectTrigger id="judge-category">
+                  <SelectTrigger id={`${id}-category`}>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -197,12 +198,12 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
           <TabsContent value="bulk" className="mt-4">
             <form ref={bulkFormRef} onSubmit={handleBulkSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="judge-csv">CSV Data</Label>
+                <Label htmlFor={`${id}-csv`}>CSV Data</Label>
                 <p className="text-xs text-muted-foreground">
                   Format: <code>name,email,categoryId</code> (no header row)
                 </p>
                 <Textarea
-                  id="judge-csv"
+                  id={`${id}-csv`}
                   name="csv"
                   placeholder={`John Doe,john@example.com,SPONSOR_01
 Jane Smith,jane@example.com,INHOUSE_01

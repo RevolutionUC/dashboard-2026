@@ -1,7 +1,7 @@
 "use client";
 
 import { Upload } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +28,7 @@ export function ImportProjectsModal({
     null,
   );
   const [showMessage, setShowMessage] = useState(false);
+  const id = useId();
 
   useEffect(() => {
     if (state?.error || state?.success) {
@@ -62,9 +63,9 @@ export function ImportProjectsModal({
 
         <form action={formAction} className="mt-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="csv-file">Devpost CSV File</Label>
+            <Label htmlFor={`${id}-file`}>Devpost CSV File</Label>
             <Input
-              id="csv-file"
+              id={`${id}-file`}
               name="csvFile"
               type="file"
               accept=".csv"

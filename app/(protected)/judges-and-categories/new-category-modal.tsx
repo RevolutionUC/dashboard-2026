@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +33,7 @@ export function NewCategoryModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const id = useId();
 
   const singleFormRef = useRef<HTMLFormElement>(null);
   const bulkFormRef = useRef<HTMLFormElement>(null);
@@ -139,23 +140,23 @@ export function NewCategoryModal() {
           <TabsContent value="single" className="mt-4">
             <form ref={singleFormRef} onSubmit={handleSingleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="shortcode">Shortcode (ID)</Label>
-                <Input id="shortcode" name="shortcode" placeholder="e.g., SPONSOR_01" required />
+                <Label htmlFor={`${id}-shortcode`}>Shortcode (ID)</Label>
+                <Input id={`${id}-shortcode`} name="shortcode" placeholder="e.g., SPONSOR_01" required />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" placeholder="e.g., Best Sponsor Project" required />
+                <Label htmlFor={`${id}-name`}>Name</Label>
+                <Input id={`${id}-name`} name="name" placeholder="e.g., Best Sponsor Project" required />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor={`${id}-type`}>Type</Label>
                 <Select
                   value={typeValue}
                   onValueChange={(value) => setTypeValue(value as CategoryType)}
                   name="type"
                 >
-                  <SelectTrigger id="type">
+                  <SelectTrigger id={`${id}-type`}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -183,12 +184,12 @@ export function NewCategoryModal() {
           <TabsContent value="bulk" className="mt-4">
             <form ref={bulkFormRef} onSubmit={handleBulkSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="csv">CSV Data</Label>
+                <Label htmlFor={`${id}-csv`}>CSV Data</Label>
                 <p className="text-xs text-muted-foreground">
                   Format: <code>id,name,type</code> (no header row)
                 </p>
                 <Textarea
-                  id="csv"
+                  id={`${id}-csv`}
                   name="csv"
                   placeholder={`SPONSOR_01,Best AI Project,Sponsor
 SPONSOR_02,Best Web App,Sponsor

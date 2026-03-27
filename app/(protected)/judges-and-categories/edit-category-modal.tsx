@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,6 +38,7 @@ export function EditCategoryModal({ category }: EditCategoryModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const id = useId();
 
   const [newId, setNewId] = useState(category.id);
   const [name, setName] = useState(category.name);
@@ -85,19 +86,19 @@ export function EditCategoryModal({ category }: EditCategoryModalProps) {
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-id">Shortcode (ID)</Label>
-            <Input id="edit-id" value={newId} onChange={(e) => setNewId(e.target.value)} required />
+            <Label htmlFor={`${id}-shortcode`}>Shortcode (ID)</Label>
+            <Input id={`${id}-shortcode`} value={newId} onChange={(e) => setNewId(e.target.value)} required />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-name">Name</Label>
-            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Label htmlFor={`${id}-name`}>Name</Label>
+            <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-type">Type</Label>
+            <Label htmlFor={`${id}-type`}>Type</Label>
             <Select value={type} onValueChange={(value) => setType(value as CategoryType)}>
-              <SelectTrigger id="edit-type">
+              <SelectTrigger id={`${id}-type`}>
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
