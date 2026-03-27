@@ -33,7 +33,7 @@ export function CategoryFilter({
     } else {
       params.set("category", value);
     }
-    router.push(`/cagetoryScorings?${params.toString()}`);
+    router.push(`/categoryScorings?${params.toString()}`);
   };
 
   return (
