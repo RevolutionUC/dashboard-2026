@@ -1,5 +1,7 @@
 import * as React from "react";
 import { render } from "@react-email/render";
+import * as CheckInConfirmed from "./QRConfirmed";
+import * as CheckInWaitlisted from "./QRWaitlisted";
 import * as ConfirmAttendance from "./ConfirmAttendance";
 import * as ConfirmAttendanceFollowUp from "./ConfirmAttendanceFollowUp";
 import * as DateChange from "./DateChange";
@@ -43,7 +45,7 @@ export interface EmailTemplateMeta {
     name: string;
     subject: string;
     description: string;
-    component: React.ComponentType<any>;
+    component: React.ComponentType<Record<string, unknown>>;
     requiredProps?: string[];
 }
 
@@ -57,10 +59,20 @@ export interface TemplateMeta {
 
 interface TemplateModule {
     meta?: TemplateMeta;
-    default?: React.ComponentType<any>;
+    default?: React.ComponentType<Record<string, unknown>>;
+}
+
+interface CompleteTemplateModule {
+    meta: TemplateMeta;
+    default: React.ComponentType<Record<string, unknown>>;
+}
+
+function isCompleteTemplateModule(module: TemplateModule): module is CompleteTemplateModule {
+    return Boolean(module.meta && module.default);
 }
 
 const modules: TemplateModule[] = [
+    CheckInConfirmed, CheckInWaitlisted,
     ConfirmAttendance, ConfirmAttendanceFollowUp, DateChange,
     GeneralEmail, InfoEmail1, InfoEmail2, InfoEmail3, InfoEmail4,
     InfoEmailCTF, InfoEmailJudges, InfoEmailWaitlist, InfoEmailWaitlist2,
@@ -70,8 +82,8 @@ const modules: TemplateModule[] = [
 ];
 
 export const emailTemplates: EmailTemplateMeta[] = modules
-    .filter((m): m is Required<TemplateModule> => !!m.meta && !!m.default)
-    .map((m) => ({ ...m.meta!, component: m.default! }));
+    .filter(isCompleteTemplateModule)
+    .map((m) => ({ ...m.meta, component: m.default }));
 
 export function getTemplateById(id: string): EmailTemplateMeta | undefined {
     return emailTemplates.find((template) => template.id === id);
@@ -82,7 +94,7 @@ export function getAllTemplates(): EmailTemplateMeta[] {
 }
 
 export interface RenderEmailProps {
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export async function renderTemplateToHtml(
