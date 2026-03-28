@@ -45,14 +45,6 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
-            <Link href="https://revolutionuc.com" target="_blank">
-              <Img
-                src={process.env.NEXT_PUBLIC_LOGO_URL ?? `${process.env.BETTER_AUTH_URL}/revuc_2026_logo.png`}
-                alt="RevolutionUC logo"
-                width="100"
-                style={logoImage}
-              />
-            </Link>
             <Text style={headerTitle}>
               <Link href="https://revolutionuc.com" style={headerLink}>
                 RevolutionUC - Spring 2026
@@ -67,8 +59,8 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
           <Section style={faqSection}>
             <Text style={paragraph}>
               Questions? See the FAQ at{" "}
-              <Link href="https://revolutionuc.com/faq" style={link}>
-                revolutionuc.com/faq
+              <Link href="https://revolutionuc.com/" style={link}>
+                revolutionuc.com
               </Link>{" "}
               or send us an email at{" "}
               <Link href="mailto:info@revolutionuc.com" style={link}>
