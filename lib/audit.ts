@@ -9,11 +9,14 @@ type AuditAction =
   | "FOOD_CHECKIN"
   | "UPDATE_STATUS"
   | "CREATE_EVENT"
+  | "UPDATE_EVENT"
   | "DELETE_EVENT"
   | "CREATE_SCHEDULE"
+  | "UPDATE_SCHEDULE"
   | "DELETE_SCHEDULE"
   | "APPROVE_USER"
-  | "DENY_USER";
+  | "DENY_USER"
+  | "REVOKE_USER";
 
 interface LogActionParams {
   userId: string;

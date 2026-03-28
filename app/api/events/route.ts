@@ -1,7 +1,6 @@
 import { desc, eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSessionWithRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { logAction } from "@/lib/audit";
@@ -22,12 +21,17 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const sessionInfo = await getSessionWithRole();
 
-    if (!session?.user) {
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { session, dashboardRole } = sessionInfo;
+
+    // Block organizers from creating events
+    if (dashboardRole === "organizer") {
+      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -79,16 +83,90 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH update an event
+export async function PATCH(request: NextRequest) {
+  try {
+    const sessionInfo = await getSessionWithRole();
+
+    if (!sessionInfo) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { session, dashboardRole } = sessionInfo;
+
+    // Block organizers from updating events
+    if (dashboardRole === "organizer") {
+      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { name, description, eventType, startTime, endTime, location, capacity } = body;
+
+    if (eventType && !["WORKSHOP", "FOOD"].includes(eventType)) {
+      return NextResponse.json(
+        { error: "Event type must be 'WORKSHOP' or 'FOOD'" },
+        { status: 400 },
+      );
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description || null;
+    if (eventType !== undefined) updateData.eventType = eventType;
+    if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null;
+    if (endTime !== undefined) updateData.endTime = endTime ? new Date(endTime) : null;
+    if (location !== undefined) updateData.location = location || null;
+    if (capacity !== undefined) updateData.capacity = capacity ? Number.parseInt(capacity, 10) : null;
+    updateData.updatedAt = new Date();
+
+    const [updatedEvent] = await db
+      .update(events)
+      .set(updateData)
+      .where(eq(events.id, id))
+      .returning();
+
+    if (!updatedEvent) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    await logAction({
+      userId: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      action: "UPDATE_EVENT",
+      targetId: updatedEvent.id,
+      details: { name: updatedEvent.name },
+    });
+
+    return NextResponse.json(updatedEvent);
+  } catch (error) {
+    console.error("Error updating event:", error);
+    return NextResponse.json({ error: "Failed to update event" }, { status: 500 });
+  }
+}
+
 // DELETE an event
 export async function DELETE(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const sessionInfo = await getSessionWithRole();
 
-    if (!session?.user) {
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { session, dashboardRole } = sessionInfo;
+
+    // Block organizers from deleting events
+    if (dashboardRole === "organizer") {
+      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

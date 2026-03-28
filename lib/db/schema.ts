@@ -33,11 +33,14 @@ export const actions = pgEnum("actions", [
   "FOOD_CHECKIN",
   "UPDATE_STATUS",
   "CREATE_EVENT",
+  "UPDATE_EVENT",
   "DELETE_EVENT",
   "CREATE_SCHEDULE",
+  "UPDATE_SCHEDULE",
   "DELETE_SCHEDULE",
   "APPROVE_USER",
   "DENY_USER",
+  "REVOKE_USER",
 ]);
 
 export const user = pgTable("user", {
@@ -54,6 +57,8 @@ export const user = pgTable("user", {
     .defaultNow(),
   // better-auth admin plugin fields
   role: text("role").default("user"),
+  // Dashboard role: admin, lead, organizer
+  dashboardRole: text("dashboard_role").default("lead"),
   banned: boolean("banned").default(false),
   banReason: text("banReason"),
   banExpires: timestamp("banExpires", { withTimezone: true }),
@@ -255,6 +260,7 @@ export const accessRequests = pgTable(
     name: text("name").notNull(),
     image: text("image"),
     status: accessRequestStatus("status").notNull().default("pending"),
+    role: text("role").default("lead"),
     requestedAt: timestamp("requested_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -266,6 +272,27 @@ export const accessRequests = pgTable(
   (table) => [
     index("access_requests_userId_idx").on(table.userId),
     index("access_requests_status_idx").on(table.status),
+  ],
+);
+
+export const confirmTokens = pgTable(
+  "confirm_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    token: text("token").notNull().unique(),
+    participantId: uuid("participant_id")
+      .notNull()
+      .references(() => participants.user_id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("confirm_tokens_token_idx").on(table.token),
+    index("confirm_tokens_participant_idx").on(table.participantId),
   ],
 );
 

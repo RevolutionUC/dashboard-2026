@@ -73,7 +73,7 @@ export const auth = betterAuth({
 
           if (isAdmin) {
             // Auto-approve admins: set role to admin and create an approved access request
-            await db.update(schema.user).set({ role: "admin" }).where(eq(schema.user.id, user.id));
+            await db.update(schema.user).set({ role: "admin", dashboardRole: "admin" }).where(eq(schema.user.id, user.id));
 
             await db.insert(accessRequests).values({
               userId: user.id,
@@ -81,6 +81,7 @@ export const auth = betterAuth({
               name: user.name,
               image: user.image,
               status: "approved",
+              role: "admin",
               reviewedAt: new Date(),
             });
           } else {
@@ -115,4 +116,25 @@ export async function assertAuthorization(): Promise<void> {
   if (!session) {
     throw new Error("Unauthorized");
   }
+}
+
+export async function getSessionWithRole() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    return null;
+  }
+
+  const [userData] = await db
+    .select({ dashboardRole: schema.user.dashboardRole })
+    .from(schema.user)
+    .where(eq(schema.user.id, session.user.id))
+    .limit(1);
+
+  return {
+    session,
+    dashboardRole: userData?.dashboardRole || "lead",
+  };
 }
