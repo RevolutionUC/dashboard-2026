@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   CalendarDays,
@@ -175,6 +175,7 @@ export function AppSidebar() {
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
+              )}
 
               {/* Judging with collapsible sub-menu */}
               <Collapsible defaultOpen className="group/collapsible">
@@ -202,7 +203,6 @@ export function AppSidebar() {
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
-              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
