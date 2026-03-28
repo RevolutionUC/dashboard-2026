@@ -100,7 +100,9 @@ export async function assignProjectsToJudgeGroups() {
       };
     }
 
-    // Create rotating queues for each category
+    // Phase 1: Assign submissions to judge groups based on category
+    // We use round-robin to assign projects across judge groups.
+    // So we create rotating queues of groups per category help easily distribute projects into different groups continously
     const groupsQueueByCategory = judgeGroupsWithCounts.reduce((acc, group) => {
       if (!acc.has(group.categoryId)) {
         acc.set(group.categoryId, new RotatingQueue<JudgeGroupWithCount>([]));
@@ -109,44 +111,22 @@ export async function assignProjectsToJudgeGroups() {
       return acc;
     }, new Map<string, RotatingQueue<JudgeGroupWithCount>>());
 
-    // Helper function to determine how many groups per submission
-    const determineGroupsCountPerSubmission = (
-      categoryType: string,
-      categoryId: string,
-    ) => {
-      const howManyGroupsOfThisCategory =
-        groupsQueueByCategory.get(categoryId)?.length || 0;
-      const suggestedGroupCount =
-        SUGGESTED_JUDGE_GROUP_COUNT_PER_SUBMISSION_BASED_ON_CATEGORY_TYPE[
-          categoryType as keyof typeof SUGGESTED_JUDGE_GROUP_COUNT_PER_SUBMISSION_BASED_ON_CATEGORY_TYPE
-        ] || 1;
-      return Math.min(howManyGroupsOfThisCategory, suggestedGroupCount);
-    };
-
-    // Phase 1: Assign submissions to judge groups based on category
-    const assignmentList: Array<{
-      projectId: string;
-      judgeGroup: JudgeGroupWithCount;
-    }> = [];
+    const assignmentList: Array<{ projectId: string; judgeGroup: JudgeGroupWithCount }> = [];
 
     for (const submission of allSubmissions) {
-      const howManyJudgeGroupsToAssign = determineGroupsCountPerSubmission(
-        submission.categoryType,
-        submission.categoryId,
-      );
       const groupsQueue = groupsQueueByCategory.get(submission.categoryId);
-
       if (!groupsQueue || groupsQueue.length === 0) {
         continue; // Skip if no judge groups for this category
       }
 
-      // Get groups to assign (rotate through available groups)
+      // Determine how many groups to assign to this project based on its category
+      const howManyGroupsOfThisCategory = groupsQueue.length;
+      const suggestedGroupCount = SUGGESTED_JUDGE_GROUP_COUNT_PER_SUBMISSION_BASED_ON_CATEGORY_TYPE[submission.categoryType] || 1;
+      const howManyJudgeGroupsToAssign = Math.min(howManyGroupsOfThisCategory, suggestedGroupCount);
+
+      // Continously rotate through available groups to asign project
       for (let i = 0; i < howManyJudgeGroupsToAssign; i++) {
-        const group = groupsQueue.getNext();
-        assignmentList.push({
-          projectId: submission.projectId,
-          judgeGroup: group,
-        });
+        assignmentList.push({ projectId: submission.projectId, judgeGroup: groupsQueue.getNext() });
       }
     }
 
@@ -156,6 +136,7 @@ export async function assignProjectsToJudgeGroups() {
       Array<{ projectId: string; judgeGroup: JudgeGroupWithCount }>
     >();
 
+    // Fist, we organize assignments by projectId to see how many judges per project already
     for (const assignment of assignmentList) {
       if (!assignmentsByProject.has(assignment.projectId)) {
         assignmentsByProject.set(assignment.projectId, []);
@@ -163,32 +144,25 @@ export async function assignProjectsToJudgeGroups() {
       assignmentsByProject.get(assignment.projectId)!.push(assignment);
     }
 
-    const generalGroupQueue = groupsQueueByCategory.get(generalCategoryId);
+    const generalGroupQueue = groupsQueueByCategory.get("general");
 
     if (generalGroupQueue) {
       for (const [projectId, projectAssignments] of assignmentsByProject) {
-        let howManyJudgesThisProject = projectAssignments.reduce(
-          (sum, a) => sum + a.judgeGroup.judgeCount,
-          0,
-        );
-        const alreadyUsedGroupIds = new Set(
-          projectAssignments.map((a) => a.judgeGroup.id),
-        );
+        let howManyJudgesAlready = projectAssignments.reduce((sum, a) => sum + a.judgeGroup.judgeCount, 0);
+        const alreadyUsedGroupIds = new Set(projectAssignments.map((a) => a.judgeGroup.id));
 
-        let safetyCounter = 0;
-        while (
-          howManyJudgesThisProject < MINIMUM_JUDGES_PER_PROJECT &&
-          safetyCounter < 100
-        ) {
+        // If less judges than desired minimum, we use a while loop to continously assign additional General groups until achieved desire count
+        let safetyCounterToPreventInfiniteLoop = 0;
+        while (howManyJudgesAlready < MINIMUM_JUDGES_PER_PROJECT && safetyCounterToPreventInfiniteLoop < 100) {
           const nextGeneralGroup = generalGroupQueue.getNext();
-          safetyCounter++;
 
-          // Only use this group if not already assigned to this project
-          if (!alreadyUsedGroupIds.has(nextGeneralGroup.id)) {
-            assignmentList.push({ projectId, judgeGroup: nextGeneralGroup });
-            alreadyUsedGroupIds.add(nextGeneralGroup.id);
-            howManyJudgesThisProject += nextGeneralGroup.judgeCount;
-          }
+          if (alreadyUsedGroupIds.has(nextGeneralGroup.id)) continue
+
+          assignmentList.push({ projectId, judgeGroup: nextGeneralGroup });
+          alreadyUsedGroupIds.add(nextGeneralGroup.id);
+          howManyJudgesAlready += nextGeneralGroup.judgeCount;
+
+          safetyCounterToPreventInfiniteLoop += 1;
         }
       }
     }
@@ -196,104 +170,61 @@ export async function assignProjectsToJudgeGroups() {
     // Post-condition: Check that all projects have sufficient number of judges
     const finalAssignmentsByProject = new Map<string, number>();
 
-    for (const assignment of assignmentList) {
-      const currentCount =
-        finalAssignmentsByProject.get(assignment.projectId) || 0;
-      finalAssignmentsByProject.set(
-        assignment.projectId,
-        currentCount + assignment.judgeGroup.judgeCount,
-      );
-    }
+    const judgeCountPerProject = assignmentList.reduce((acc, assignment) => {
+      const currentCount = acc.get(assignment.projectId) || 0;
+      acc.set(assignment.projectId, currentCount + assignment.judgeGroup.judgeCount);
+      return acc;
+    }, new Map<string, number>());
 
     const projectsWithInsufficientJudges: string[] = [];
 
-    for (const [projectId, judgeCount] of finalAssignmentsByProject) {
+    for (const [projectId, judgeCount] of judgeCountPerProject) {
       if (judgeCount < MINIMUM_JUDGES_PER_PROJECT) {
         projectsWithInsufficientJudges.push(projectId);
       }
     }
 
     if (projectsWithInsufficientJudges.length > 0) {
+      const projectList = projectsWithInsufficientJudges.join('\n');
       return {
         success: false,
-        error: `${projectsWithInsufficientJudges.length} project(s) have insufficient judges. Need at least ${MINIMUM_JUDGES_PER_PROJECT} judges per project.`,
+        error: `${projectsWithInsufficientJudges.length} project(s) have less than ${MINIMUM_JUDGES_PER_PROJECT} judges). Projects: ${projectList}`,
       };
     }
 
-    // Convert to insert format
-    const assignmentsToInsert: AssignmentToInsert[] = assignmentList.map(
+    // De-duplicate duplicated assignment because I am paranoid
+    const seen = new Set<string>();
+
+    const dedupedAssignmentList = assignmentList.filter((assignment) => {
+      const key = `${assignment.judgeGroup.id}:${assignment.projectId}`;
+      if (seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    });
+
+    const assignmentsToInsert = dedupedAssignmentList.map(
       (a) => ({
         projectId: a.projectId,
         judgeGroupId: a.judgeGroup.id,
       }),
     );
 
-    // Post-condition: Check for duplicates
-    const seen = new Set<string>();
-    const duplicates: AssignmentToInsert[] = [];
+    // Also Create evaluation records for each judge-project pair
+    const allJudgeGroups = await db.query.judgeGroups.findMany({ with: { judges: true } });
 
-    for (const entry of assignmentsToInsert) {
-      const key = `${entry.judgeGroupId}:${entry.projectId}`;
-      if (seen.has(key)) {
-        duplicates.push(entry);
-      } else {
-        seen.add(key);
-      }
-    }
+    const judgesByGroupId = new Map(allJudgeGroups.map(g => [g.id, g.judges]));
 
-    if (duplicates.length > 0) {
-      return {
-        success: false,
-        error: `Found ${duplicates.length} duplicate assignments.`,
-      };
-    }
+    // Create evaluation records: From `assignments`, each (judgeId, projectId) pair is a unique evaluation
+    const evaluationsToInsert = assignmentsToInsert.flatMap((assignment) => {
+      const judges = judgesByGroupId.get(assignment.judgeGroupId) || [];
 
-    // Create evaluation records for each judge-project pair
-    // First, get all judges in the assigned groups with their categories
-    const judgeGroupIds = [
-      ...new Set(assignmentsToInsert.map((a) => a.judgeGroupId)),
-    ];
-    const judgesInGroups = await db
-      .select({
-        judgeId: judges.id,
-        judgeGroupId: judges.judgeGroupId,
-        categoryId: judges.categoryId,
-      })
-      .from(judges)
-      .where(inArray(judges.judgeGroupId, judgeGroupIds));
-
-    // Build a map of judgeGroupId -> judges
-    const judgesByGroup = new Map<
-      number,
-      Array<{ judgeId: string; categoryId: string }>
-    >();
-    for (const judge of judgesInGroups) {
-      if (!judgesByGroup.has(judge.judgeGroupId!)) {
-        judgesByGroup.set(judge.judgeGroupId!, []);
-      }
-      judgesByGroup.get(judge.judgeGroupId!)!.push({
-        judgeId: judge.judgeId,
+      return judges.map((judge) => ({
+        projectId: assignment.projectId,
+        judgeId: judge.id,
         categoryId: judge.categoryId,
-      });
-    }
-
-    // Create evaluation records
-    const evaluationsToInsert: Array<{
-      projectId: string;
-      judgeId: string;
-      categoryId: string;
-    }> = [];
-
-    for (const assignment of assignmentsToInsert) {
-      const groupJudges = judgesByGroup.get(assignment.judgeGroupId) || [];
-      for (const judge of groupJudges) {
-        evaluationsToInsert.push({
-          projectId: assignment.projectId,
-          judgeId: judge.judgeId,
-          categoryId: judge.categoryId,
-        });
-      }
-    }
+      }));
+    });
 
     await db.transaction(async (tx) => {
       await tx.delete(assignments);
