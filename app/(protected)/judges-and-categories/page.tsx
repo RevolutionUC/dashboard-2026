@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { db } from "@/lib/db";
-import { categories, judgeGroups, judges } from "@/lib/db/schema";
+import { categories, judgeGroups, judges, submissions } from "@/lib/db/schema";
 import { CategoryBadge } from "@/components/category-badge";
 import { AssignJudgesToGroupsButton } from "./assign-judges-button";
 import { EditCategoryModal } from "./edit-category-modal";
@@ -20,7 +20,19 @@ import { NewJudgeModal } from "./new-judge-modal";
 
 export default async function JudgeAndCategoriesPage() {
   const [allCategories, allJudges, allJudgeGroups] = await Promise.all([
-    db.select().from(categories).orderBy(categories.name),
+    db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        type: categories.type,
+        judgeCount: sql<number>`count(distinct ${judges.id})`.mapWith(Number),
+        projectCount: sql<number>`count(distinct ${submissions.projectId})`.mapWith(Number),
+      })
+      .from(categories)
+      .leftJoin(judges, eq(judges.categoryId, categories.id))
+      .leftJoin(submissions, eq(submissions.categoryId, categories.id))
+      .groupBy(categories.id, categories.name, categories.type)
+      .orderBy(categories.name),
     db
       .select({
         id: judges.id,
@@ -73,6 +85,8 @@ export default async function JudgeAndCategoriesPage() {
                     <TableHead className="w-30">ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead className="w-30">Type</TableHead>
+                    <TableHead className="w-20 text-center">Judges</TableHead>
+                    <TableHead className="w-20 text-center">Projects</TableHead>
                     <TableHead className="w-20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -80,7 +94,7 @@ export default async function JudgeAndCategoriesPage() {
                   {allCategories.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={6}
                         className="text-center text-muted-foreground"
                       >
                         No categories found
@@ -97,6 +111,12 @@ export default async function JudgeAndCategoriesPage() {
                         </TableCell>
                         <TableCell>
                           <CategoryBadge type={category.type} />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {category.judgeCount ?? 0}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {category.projectCount ?? 0}
                         </TableCell>
                         <TableCell>
                           <EditCategoryModal category={category} />
