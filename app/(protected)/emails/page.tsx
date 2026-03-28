@@ -27,7 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type RecipientType = "all" | "status" | "specific";
+type RecipientType = "all" | "status" | "specific" | "judges";
 
 function EmailPreviewTab() {
   const [selectedTemplateId, setSelectedTemplateId] = useState(
@@ -52,6 +52,7 @@ function EmailPreviewTab() {
             yesConfirmationUrl="https://example.com/confirm-yes"
             noConfirmationUrl="https://example.com/confirm-no"
             resetToken="abc123"
+            portalUrl="https://revolutionuc.com/"
           />,
           { pretty: true }
         );
@@ -217,9 +218,12 @@ function SendEmailsTab() {
         return "all participants";
       case "status":
         return `participants with status "${selectedStatus.charAt(0) + selectedStatus.slice(1).toLowerCase().replace(/_/g, " ")}"`;
-      case "specific":
+      case "specific": {
         const count = specificEmails.split(",").filter((e) => e.trim()).length;
         return `${count} specific email${count !== 1 ? "s" : ""}`;
+      }
+      case "judges":
+        return "all judges";
       default:
         return "";
     }
@@ -262,7 +266,7 @@ function SendEmailsTab() {
           </div>
 
           <div className="flex items-start space-x-2">
-            <RadioGroupItem value="status" id="status" className="mt-1" />
+            <RadioGroupItem value="status" id="status" />
             <div className="flex-1 space-y-2">
               <Label htmlFor="status" className="font-normal cursor-pointer">
                 Participants with status
@@ -286,10 +290,10 @@ function SendEmailsTab() {
           </div>
 
           <div className="flex items-start space-x-2">
-            <RadioGroupItem value="specific" id="specific" className="mt-1" />
+            <RadioGroupItem value="specific" id="specific" />
             <div className="flex-1 space-y-2">
               <Label htmlFor="specific" className="font-normal cursor-pointer">
-                Specific emails
+                Specific participant emails
               </Label>
               {recipientType === "specific" && (
                 <Input
@@ -300,6 +304,15 @@ function SendEmailsTab() {
                   className="w-full"
                 />
               )}
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="judges" id="judges" />
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="judges" className="font-normal cursor-pointer">
+                All judges
+              </Label>
             </div>
           </div>
         </RadioGroup>
