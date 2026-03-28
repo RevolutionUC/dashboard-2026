@@ -1,4 +1,3 @@
-CREATE TYPE "public"."actions" AS ENUM('SIGNED_IN', 'CHECKIN', 'WORKSHOP_CHECKIN', 'FOOD_CHECKIN', 'UPDATE_STATUS', 'CREATE_EVENT', 'DELETE_EVENT', 'CREATE_SCHEDULE', 'DELETE_SCHEDULE', 'APPROVE_USER', 'DENY_USER');--> statement-breakpoint
 CREATE TYPE "public"."category_type" AS ENUM('Sponsor', 'Inhouse', 'General', 'MLH');--> statement-breakpoint
 CREATE TYPE "public"."judging_phase" AS ENUM('scoring', 'finalized');--> statement-breakpoint
 CREATE TYPE "public"."project_status" AS ENUM('created', 'disqualified');--> statement-breakpoint
@@ -36,7 +35,6 @@ CREATE TABLE "evaluations" (
 	"scores" integer[],
 	"category_relevance" integer DEFAULT 0 NOT NULL,
 	"category_borda_score" integer,
-	"general_borda_score" integer,
 	CONSTRAINT "evaluations_judge_id_project_id_pk" PRIMARY KEY("judge_id","project_id")
 );
 --> statement-breakpoint
@@ -83,6 +81,8 @@ ALTER TABLE "event_registrations" RENAME COLUMN "user_id" TO "participant_id";--
 ALTER TABLE "event_registrations" DROP CONSTRAINT "event_registrations_user_id_participants_user_id_fk";
 --> statement-breakpoint
 DROP INDEX "event_registrations_participant_idx";--> statement-breakpoint
+ALTER TABLE "access_requests" ADD COLUMN "role" text DEFAULT 'lead';--> statement-breakpoint
+ALTER TABLE "user" ADD COLUMN "dashboard_role" text DEFAULT 'lead';--> statement-breakpoint
 ALTER TABLE "assignments" ADD CONSTRAINT "assignments_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignments" ADD CONSTRAINT "assignments_judge_group_id_judge_groups_id_fk" FOREIGN KEY ("judge_group_id") REFERENCES "public"."judge_groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_session_id_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
