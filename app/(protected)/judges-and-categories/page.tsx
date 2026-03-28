@@ -17,6 +17,8 @@ import { EditJudgeModal } from "./edit-judge-modal";
 import { LoginAsJudgeButton } from "./login-as-judge-button";
 import { NewCategoryModal } from "./new-category-modal";
 import { NewJudgeModal } from "./new-judge-modal";
+import { JudgeCheckinCheckbox } from "./judge-checkin-checkbox";
+import { ClearAbsentJudgesButton } from "./clear-absent-judges-button";
 
 export default async function JudgeAndCategoriesPage() {
   const [allCategories, allJudges, allJudgeGroups] = await Promise.all([
@@ -43,12 +45,13 @@ export default async function JudgeAndCategoriesPage() {
         categoryType: categories.type,
         judgeGroupId: judges.judgeGroupId,
         judgeGroupName: judgeGroups.name,
+        isCheckedin: judges.isCheckedin,
         createdAt: judges.createdAt,
       })
       .from(judges)
       .innerJoin(categories, eq(judges.categoryId, categories.id))
       .leftJoin(judgeGroups, eq(judges.judgeGroupId, judgeGroups.id))
-      .orderBy(judges.name),
+      .orderBy(categories.id, judges.name),
     db
       .select({
         id: judgeGroups.id,
@@ -133,8 +136,11 @@ export default async function JudgeAndCategoriesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Judges ({allJudges.length})</CardTitle>
-            <AssignJudgesToGroupsButton />
-            <NewJudgeModal categories={allCategories} />
+            <div className="flex gap-2">
+              <ClearAbsentJudgesButton />
+              <AssignJudgesToGroupsButton />
+              <NewJudgeModal categories={allCategories} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -144,6 +150,7 @@ export default async function JudgeAndCategoriesPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead className="text-center">Checked In</TableHead>
                     <TableHead>Group</TableHead>
                     <TableHead className="w-32">Actions</TableHead>
                   </TableRow>
@@ -152,7 +159,7 @@ export default async function JudgeAndCategoriesPage() {
                   {allJudges.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={6}
                         className="text-center text-muted-foreground"
                       >
                         No judges found
@@ -174,6 +181,12 @@ export default async function JudgeAndCategoriesPage() {
                               <CategoryBadge type={judge.categoryType} />
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <JudgeCheckinCheckbox
+                            judgeId={judge.id}
+                            isCheckedin={judge.isCheckedin ?? false}
+                          />
                         </TableCell>
                         <TableCell>
                           {judge.judgeGroupName ? (

@@ -1,6 +1,8 @@
 CREATE TYPE "public"."access_request_status" AS ENUM('pending', 'approved', 'denied');--> statement-breakpoint
 CREATE TYPE "public"."participant_status" AS ENUM('REGISTERED', 'CONFIRMED', 'WAITLISTED', 'CHECKED_IN');--> statement-breakpoint
 CREATE TYPE "public"."schedule_visibility" AS ENUM('internal', 'public');--> statement-breakpoint
+CREATE TYPE "public"."actions" AS ENUM('SIGNED_IN', 'CHECKIN', 'WORKSHOP_CHECKIN', 'FOOD_CHECKIN', 'UPDATE_STATUS', 'CREATE_EVENT', 'UPDATE_EVENT', 'DELETE_EVENT', 'CREATE_SCHEDULE', 'UPDATE_SCHEDULE', 'DELETE_SCHEDULE', 'APPROVE_USER', 'DENY_USER', 'REVOKE_USER');--> statement-breakpoint
+
 CREATE TABLE "access_requests" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,

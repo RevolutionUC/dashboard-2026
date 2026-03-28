@@ -404,6 +404,7 @@ export const judges = pgTable(
       onDelete: "set null",
     }),
     judgingPhase: judgingPhase("judging_phase").notNull().default("scoring"),
+    isCheckedin: boolean("is_checkedin").default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

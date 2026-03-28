@@ -1,5 +1,5 @@
 {
-  "id": "883c902f-2ec3-41e1-9b8a-38d6044c42d3",
+  "id": "d7d42345-1ab3-41fe-8f58-807cfeff74b6",
   "prevId": "7cd5a197-fd05-4a3d-bdb5-287e6a6311c9",
   "version": "7",
   "dialect": "postgresql",
@@ -1260,6 +1260,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'scoring'"
+        },
+        "is_checkedin": {
+          "name": "is_checkedin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
         },
         "created_at": {
           "name": "created_at",

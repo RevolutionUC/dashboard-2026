@@ -53,6 +53,7 @@ CREATE TABLE "judges" (
 	"category_id" text NOT NULL,
 	"judge_group_id" integer,
 	"judging_phase" "judging_phase" DEFAULT 'scoring' NOT NULL,
+	"is_checkedin" boolean DEFAULT false,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "judges_email_unique" UNIQUE("email")
@@ -81,8 +82,8 @@ ALTER TABLE "event_registrations" RENAME COLUMN "user_id" TO "participant_id";--
 ALTER TABLE "event_registrations" DROP CONSTRAINT "event_registrations_user_id_participants_user_id_fk";
 --> statement-breakpoint
 DROP INDEX "event_registrations_participant_idx";--> statement-breakpoint
-ALTER TABLE "access_requests" ADD COLUMN "role" text DEFAULT 'lead';--> statement-breakpoint
-ALTER TABLE "user" ADD COLUMN "dashboard_role" text DEFAULT 'lead';--> statement-breakpoint
+ALTER TABLE "access_requests" ADD COLUMN IF NOT EXISTS "role" text DEFAULT 'lead';--> statement-breakpoint
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "dashboard_role" text DEFAULT 'lead';--> statement-breakpoint
 ALTER TABLE "assignments" ADD CONSTRAINT "assignments_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignments" ADD CONSTRAINT "assignments_judge_group_id_judge_groups_id_fk" FOREIGN KEY ("judge_group_id") REFERENCES "public"."judge_groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_session_id_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint

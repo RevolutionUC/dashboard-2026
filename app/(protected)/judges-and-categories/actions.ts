@@ -132,6 +132,56 @@ export async function updateJudgeAction(
   }
 }
 
+export async function toggleJudgeCheckinAction(judgeId: string) {
+  await assertAuthorization();
+
+  try {
+    const [judge] = await db
+      .select({ isCheckedin: judges.isCheckedin })
+      .from(judges)
+      .where(eq(judges.id, judgeId));
+
+    if (!judge) {
+      return { success: false, error: "Judge not found" };
+    }
+
+    await db
+      .update(judges)
+      .set({ isCheckedin: !judge.isCheckedin })
+      .where(eq(judges.id, judgeId));
+
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling judge checkin:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to toggle checkin",
+    };
+  }
+}
+
+export async function deleteAbsentJudgesAction() {
+  await assertAuthorization();
+
+  try {
+    const result = await db
+      .delete(judges)
+      .where(eq(judges.isCheckedin, false));
+
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting absent judges:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete absent judges",
+    };
+  }
+}
+
 interface JudgeWithCategory {
   id: string;
   name: string;
