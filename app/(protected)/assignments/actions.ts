@@ -45,28 +45,29 @@ export async function assignProjectsToJudgeGroups() {
       .where(eq(categories.type, "General"))
       .limit(1);
 
+    let generalCategoryId: string;
+
     if (generalCategory.length === 0) {
-      return {
-        success: false,
-        error:
-          "General category not found. Please create a General category first.",
-      };
+      // Create the General category if not exists yet
+      const newGeneralCategory = await db
+        .insert(categories)
+        .values({ id: "general", name: "General", type: "General" })
+        .returning({ id: categories.id });
+      generalCategoryId = newGeneralCategory[0].id;
+    } else {
+      generalCategoryId = generalCategory[0].id;
     }
 
-    const generalCategoryId = generalCategory[0].id;
-
     // Preconditions: Check minimum General judges
-    const generalJudgesCount = await db
+    const [{count: generalJudgesCount}] = await db
       .select({ count: count() })
       .from(judges)
       .where(eq(judges.categoryId, generalCategoryId));
 
-    const countGeneralJudges = generalJudgesCount[0]?.count || 0;
-
-    if (countGeneralJudges < MINIMUM_JUDGES_PER_PROJECT) {
+    if (generalJudgesCount < MINIMUM_JUDGES_PER_PROJECT) {
       return {
         success: false,
-        error: `There must be at least ${MINIMUM_JUDGES_PER_PROJECT} General judges. Currently have ${countGeneralJudges}.`,
+        error: `There must be at least ${MINIMUM_JUDGES_PER_PROJECT} General judges. Currently have ${generalJudgesCount}.`,
       };
     }
 
