@@ -75,7 +75,7 @@ function StarRating({
 
 function ProjectScoreForm({
   projectId,
-  isSponsor,
+  shouldShowCategoryRelevanceScoring,
   localScores,
   localRelevance,
   saving,
@@ -83,7 +83,7 @@ function ProjectScoreForm({
   onRelevanceChange,
 }: {
   projectId: string;
-  isSponsor: boolean;
+  shouldShowCategoryRelevanceScoring: boolean;
   localScores: Record<string, (number | null)[]>;
   localRelevance: Record<string, number>;
   saving: string | null;
@@ -101,7 +101,7 @@ function ProjectScoreForm({
           disabled={saving === `${projectId}-${scoreIndex}`}
         />
       ))}
-      {isSponsor && (
+      {shouldShowCategoryRelevanceScoring && (
         <StarRating
           label="Relevance"
           score={
@@ -123,6 +123,7 @@ export function ScoringInterface({
   categoryType,
 }: ScoringInterfaceProps) {
   const isSponsor = categoryType === "Sponsor";
+  const isInhouse = categoryType === "Inhouse";
   const isGeneral = categoryType === "General";
 
   const [saving, setSaving] = useState<string | null>(null);
@@ -230,7 +231,7 @@ export function ScoringInterface({
               <div className="space-y-3 border-t border-slate-100 pt-4">
                 <ProjectScoreForm
                   projectId={project.id}
-                  isSponsor={isSponsor}
+                  shouldShowCategoryRelevanceScoring={isSponsor || isInhouse}
                   localScores={localScores}
                   localRelevance={localRelevance}
                   saving={saving}
@@ -281,7 +282,7 @@ export function ScoringInterface({
               <p className="text-sm font-medium text-slate-700">Scores</p>
               <ProjectScoreForm
                 projectId={selectedProject.id}
-                isSponsor={isSponsor}
+                shouldShowCategoryRelevanceScoring={isSponsor || isInhouse}
                 localScores={localScores}
                 localRelevance={localRelevance}
                 saving={saving}
