@@ -73,6 +73,8 @@ function StarRating({
   );
 }
 
+const SCORE_LABELS = ["Originality", "Execution", "Impact"];
+
 function ProjectScoreForm({
   projectId,
   shouldShowCategoryRelevanceScoring,
@@ -95,7 +97,7 @@ function ProjectScoreForm({
       {[0, 1, 2].map((scoreIndex) => (
         <StarRating
           key={scoreIndex}
-          label={`Score ${scoreIndex + 1}`}
+          label={SCORE_LABELS[scoreIndex]}
           score={localScores[projectId]?.[scoreIndex] ?? null}
           onChange={(score) => onScoreChange(projectId, scoreIndex, score)}
           disabled={saving === `${projectId}-${scoreIndex}`}

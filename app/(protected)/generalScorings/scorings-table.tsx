@@ -173,21 +173,21 @@ export function ScoringsTable({
               onSort={handleSort}
             />
             <SortableHeader
-              label="Score 1"
+              label="Originality"
               sortKey="score1"
               currentSortKey={sortKey}
               currentSortDir={sortDir}
               onSort={handleSort}
             />
             <SortableHeader
-              label="Score 2"
+              label="Execution"
               sortKey="score2"
               currentSortKey={sortKey}
               currentSortDir={sortDir}
               onSort={handleSort}
             />
             <SortableHeader
-              label="Score 3"
+              label="Impact"
               sortKey="score3"
               currentSortKey={sortKey}
               currentSortDir={sortDir}
