@@ -37,14 +37,19 @@ interface RawEvent {
 
 interface RawRegistration {
   id: string;
-  eventId: string;
-  participantId: string;
+  event_id?: string;
+  participant_id?: string;
+  eventId?: string;
+  participantId?: string;
   checkedInAt?: string | null;
+  registered_at?: string | null;
 }
 
 interface RawParticipant {
   id: string;
-  name: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string | null;
 }
 
@@ -57,19 +62,37 @@ interface RawEventStatsResponse {
   lastUpdated?: string;
 }
 
+function normalizeRegistration(reg: RawRegistration) {
+  return {
+    id: reg.id,
+    eventId: reg.eventId ?? reg.event_id ?? "",
+    participantId: reg.participantId ?? reg.participant_id ?? "",
+  };
+}
+
+function participantDisplayName(p?: RawParticipant) {
+  if (!p) return "Unknown participant";
+  if (p.name && p.name.trim().length > 0) return p.name;
+  const full = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim();
+  return full.length > 0 ? full : "Unknown participant";
+}
+
 function toGroupStats(
   eventsList: RawEvent[],
   registrations: RawRegistration[],
   participantsMap: Record<string, RawParticipant>
 ): GroupStat[] {
+  // Normalize registrations once for all events
+  const normalizedRegs = registrations.map(normalizeRegistration);
+
   return eventsList.map((event) => {
-    const eventRegs = registrations.filter((r) => r.eventId === event.id);
+    const eventRegs = normalizedRegs.filter((r) => r.eventId === event.id);
 
     const attendees: CheckinAttendee[] = eventRegs.map((reg) => {
       const p = participantsMap[reg.participantId];
       return {
         id: reg.participantId,
-        name: p?.name ?? "Unknown participant",
+        name: participantDisplayName(p),
         email: p?.email ?? undefined,
       };
     });
@@ -205,8 +228,8 @@ export default function EventStatsPage() {
         </TabsList>
 
         <TabsContent value="workshops" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-1">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.4fr]">
+            <Card>
               <CardHeader>
                 <CardTitle>Workshops</CardTitle>
               </CardHeader>
@@ -250,7 +273,7 @@ export default function EventStatsPage() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card>
               <CardHeader>
                 <CardTitle>
                   {selectedWorkshop
@@ -263,14 +286,6 @@ export default function EventStatsPage() {
                   <p className="text-sm text-muted-foreground">Select a workshop to view who checked in.</p>
                 ) : (
                   <>
-                    <div className="mb-3">
-                      <Input
-                        placeholder="Search by name or email"
-                        value={searchWorkshop}
-                        onChange={(e) => setSearchWorkshop(e.target.value)}
-                      />
-                    </div>
-
                     <div className="max-h-[420px] overflow-auto rounded-md border">
                       <table className="w-full text-sm">
                         <thead className="bg-muted/40">
@@ -305,8 +320,8 @@ export default function EventStatsPage() {
         </TabsContent>
 
         <TabsContent value="food" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-1">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.4fr]">
+            <Card>
               <CardHeader>
                 <CardTitle>Food Checkpoints</CardTitle>
               </CardHeader>
@@ -337,7 +352,7 @@ export default function EventStatsPage() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card>
               <CardHeader>
                 <CardTitle>
                   {selectedFood
@@ -352,14 +367,6 @@ export default function EventStatsPage() {
                   </p>
                 ) : (
                   <>
-                    <div className="mb-3">
-                      <Input
-                        placeholder="Search by name or email"
-                        value={searchFood}
-                        onChange={(e) => setSearchFood(e.target.value)}
-                      />
-                    </div>
-
                     <div className="max-h-[420px] overflow-auto rounded-md border">
                       <table className="w-full text-sm">
                         <thead className="bg-muted/40">
