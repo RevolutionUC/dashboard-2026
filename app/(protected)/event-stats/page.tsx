@@ -258,15 +258,8 @@ export default function EventStatsPage() {
                         <Badge variant="secondary">{workshop.checkedIn}</Badge>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {total > 0
-                          ? `${workshop.checkedIn} / ${total} checked in`
-                          : `${workshop.checkedIn} checked in`}
+                        {`${workshop.checkedIn} checked in`}
                       </p>
-                      {total > 0 && (
-                        <div className="mt-2 h-1.5 rounded bg-muted">
-                          <div className="h-1.5 rounded bg-primary" style={{ width: `${percent}%` }} />
-                        </div>
-                      )}
                     </button>
                   );
                 })}
