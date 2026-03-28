@@ -1,0 +1,355 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+const POLL_INTERVAL = 5000; // 5 seconds
+
+interface CheckinAttendee {
+  id: string;
+  name: string;
+  email?: string;
+  checkedInAt?: string;
+}
+
+interface GroupStat {
+  id: string;
+  name: string;
+  checkedIn: number;
+  totalRegistered?: number;
+  attendees: CheckinAttendee[];
+}
+
+interface EventStatsResponse {
+  workshops: GroupStat[];
+  food: GroupStat[];
+  lastUpdated?: string;
+}
+
+function formatTime(ts?: string) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString();
+}
+
+export default function EventStatsPage() {
+  const [data, setData] = useState<EventStatsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedWorkshopId, setSelectedWorkshopId] = useState<string | null>(null);
+  const [selectedFoodId, setSelectedFoodId] = useState<string | null>(null);
+
+  const [searchWorkshop, setSearchWorkshop] = useState("");
+  const [searchFood, setSearchFood] = useState("");
+
+  const fetchStats = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false;
+
+    try {
+      if (!silent) setIsLoading(true);
+      else setIsRefreshing(true);
+
+      // Replace this endpoint with your real grouped stats endpoint
+      // Example: /api/dashboard/event-stats
+      const response = await fetch("/api/dashboard/event-stats");
+      if (!response.ok) throw new Error("Failed to fetch event stats");
+      const json = (await response.json()) as EventStatsResponse;
+
+      setData(json);
+      setError(null);
+
+      // Keep selected item if it still exists, otherwise default to first
+      if (json.workshops.length > 0) {
+        setSelectedWorkshopId((prev) =>
+          prev && json.workshops.some((w) => w.id === prev) ? prev : json.workshops[0].id
+        );
+      } else {
+        setSelectedWorkshopId(null);
+      }
+
+      if (json.food.length > 0) {
+        setSelectedFoodId((prev) =>
+          prev && json.food.some((f) => f.id === prev) ? prev : json.food[0].id
+        );
+      } else {
+        setSelectedFoodId(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load event stats");
+      console.error("Error fetching event stats:", err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats({ silent: false });
+
+    const interval = setInterval(() => {
+      fetchStats({ silent: true });
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const selectedWorkshop = useMemo(
+    () => data?.workshops.find((w) => w.id === selectedWorkshopId) ?? null,
+    [data?.workshops, selectedWorkshopId]
+  );
+
+  const selectedFood = useMemo(
+    () => data?.food.find((f) => f.id === selectedFoodId) ?? null,
+    [data?.food, selectedFoodId]
+  );
+
+  const filteredWorkshopAttendees = useMemo(() => {
+    const attendees = selectedWorkshop?.attendees ?? [];
+    const q = searchWorkshop.trim().toLowerCase();
+    if (!q) return attendees;
+    return attendees.filter((a) =>
+      `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q)
+    );
+  }, [selectedWorkshop, searchWorkshop]);
+
+  const filteredFoodAttendees = useMemo(() => {
+    const attendees = selectedFood?.attendees ?? [];
+    const q = searchFood.trim().toLowerCase();
+    if (!q) return attendees;
+    return attendees.filter((a) =>
+      `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q)
+    );
+  }, [selectedFood, searchFood]);
+
+  return (
+    <main className="p-6 sm:p-8">
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Event Stats</h1>
+          <p className="text-sm text-muted-foreground">
+            Live check-ins for workshops and food
+            {isLoading && " (loading...)"}{" "}
+            {isRefreshing && !isLoading && " (updating...)"}{" "}
+            {error && ` (error: ${error})`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">Live</Badge>
+          <span className="text-xs text-muted-foreground">
+            Last updated: {formatTime(data?.lastUpdated)}
+          </span>
+          <Button variant="outline" size="sm" onClick={() => fetchStats({ silent: false })}>
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="workshops" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="workshops">Workshops</TabsTrigger>
+          <TabsTrigger value="food">Food</TabsTrigger>
+        </TabsList>
+
+        {/* Workshops tab */}
+        <TabsContent value="workshops" className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Workshops</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(data?.workshops ?? []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No workshop data yet.</p>
+                )}
+
+                {(data?.workshops ?? []).map((workshop) => {
+                  const selected = workshop.id === selectedWorkshopId;
+                  const total = workshop.totalRegistered ?? 0;
+                  const percent = total > 0 ? Math.min(100, Math.round((workshop.checkedIn / total) * 100)) : 0;
+
+                  return (
+                    <button
+                      key={workshop.id}
+                      type="button"
+                      onClick={() => setSelectedWorkshopId(workshop.id)}
+                      className={`w-full rounded-md border p-3 text-left transition ${
+                        selected ? "border-primary bg-primary/5" : "hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">{workshop.name}</p>
+                        <Badge variant="secondary">{workshop.checkedIn}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {total > 0 ? `${workshop.checkedIn} / ${total} checked in` : `${workshop.checkedIn} checked in`}
+                      </p>
+                      {total > 0 && (
+                        <div className="mt-2 h-1.5 rounded bg-muted">
+                          <div className="h-1.5 rounded bg-primary" style={{ width: `${percent}%` }} />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>
+                  {selectedWorkshop
+                    ? `${selectedWorkshop.name} — ${selectedWorkshop.checkedIn} checked in`
+                    : "Workshop attendees"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!selectedWorkshop ? (
+                  <p className="text-sm text-muted-foreground">Select a workshop to view who checked in.</p>
+                ) : (
+                  <>
+                    <div className="mb-3">
+                      <Input
+                        placeholder="Search by name or email"
+                        value={searchWorkshop}
+                        onChange={(e) => setSearchWorkshop(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="max-h-[420px] overflow-auto rounded-md border">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/40">
+                          <tr className="text-left">
+                            <th className="px-3 py-2 font-medium">Name</th>
+                            <th className="px-3 py-2 font-medium">Email</th>
+                            <th className="px-3 py-2 font-medium">Checked in at</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredWorkshopAttendees.length === 0 ? (
+                            <tr>
+                              <td className="px-3 py-3 text-muted-foreground" colSpan={3}>
+                                No attendees found.
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredWorkshopAttendees.map((a) => (
+                              <tr key={a.id} className="border-t">
+                                <td className="px-3 py-2">{a.name}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{a.email || "—"}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{formatTime(a.checkedInAt)}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Food tab */}
+        <TabsContent value="food" className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Food Checkpoints</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(data?.food ?? []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No food check-in data yet.</p>
+                )}
+
+                {(data?.food ?? []).map((meal) => {
+                  const selected = meal.id === selectedFoodId;
+                  return (
+                    <button
+                      key={meal.id}
+                      type="button"
+                      onClick={() => setSelectedFoodId(meal.id)}
+                      className={`w-full rounded-md border p-3 text-left transition ${
+                        selected ? "border-primary bg-primary/5" : "hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">{meal.name}</p>
+                        <Badge variant="secondary">{meal.checkedIn}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {meal.checkedIn} checked in
+                      </p>
+                    </button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>
+                  {selectedFood
+                    ? `${selectedFood.name} — ${selectedFood.checkedIn} checked in`
+                    : "Food check-ins"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!selectedFood ? (
+                  <p className="text-sm text-muted-foreground">Select a food checkpoint to view who checked in.</p>
+                ) : (
+                  <>
+                    <div className="mb-3">
+                      <Input
+                        placeholder="Search by name or email"
+                        value={searchFood}
+                        onChange={(e) => setSearchFood(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="max-h-[420px] overflow-auto rounded-md border">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/40">
+                          <tr className="text-left">
+                            <th className="px-3 py-2 font-medium">Name</th>
+                            <th className="px-3 py-2 font-medium">Email</th>
+                            <th className="px-3 py-2 font-medium">Checked in at</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredFoodAttendees.length === 0 ? (
+                            <tr>
+                              <td className="px-3 py-3 text-muted-foreground" colSpan={3}>
+                                No attendees found.
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredFoodAttendees.map((a) => (
+                              <tr key={a.id} className="border-t">
+                                <td className="px-3 py-2">{a.name}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{a.email || "—"}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{formatTime(a.checkedInAt)}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </main>
+  );
+}
