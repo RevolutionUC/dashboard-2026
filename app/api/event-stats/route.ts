@@ -27,31 +27,31 @@ export async function GET() {
     const workshopEventIds = workshopEvents.map((e) => e.id);
     const foodEventIds = foodEvents.map((e) => e.id);
     
-    const workshopRegistrations =
+    const [workshopRegistrations, foodRegistrations] = await Promise.all([
       workshopEventIds.length === 0
         ? []
-        : await db
+        : db
             .select({
               id: eventRegistrations.id,
               participant_id: eventRegistrations.participant_id,
               event_id: eventRegistrations.eventId,
-              registered_at: eventRegistrations.registeredAt
+              registered_at: eventRegistrations.registeredAt,
             })
             .from(eventRegistrations)
-            .where(inArray(eventRegistrations.eventId, workshopEventIds))
-    
-    const foodRegistrations =
+            .where(inArray(eventRegistrations.eventId, workshopEventIds)),
       foodEventIds.length === 0
         ? []
-        : await db
+        : db
             .select({
               id: eventRegistrations.id,
               participant_id: eventRegistrations.participant_id,
               event_id: eventRegistrations.eventId,
-              registered_at: eventRegistrations.registeredAt
+              registered_at: eventRegistrations.registeredAt,
             })
             .from(eventRegistrations)
-            .where(inArray(eventRegistrations.eventId, foodEventIds))
+            .where(inArray(eventRegistrations.eventId, foodEventIds)),
+    ]);
+
     
     const participantIds = Array.from(
       new Set(
