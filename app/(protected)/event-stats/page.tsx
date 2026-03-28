@@ -30,6 +30,35 @@ interface EventStatsResponse {
   lastUpdated?: string;
 }
 
+interface RawEvent {
+  id: string;
+  name: string;
+  eventType: "WORKSHOP" | "FOOD" | string;
+}
+
+interface RawRegistration {
+  id: string;
+  eventId: string;
+  participantId: string;
+  checkedInAt?: string | null;
+}
+
+interface RawParticipant {
+  id: string;
+  name: string;
+  email?: string | null;
+}
+
+interface RawEventStatsResponse {
+  workshops: RawEvent[];
+  food: RawEvent[];
+  workshopRegistrations: RawRegistration[];
+  foodRegistrations: RawRegistration[];
+  participants: Record<string, RawParticipant>;
+  lastUpdated?: string;
+}
+
+
 function formatTime(ts?: string) {
   if (!ts) return "—";
   const d = new Date(ts);
@@ -58,25 +87,24 @@ export default function EventStatsPage() {
 
       // Replace this endpoint with your real grouped stats endpoint
       // Example: /api/dashboard/event-stats
-      const response = await fetch("/api/dashboard/event-stats");
+      const response = await fetch("/api/event-stats");
       if (!response.ok) throw new Error("Failed to fetch event stats");
-      const json = (await response.json()) as EventStatsResponse;
-
-      setData(json);
-      setError(null);
+      const raw = (await response.json()) as RawEventStatsResponse;
+      const shaped = shapeEventStatsPayload(raw);
+      setData(shaped);
 
       // Keep selected item if it still exists, otherwise default to first
-      if (json.workshops.length > 0) {
+      if (shaped.workshops.length > 0) {
         setSelectedWorkshopId((prev) =>
-          prev && json.workshops.some((w) => w.id === prev) ? prev : json.workshops[0].id
+          prev && shaped.workshops.some((w) => w.id === prev) ? prev : shaped.workshops[0].id
         );
       } else {
         setSelectedWorkshopId(null);
       }
 
-      if (json.food.length > 0) {
+      if (shaped.food.length > 0) {
         setSelectedFoodId((prev) =>
-          prev && json.food.some((f) => f.id === prev) ? prev : json.food[0].id
+          prev && shaped.food.some((f) => f.id === prev) ? prev : shaped.food[0].id
         );
       } else {
         setSelectedFoodId(null);
@@ -352,4 +380,47 @@ export default function EventStatsPage() {
       </Tabs>
     </main>
   );
+}
+
+function toGroupStats(
+  eventsList: RawEvent[],
+  registrations: RawRegistration[],
+  participantsMap: Record<string, RawParticipant>
+): GroupStat[] {
+  return eventsList.map((event) => {
+    const eventRegs = registrations.filter((r) => r.eventId === event.id);
+
+    const attendees: CheckinAttendee[] = eventRegs.map((reg) => {
+      const p = participantsMap[reg.participantId];
+      return {
+        id: reg.participantId,
+        name: p?.name ?? "Unknown participant",
+        email: p?.email ?? undefined,
+        checkedInAt: reg.checkedInAt ?? undefined,
+      };
+    });
+
+    // newest first (optional, but nice for ops)
+    attendees.sort((a, b) => {
+      const ta = a.checkedInAt ? new Date(a.checkedInAt).getTime() : 0;
+      const tb = b.checkedInAt ? new Date(b.checkedInAt).getTime() : 0;
+      return tb - ta;
+    });
+
+    return {
+      id: event.id,
+      name: event.name,
+      checkedIn: attendees.length,
+      totalRegistered: attendees.length, // if you later add non-checked-in regs, change this
+      attendees,
+    };
+  });
+}
+
+function shapeEventStatsPayload(raw: RawEventStatsResponse): EventStatsResponse {
+  return {
+    workshops: toGroupStats(raw.workshops, raw.workshopRegistrations, raw.participants),
+    food: toGroupStats(raw.food, raw.foodRegistrations, raw.participants),
+    lastUpdated: raw.lastUpdated,
+  };
 }
