@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { getSessionWithRole } from "@/lib/auth";
 import {
     getTemplateById,
     renderTemplateToHtml,
     renderTemplateToText,
 } from "@/lib/templates";
+import { isParticipantStatus } from "@/lib/participant-status";
 import formData from "form-data";
 import Mailgun from "mailgun.js";
 import { db } from "@/lib/db";
@@ -23,6 +25,19 @@ interface SendEmailRequest {
 
 // Templates that use per-recipient confirmation URLs
 const CONFIRM_ATTENDANCE_ID = "confirm-attendance";
+const CHECK_IN_CONFIRMED_ID = "check-in-confirmed";
+const CHECK_IN_WAITLISTED_ID = "check-in-waitlisted";
+const QR_REQUIRED_TEMPLATE_IDS = new Set([
+    CHECK_IN_CONFIRMED_ID,
+    CHECK_IN_WAITLISTED_ID,
+]);
+
+function normalizeQrImageSrc(qrBase64: string | null | undefined): string | null {
+    const trimmed = qrBase64?.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith("data:image/")) return trimmed;
+    return `data:image/png;base64,${trimmed}`;
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -86,6 +101,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (recipientType === "status" && !isParticipantStatus(status)) {
+            return NextResponse.json(
+                { error: "Invalid participant status" },
+                { status: 400 },
+            );
+        }
+
         if (
             recipientType === "specific" &&
             (!specificEmails || specificEmails.length === 0)
@@ -105,35 +127,71 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Fetch recipients and build personalization map (email → {firstName, userId})
+        // Fetch recipients and build personalization map (email → {firstName, userId, qrImageSrc})
         let recipients: string[] = [];
-        const participantMap = new Map<string, { firstName: string; userId: string }>();
+        const participantMap = new Map<
+            string,
+            { firstName: string; userId: string; qrImageSrc: string | null }
+        >();
 
         try {
             if (recipientType === "all") {
                 const allParticipants = await db
-                    .select({ email: participants.email, firstName: participants.firstName, userId: participants.user_id })
+                    .select({
+                        email: participants.email,
+                        firstName: participants.firstName,
+                        userId: participants.user_id,
+                        qrBase64: participants.qrBase64,
+                    })
                     .from(participants);
                 for (const p of allParticipants) {
-                    participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
+                    participantMap.set(p.email, {
+                        firstName: p.firstName,
+                        userId: p.userId,
+                        qrImageSrc: normalizeQrImageSrc(p.qrBase64),
+                    });
                 }
                 recipients = allParticipants.map((p) => p.email);
             } else if (recipientType === "status") {
+                if (!isParticipantStatus(status)) {
+                    return NextResponse.json(
+                        { error: "Invalid participant status" },
+                        { status: 400 },
+                    );
+                }
                 const statusParticipants = await db
-                    .select({ email: participants.email, firstName: participants.firstName, userId: participants.user_id })
+                    .select({
+                        email: participants.email,
+                        firstName: participants.firstName,
+                        userId: participants.user_id,
+                        qrBase64: participants.qrBase64,
+                    })
                     .from(participants)
-                    .where(eq(participants.status, status as any));
+                    .where(eq(participants.status, status));
                 for (const p of statusParticipants) {
-                    participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
+                    participantMap.set(p.email, {
+                        firstName: p.firstName,
+                        userId: p.userId,
+                        qrImageSrc: normalizeQrImageSrc(p.qrBase64),
+                    });
                 }
                 recipients = statusParticipants.map((p) => p.email);
             } else if (recipientType === "specific") {
                 const knownParticipants = await db
-                    .select({ email: participants.email, firstName: participants.firstName, userId: participants.user_id })
+                    .select({
+                        email: participants.email,
+                        firstName: participants.firstName,
+                        userId: participants.user_id,
+                        qrBase64: participants.qrBase64,
+                    })
                     .from(participants)
                     .where(inArray(participants.email, specificEmails ?? []));
                 for (const p of knownParticipants) {
-                    participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
+                    participantMap.set(p.email, {
+                        firstName: p.firstName,
+                        userId: p.userId,
+                        qrImageSrc: normalizeQrImageSrc(p.qrBase64),
+                    });
                 }
                 recipients = specificEmails || [];
             }
@@ -152,6 +210,25 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const isQrTemplate = QR_REQUIRED_TEMPLATE_IDS.has(templateId);
+        if (isQrTemplate) {
+            const missingQrRecipients = recipients.filter((email) => {
+                const participant = participantMap.get(email);
+                return !participant?.qrImageSrc;
+            });
+
+            if (missingQrRecipients.length > 0) {
+                return NextResponse.json(
+                    {
+                        error: "Cannot send QR check-in email because some recipients are missing qrBase64 data",
+                        missingQrCount: missingQrRecipients.length,
+                        missingQrRecipients,
+                    },
+                    { status: 400 },
+                );
+            }
+        }
+
         // Verify template exists
         const template = getTemplateById(templateId);
         if (!template) {
@@ -168,6 +245,9 @@ export async function POST(request: NextRequest) {
                 ...(templateId === CONFIRM_ATTENDANCE_ID && {
                     yesConfirmationUrl: true,
                     noConfirmationUrl: true,
+                }),
+                ...(isQrTemplate && {
+                    qrImageSrc: true,
                 }),
             };
             const unsatisfied = template.requiredProps.filter(
@@ -254,6 +334,9 @@ export async function POST(request: NextRequest) {
                 yesConfirmationUrl: "%recipient.yesUrl%",
                 noConfirmationUrl: "%recipient.noUrl%",
             }),
+            ...(isQrTemplate && {
+                qrImageSrc: "%recipient.qrImageSrc%",
+            }),
         };
 
         const [html, text] = await Promise.all([
@@ -285,6 +368,9 @@ export async function POST(request: NextRequest) {
                     vars.yesUrl = `${baseUrl}/confirm?response=yes`;
                     vars.noUrl = `${baseUrl}/confirm?response=no`;
                 }
+            }
+            if (isQrTemplate && participant?.qrImageSrc) {
+                vars.qrImageSrc = participant.qrImageSrc;
             }
             recipientVariables[email] = vars;
         }
