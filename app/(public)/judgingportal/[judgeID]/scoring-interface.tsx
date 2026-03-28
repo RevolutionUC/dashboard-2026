@@ -73,7 +73,7 @@ function StarRating({
   );
 }
 
-const SCORE_LABELS = ["Originality", "Execution", "Impact"];
+const SCORE_LABELS = ["Originality", "Execution", "Learning"];
 
 function ProjectScoreForm({
   projectId,
