@@ -11,6 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { assignProjectsToJudgeGroups } from "./actions";
 
 export function AssignSubmissionsButton() {
@@ -53,6 +55,18 @@ export function AssignSubmissionsButton() {
         </DialogHeader>
 
         <form action={formAction} className="mt-4 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="minimum-judges-input">Minimum Judges per Project</Label>
+            <Input
+              id="minimum-judges-input"
+              name="minimumJudges"
+              type="number"
+              min="1"
+              defaultValue="6"
+              required
+            />
+          </div>
+
           <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
             <p className="font-medium mb-2">Assignment Logic:</p>
             <ul className="list-disc list-inside space-y-1">

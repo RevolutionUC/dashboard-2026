@@ -14,8 +14,6 @@ import {
 } from "@/lib/db/schema";
 import { RotatingQueue } from "@/lib/rotating-queue";
 
-const MINIMUM_JUDGES_PER_PROJECT = 6;
-
 const SUGGESTED_JUDGE_GROUP_COUNT_PER_SUBMISSION_BASED_ON_CATEGORY_TYPE = {
   General: 1,
   Inhouse: 2,
@@ -34,7 +32,12 @@ interface AssignmentToInsert {
   judgeGroupId: number;
 }
 
-export async function assignProjectsToJudgeGroups() {
+export async function assignProjectsToJudgeGroups(
+  prevState: { success?: boolean; error?: string } | null,
+  formData: FormData,
+) {
+  const minimumJudgesPerProject = Number(formData.get("minimumJudges")) || 6;
+
   try {
     await assertAuthorization();
 
@@ -64,10 +67,10 @@ export async function assignProjectsToJudgeGroups() {
       .from(judges)
       .where(eq(judges.categoryId, generalCategoryId));
 
-    if (generalJudgesCount < MINIMUM_JUDGES_PER_PROJECT) {
+    if (generalJudgesCount < minimumJudgesPerProject) {
       return {
         success: false,
-        error: `There must be at least ${MINIMUM_JUDGES_PER_PROJECT} General judges. Currently have ${generalJudgesCount}.`,
+        error: `There must be at least ${minimumJudgesPerProject} General judges. Currently have ${generalJudgesCount}.`,
       };
     }
 
@@ -100,7 +103,7 @@ export async function assignProjectsToJudgeGroups() {
       };
     }
 
-    // Phase 1: Assign submissions to judge groups based on category
+    // Phase 1: Assign submissions to judge groups based on category (except General submissions)
     // We use round-robin to assign projects across judge groups.
     // So we create rotating queues of groups per category help easily distribute projects into different groups continously
     const groupsQueueByCategory = judgeGroupsWithCounts.reduce((acc, group) => {
@@ -114,6 +117,9 @@ export async function assignProjectsToJudgeGroups() {
     const assignmentList: Array<{ projectId: string; judgeGroup: JudgeGroupWithCount }> = [];
 
     for (const submission of allSubmissions) {
+      if (submission.categoryId === 'general') {
+          continue
+      }
       const groupsQueue = groupsQueueByCategory.get(submission.categoryId);
       if (!groupsQueue || groupsQueue.length === 0) {
         continue; // Skip if no judge groups for this category
@@ -153,7 +159,7 @@ export async function assignProjectsToJudgeGroups() {
 
         // If less judges than desired minimum, we use a while loop to continously assign additional General groups until achieved desire count
         let safetyCounterToPreventInfiniteLoop = 0;
-        while (howManyJudgesAlready < MINIMUM_JUDGES_PER_PROJECT && safetyCounterToPreventInfiniteLoop < 100) {
+        while (howManyJudgesAlready < minimumJudgesPerProject && safetyCounterToPreventInfiniteLoop < 100) {
           const nextGeneralGroup = generalGroupQueue.getNext();
 
           if (alreadyUsedGroupIds.has(nextGeneralGroup.id)) continue
@@ -179,7 +185,7 @@ export async function assignProjectsToJudgeGroups() {
     const projectsWithInsufficientJudges: string[] = [];
 
     for (const [projectId, judgeCount] of judgeCountPerProject) {
-      if (judgeCount < MINIMUM_JUDGES_PER_PROJECT) {
+      if (judgeCount < minimumJudgesPerProject) {
         projectsWithInsufficientJudges.push(projectId);
       }
     }
@@ -188,7 +194,7 @@ export async function assignProjectsToJudgeGroups() {
       const projectList = projectsWithInsufficientJudges.join('\n');
       return {
         success: false,
-        error: `${projectsWithInsufficientJudges.length} project(s) have less than ${MINIMUM_JUDGES_PER_PROJECT} judges). Projects: ${projectList}`,
+        error: `${projectsWithInsufficientJudges.length} project(s) have less than ${minimumJudgesPerProject} judges). Projects: ${projectList}`,
       };
     }
 
