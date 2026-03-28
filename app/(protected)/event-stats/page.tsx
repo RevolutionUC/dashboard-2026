@@ -13,7 +13,6 @@ interface CheckinAttendee {
   id: string;
   name: string;
   email?: string;
-  checkedInAt?: string;
 }
 
 interface GroupStat {
@@ -27,9 +26,9 @@ interface GroupStat {
 interface EventStatsResponse {
   workshops: GroupStat[];
   food: GroupStat[];
-  lastUpdated?: string;
 }
 
+/** Raw API payload from /api/event-stats */
 interface RawEvent {
   id: string;
   name: string;
@@ -58,12 +57,38 @@ interface RawEventStatsResponse {
   lastUpdated?: string;
 }
 
+function toGroupStats(
+  eventsList: RawEvent[],
+  registrations: RawRegistration[],
+  participantsMap: Record<string, RawParticipant>
+): GroupStat[] {
+  return eventsList.map((event) => {
+    const eventRegs = registrations.filter((r) => r.eventId === event.id);
 
-function formatTime(ts?: string) {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString();
+    const attendees: CheckinAttendee[] = eventRegs.map((reg) => {
+      const p = participantsMap[reg.participantId];
+      return {
+        id: reg.participantId,
+        name: p?.name ?? "Unknown participant",
+        email: p?.email ?? undefined,
+      };
+    });
+
+    return {
+      id: event.id,
+      name: event.name,
+      checkedIn: attendees.length,
+      totalRegistered: attendees.length,
+      attendees,
+    };
+  });
+}
+
+function shapeEventStatsPayload(raw: RawEventStatsResponse): EventStatsResponse {
+  return {
+    workshops: toGroupStats(raw.workshops, raw.workshopRegistrations, raw.participants),
+    food: toGroupStats(raw.food, raw.foodRegistrations, raw.participants),
+  };
 }
 
 export default function EventStatsPage() {
@@ -85,13 +110,14 @@ export default function EventStatsPage() {
       if (!silent) setIsLoading(true);
       else setIsRefreshing(true);
 
-      // Replace this endpoint with your real grouped stats endpoint
-      // Example: /api/dashboard/event-stats
       const response = await fetch("/api/event-stats");
       if (!response.ok) throw new Error("Failed to fetch event stats");
+
       const raw = (await response.json()) as RawEventStatsResponse;
       const shaped = shapeEventStatsPayload(raw);
+
       setData(shaped);
+      setError(null);
 
       // Keep selected item if it still exists, otherwise default to first
       if (shaped.workshops.length > 0) {
@@ -142,18 +168,14 @@ export default function EventStatsPage() {
     const attendees = selectedWorkshop?.attendees ?? [];
     const q = searchWorkshop.trim().toLowerCase();
     if (!q) return attendees;
-    return attendees.filter((a) =>
-      `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q)
-    );
+    return attendees.filter((a) => `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q));
   }, [selectedWorkshop, searchWorkshop]);
 
   const filteredFoodAttendees = useMemo(() => {
     const attendees = selectedFood?.attendees ?? [];
     const q = searchFood.trim().toLowerCase();
     if (!q) return attendees;
-    return attendees.filter((a) =>
-      `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q)
-    );
+    return attendees.filter((a) => `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q));
   }, [selectedFood, searchFood]);
 
   return (
@@ -162,7 +184,7 @@ export default function EventStatsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Event Stats</h1>
           <p className="text-sm text-muted-foreground">
-            Live check-ins for workshops and food
+            Check-ins for workshops and food
             {isLoading && " (loading...)"}{" "}
             {isRefreshing && !isLoading && " (updating...)"}{" "}
             {error && ` (error: ${error})`}
@@ -170,10 +192,6 @@ export default function EventStatsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">Live</Badge>
-          <span className="text-xs text-muted-foreground">
-            Last updated: {formatTime(data?.lastUpdated)}
-          </span>
           <Button variant="outline" size="sm" onClick={() => fetchStats({ silent: false })}>
             Refresh
           </Button>
@@ -186,7 +204,6 @@ export default function EventStatsPage() {
           <TabsTrigger value="food">Food</TabsTrigger>
         </TabsList>
 
-        {/* Workshops tab */}
         <TabsContent value="workshops" className="space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-1">
@@ -201,7 +218,8 @@ export default function EventStatsPage() {
                 {(data?.workshops ?? []).map((workshop) => {
                   const selected = workshop.id === selectedWorkshopId;
                   const total = workshop.totalRegistered ?? 0;
-                  const percent = total > 0 ? Math.min(100, Math.round((workshop.checkedIn / total) * 100)) : 0;
+                  const percent =
+                    total > 0 ? Math.min(100, Math.round((workshop.checkedIn / total) * 100)) : 0;
 
                   return (
                     <button
@@ -217,7 +235,9 @@ export default function EventStatsPage() {
                         <Badge variant="secondary">{workshop.checkedIn}</Badge>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {total > 0 ? `${workshop.checkedIn} / ${total} checked in` : `${workshop.checkedIn} checked in`}
+                        {total > 0
+                          ? `${workshop.checkedIn} / ${total} checked in`
+                          : `${workshop.checkedIn} checked in`}
                       </p>
                       {total > 0 && (
                         <div className="mt-2 h-1.5 rounded bg-muted">
@@ -257,13 +277,12 @@ export default function EventStatsPage() {
                           <tr className="text-left">
                             <th className="px-3 py-2 font-medium">Name</th>
                             <th className="px-3 py-2 font-medium">Email</th>
-                            <th className="px-3 py-2 font-medium">Checked in at</th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredWorkshopAttendees.length === 0 ? (
                             <tr>
-                              <td className="px-3 py-3 text-muted-foreground" colSpan={3}>
+                              <td className="px-3 py-3 text-muted-foreground" colSpan={2}>
                                 No attendees found.
                               </td>
                             </tr>
@@ -272,7 +291,6 @@ export default function EventStatsPage() {
                               <tr key={a.id} className="border-t">
                                 <td className="px-3 py-2">{a.name}</td>
                                 <td className="px-3 py-2 text-muted-foreground">{a.email || "—"}</td>
-                                <td className="px-3 py-2 text-muted-foreground">{formatTime(a.checkedInAt)}</td>
                               </tr>
                             ))
                           )}
@@ -286,7 +304,6 @@ export default function EventStatsPage() {
           </div>
         </TabsContent>
 
-        {/* Food tab */}
         <TabsContent value="food" className="space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-1">
@@ -313,9 +330,7 @@ export default function EventStatsPage() {
                         <p className="font-medium">{meal.name}</p>
                         <Badge variant="secondary">{meal.checkedIn}</Badge>
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {meal.checkedIn} checked in
-                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">{meal.checkedIn} checked in</p>
                     </button>
                   );
                 })}
@@ -332,7 +347,9 @@ export default function EventStatsPage() {
               </CardHeader>
               <CardContent>
                 {!selectedFood ? (
-                  <p className="text-sm text-muted-foreground">Select a food checkpoint to view who checked in.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Select a food checkpoint to view who checked in.
+                  </p>
                 ) : (
                   <>
                     <div className="mb-3">
@@ -349,13 +366,12 @@ export default function EventStatsPage() {
                           <tr className="text-left">
                             <th className="px-3 py-2 font-medium">Name</th>
                             <th className="px-3 py-2 font-medium">Email</th>
-                            <th className="px-3 py-2 font-medium">Checked in at</th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredFoodAttendees.length === 0 ? (
                             <tr>
-                              <td className="px-3 py-3 text-muted-foreground" colSpan={3}>
+                              <td className="px-3 py-3 text-muted-foreground" colSpan={2}>
                                 No attendees found.
                               </td>
                             </tr>
@@ -364,7 +380,6 @@ export default function EventStatsPage() {
                               <tr key={a.id} className="border-t">
                                 <td className="px-3 py-2">{a.name}</td>
                                 <td className="px-3 py-2 text-muted-foreground">{a.email || "—"}</td>
-                                <td className="px-3 py-2 text-muted-foreground">{formatTime(a.checkedInAt)}</td>
                               </tr>
                             ))
                           )}
@@ -380,47 +395,4 @@ export default function EventStatsPage() {
       </Tabs>
     </main>
   );
-}
-
-function toGroupStats(
-  eventsList: RawEvent[],
-  registrations: RawRegistration[],
-  participantsMap: Record<string, RawParticipant>
-): GroupStat[] {
-  return eventsList.map((event) => {
-    const eventRegs = registrations.filter((r) => r.eventId === event.id);
-
-    const attendees: CheckinAttendee[] = eventRegs.map((reg) => {
-      const p = participantsMap[reg.participantId];
-      return {
-        id: reg.participantId,
-        name: p?.name ?? "Unknown participant",
-        email: p?.email ?? undefined,
-        checkedInAt: reg.checkedInAt ?? undefined,
-      };
-    });
-
-    // newest first (optional, but nice for ops)
-    attendees.sort((a, b) => {
-      const ta = a.checkedInAt ? new Date(a.checkedInAt).getTime() : 0;
-      const tb = b.checkedInAt ? new Date(b.checkedInAt).getTime() : 0;
-      return tb - ta;
-    });
-
-    return {
-      id: event.id,
-      name: event.name,
-      checkedIn: attendees.length,
-      totalRegistered: attendees.length, // if you later add non-checked-in regs, change this
-      attendees,
-    };
-  });
-}
-
-function shapeEventStatsPayload(raw: RawEventStatsResponse): EventStatsResponse {
-  return {
-    workshops: toGroupStats(raw.workshops, raw.workshopRegistrations, raw.participants),
-    food: toGroupStats(raw.food, raw.foodRegistrations, raw.participants),
-    lastUpdated: raw.lastUpdated,
-  };
 }
