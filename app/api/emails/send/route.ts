@@ -32,11 +32,50 @@ const QR_REQUIRED_TEMPLATE_IDS = new Set([
     CHECK_IN_WAITLISTED_ID,
 ]);
 
-function normalizeQrImageSrc(qrBase64: string | null | undefined): string | null {
+const MAX_QR_IMAGE_BYTES = 1_500_000;
+
+interface InlineQrImage {
+    src: string;
+    filename: string;
+    data: Buffer;
+}
+
+interface ParticipantEmailData {
+    firstName: string;
+    userId: string;
+    qrInline: InlineQrImage | null;
+}
+
+function normalizeQrBase64(qrBase64: string | null | undefined): string | null {
     const trimmed = qrBase64?.trim();
     if (!trimmed) return null;
-    if (trimmed.startsWith("data:image/")) return trimmed;
-    return `data:image/png;base64,${trimmed}`;
+    if (trimmed.startsWith("data:image/")) {
+        const parts = trimmed.split(",", 2);
+        return parts[1]?.trim() || null;
+    }
+    return trimmed;
+}
+
+function buildQrInlineImage(
+    userId: string,
+    qrBase64: string | null | undefined,
+): InlineQrImage | null {
+    const normalized = normalizeQrBase64(qrBase64);
+    if (!normalized) return null;
+
+    const compact = normalized.replace(/\s+/g, "");
+    const data = Buffer.from(compact, "base64");
+    if (!data.length || data.length > MAX_QR_IMAGE_BYTES) return null;
+
+    const safeUserId = userId.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filename = `qr-${safeUserId}.png`;
+    const cid = filename;
+
+    return {
+        src: `cid:${cid}`,
+        filename,
+        data,
+    };
 }
 
 export async function POST(request: NextRequest) {
@@ -127,11 +166,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Fetch recipients and build personalization map (email → {firstName, userId, qrImageSrc})
+        // Fetch recipients and build personalization map (email → participant data)
         let recipients: string[] = [];
         const participantMap = new Map<
             string,
-            { firstName: string; userId: string; qrImageSrc: string | null }
+            ParticipantEmailData
         >();
 
         try {
@@ -148,7 +187,7 @@ export async function POST(request: NextRequest) {
                     participantMap.set(p.email, {
                         firstName: p.firstName,
                         userId: p.userId,
-                        qrImageSrc: normalizeQrImageSrc(p.qrBase64),
+                        qrInline: buildQrInlineImage(p.userId, p.qrBase64),
                     });
                 }
                 recipients = allParticipants.map((p) => p.email);
@@ -172,7 +211,7 @@ export async function POST(request: NextRequest) {
                     participantMap.set(p.email, {
                         firstName: p.firstName,
                         userId: p.userId,
-                        qrImageSrc: normalizeQrImageSrc(p.qrBase64),
+                        qrInline: buildQrInlineImage(p.userId, p.qrBase64),
                     });
                 }
                 recipients = statusParticipants.map((p) => p.email);
@@ -190,7 +229,7 @@ export async function POST(request: NextRequest) {
                     participantMap.set(p.email, {
                         firstName: p.firstName,
                         userId: p.userId,
-                        qrImageSrc: normalizeQrImageSrc(p.qrBase64),
+                        qrInline: buildQrInlineImage(p.userId, p.qrBase64),
                     });
                 }
                 recipients = specificEmails || [];
@@ -214,7 +253,7 @@ export async function POST(request: NextRequest) {
         if (isQrTemplate) {
             const missingQrRecipients = recipients.filter((email) => {
                 const participant = participantMap.get(email);
-                return !participant?.qrImageSrc;
+                return !participant?.qrInline;
             });
 
             if (missingQrRecipients.length > 0) {
@@ -325,32 +364,6 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Render template once with Mailgun recipient-variable placeholders.
-        // Mailgun substitutes %recipient.X% per delivery, so each recipient
-        // sees their own personalized content with a single render + API call.
-        const templateProps: Record<string, string | boolean | undefined> = {
-            firstName: "%recipient.firstName%",
-            ...(isConfirmAttendance && {
-                yesConfirmationUrl: "%recipient.yesUrl%",
-                noConfirmationUrl: "%recipient.noUrl%",
-            }),
-            ...(isQrTemplate && {
-                qrImageSrc: "%recipient.qrImageSrc%",
-            }),
-        };
-
-        const [html, text] = await Promise.all([
-            renderTemplateToHtml(templateId, templateProps),
-            renderTemplateToText(templateId, templateProps),
-        ]);
-
-        if (!html || !text) {
-            return NextResponse.json(
-                { error: "Failed to render email template" },
-                { status: 500 },
-            );
-        }
-
         // Build per-recipient variable map for Mailgun substitution
         const recipientVariables: Record<string, Record<string, string>> = {};
         for (const email of recipients) {
@@ -369,8 +382,8 @@ export async function POST(request: NextRequest) {
                     vars.noUrl = `${baseUrl}/confirm?response=no`;
                 }
             }
-            if (isQrTemplate && participant?.qrImageSrc) {
-                vars.qrImageSrc = participant.qrImageSrc;
+            if (isQrTemplate && participant?.qrInline) {
+                vars.qrImageSrc = participant.qrInline.src;
             }
             recipientVariables[email] = vars;
         }
@@ -386,53 +399,142 @@ export async function POST(request: NextRequest) {
         const fromEmail =
             process.env.MAILGUN_FROM_EMAIL || "info@revolutionuc.com";
 
-        // Send in batches of 1000 (Mailgun's limit)
-        const BATCH_SIZE = 1000;
         const results = [];
 
-        for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-            const batch = recipients.slice(i, i + BATCH_SIZE);
-            const batchVars = Object.fromEntries(
-                batch.map((email) => [
-                    email,
-                    recipientVariables[email] ?? { firstName: "Hacker" },
-                ]),
-            );
+        if (isQrTemplate) {
+            for (const email of recipients) {
+                const participant = participantMap.get(email);
+                const qrInline = participant?.qrInline;
+                const vars = recipientVariables[email] ?? { firstName: "Hacker" };
 
-            try {
-                const response = await mg.messages.create(mailgunDomain, {
-                    from: fromEmail,
-                    to: batch,
-                    subject: emailSubject,
-                    html: html,
-                    text: text,
-                    "recipient-variables": JSON.stringify(batchVars),
-                });
+                if (!qrInline) {
+                    results.push({
+                        recipient: email,
+                        success: false,
+                        error: "Missing QR image data",
+                    });
+                    continue;
+                }
 
-                console.log(
-                    `Batch ${Math.floor(i / BATCH_SIZE) + 1} sent (${batch.length} recipients):`,
-                    response.id,
+                const [html, text] = await Promise.all([
+                    renderTemplateToHtml(templateId, {
+                        firstName: vars.firstName,
+                        qrImageSrc: qrInline.src,
+                    }),
+                    renderTemplateToText(templateId, {
+                        firstName: vars.firstName,
+                        qrImageSrc: qrInline.src,
+                    }),
+                ]);
+
+                if (!html || !text) {
+                    results.push({
+                        recipient: email,
+                        success: false,
+                        error: "Failed to render email template",
+                    });
+                    continue;
+                }
+
+                try {
+                    const response = await mg.messages.create(mailgunDomain, {
+                        from: fromEmail,
+                        to: email,
+                        subject: emailSubject,
+                        html,
+                        text,
+                        inline: [
+                            {
+                                filename: qrInline.filename,
+                                data: qrInline.data,
+                            },
+                        ],
+                    });
+
+                    console.log(`QR email sent to ${email}:`, response.id);
+                    results.push({
+                        recipient: email,
+                        success: true,
+                        messageId: response.id,
+                    });
+                } catch (error) {
+                    console.error(`QR email send failed for ${email}:`, error);
+                    results.push({
+                        recipient: email,
+                        success: false,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : "Unknown error",
+                    });
+                }
+            }
+        } else {
+            const BATCH_SIZE = 1000;
+            const templateProps: Record<string, string | boolean | undefined> = {
+                firstName: "%recipient.firstName%",
+                ...(isConfirmAttendance && {
+                    yesConfirmationUrl: "%recipient.yesUrl%",
+                    noConfirmationUrl: "%recipient.noUrl%",
+                }),
+            };
+
+            const [html, text] = await Promise.all([
+                renderTemplateToHtml(templateId, templateProps),
+                renderTemplateToText(templateId, templateProps),
+            ]);
+
+            if (!html || !text) {
+                return NextResponse.json(
+                    { error: "Failed to render email template" },
+                    { status: 500 },
                 );
-                results.push({
-                    batch: Math.floor(i / BATCH_SIZE) + 1,
-                    count: batch.length,
-                    success: true,
-                    messageId: response.id,
-                });
-            } catch (error) {
-                console.error(
-                    `Batch ${Math.floor(i / BATCH_SIZE) + 1} failed:`,
-                    error,
+            }
+
+            for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+                const batch = recipients.slice(i, i + BATCH_SIZE);
+                const batchVars = Object.fromEntries(
+                    batch.map((email) => [
+                        email,
+                        recipientVariables[email] ?? { firstName: "Hacker" },
+                    ]),
                 );
-                results.push({
-                    batch: Math.floor(i / BATCH_SIZE) + 1,
-                    count: batch.length,
-                    success: false,
-                    error:
-                        error instanceof Error
-                            ? error.message
-                            : "Unknown error",
-                });
+
+                try {
+                    const response = await mg.messages.create(mailgunDomain, {
+                        from: fromEmail,
+                        to: batch,
+                        subject: emailSubject,
+                        html: html,
+                        text: text,
+                        "recipient-variables": JSON.stringify(batchVars),
+                    });
+
+                    console.log(
+                        `Batch ${Math.floor(i / BATCH_SIZE) + 1} sent (${batch.length} recipients):`,
+                        response.id,
+                    );
+                    results.push({
+                        batch: Math.floor(i / BATCH_SIZE) + 1,
+                        count: batch.length,
+                        success: true,
+                        messageId: response.id,
+                    });
+                } catch (error) {
+                    console.error(
+                        `Batch ${Math.floor(i / BATCH_SIZE) + 1} failed:`,
+                        error,
+                    );
+                    results.push({
+                        batch: Math.floor(i / BATCH_SIZE) + 1,
+                        count: batch.length,
+                        success: false,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : "Unknown error",
+                    });
+                }
             }
         }
 
