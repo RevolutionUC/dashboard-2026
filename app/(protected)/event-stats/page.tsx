@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,9 +122,6 @@ export default function EventStatsPage() {
   const [selectedWorkshopId, setSelectedWorkshopId] = useState<string | null>(null);
   const [selectedFoodId, setSelectedFoodId] = useState<string | null>(null);
 
-  const [searchWorkshop, setSearchWorkshop] = useState("");
-  const [searchFood, setSearchFood] = useState("");
-
   const fetchStats = async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent ?? false;
 
@@ -189,17 +185,13 @@ export default function EventStatsPage() {
 
   const filteredWorkshopAttendees = useMemo(() => {
     const attendees = selectedWorkshop?.attendees ?? [];
-    const q = searchWorkshop.trim().toLowerCase();
-    if (!q) return attendees;
-    return attendees.filter((a) => `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q));
-  }, [selectedWorkshop, searchWorkshop]);
+    return attendees.filter((a) => `${a.name} ${a.email ?? ""}`.toLowerCase());
+  }, [selectedWorkshop]);
 
   const filteredFoodAttendees = useMemo(() => {
     const attendees = selectedFood?.attendees ?? [];
-    const q = searchFood.trim().toLowerCase();
-    if (!q) return attendees;
-    return attendees.filter((a) => `${a.name} ${a.email ?? ""}`.toLowerCase().includes(q));
-  }, [selectedFood, searchFood]);
+    return attendees.filter((a) => `${a.name} ${a.email ?? ""}`.toLowerCase());
+  }, [selectedFood]);
 
   return (
     <main className="p-6 sm:p-8">
@@ -241,9 +233,6 @@ export default function EventStatsPage() {
                 {(data?.workshops ?? []).map((workshop) => {
                   const selected = workshop.id === selectedWorkshopId;
                   const total = workshop.totalRegistered ?? 0;
-                  const percent =
-                    total > 0 ? Math.min(100, Math.round((workshop.checkedIn / total) * 100)) : 0;
-
                   return (
                     <button
                       key={workshop.id}
