@@ -35,16 +35,6 @@ export const JudgePortalLink: React.FC<JudgePortalLinkProps> = ({
                     Go to Judge Portal
                 </EmailButton>
             </Section>
-
-            <EmailText>
-                If you have any questions, please reach out to us at{" "}
-                <EmailLink href="mailto:info@revolutionuc.com">
-                    info@revolutionuc.com
-                </EmailLink>
-                .
-            </EmailText>
-
-            <EmailText>We look forward to seeing you at RevolutionUC!</EmailText>
         </EmailLayout>
     );
 };

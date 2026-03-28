@@ -12,7 +12,7 @@ import { accessRequests, confirmTokens, participants, judges } from "@/lib/db/sc
 import { eq, inArray, isNull, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
-type RecipientType = "all" | "status" | "specific" | "judges";
+type RecipientType = "all" | "status" | "specific" | "specific-judges" | "judges";
 
 interface SendEmailRequest {
     templateId: string;
@@ -137,6 +137,26 @@ export async function POST(request: NextRequest) {
                     participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
                 }
                 recipients = specificEmails || [];
+            } else if (recipientType === "specific-judges") {
+                const knownJudges = await db
+                    .select({ email: judges.email, name: judges.name, id: judges.id })
+                    .from(judges)
+                    .where(inArray(judges.email, specificEmails ?? []));
+                for (const j of knownJudges) {
+                    participantMap.set(j.email, { firstName: j.name, userId: j.id });
+                }
+                recipients = specificEmails || [];
+
+                const foundEmails = new Set(knownJudges.map((j) => j.email));
+                const notFoundEmails = (specificEmails ?? []).filter(
+                    (email) => !foundEmails.has(email),
+                );
+                if (notFoundEmails.length > 0) {
+                    return NextResponse.json(
+                        { error: `Judge email(s) not found: ${notFoundEmails.join(", ")}` },
+                        { status: 400 },
+                    );
+                }
             } else if (recipientType === "judges") {
                 const allJudges = await db
                     .select({ email: judges.email, name: judges.name, id: judges.id })
@@ -178,7 +198,7 @@ export async function POST(request: NextRequest) {
                     yesConfirmationUrl: true,
                     noConfirmationUrl: true,
                 }),
-                ...(templateId === JUDGE_PORTAL_LINK_ID && recipientType === "judges" && {
+                ...(templateId === JUDGE_PORTAL_LINK_ID && (recipientType === "judges" || recipientType === "specific-judges") && {
                     portalUrl: true,
                 }),
             };
@@ -303,7 +323,8 @@ export async function POST(request: NextRequest) {
                 }
             }
             if (isJudgePortalLink && participant?.userId) {
-                vars.portalUrl = `https://dashboard.revolutionuc.com/judgingportal/${participant.userId}`;
+                const judgingPortalUrl = process.env.NEXT_PUBLIC_JUDGING_PORTAL_URL || "https://dashboard.revolutionuc.com/judgingportal";
+                vars.portalUrl = `${judgingPortalUrl}/${participant.userId}`;
             }
             recipientVariables[email] = vars;
         }

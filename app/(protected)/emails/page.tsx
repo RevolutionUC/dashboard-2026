@@ -27,7 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type RecipientType = "all" | "status" | "specific" | "judges";
+type RecipientType = "all" | "status" | "specific" | "specific-judges" | "judges";
 
 function EmailPreviewTab() {
   const [selectedTemplateId, setSelectedTemplateId] = useState(
@@ -156,6 +156,14 @@ function SendEmailsTab() {
       return;
     }
 
+    if (recipientType === "specific-judges" && !specificEmails.trim()) {
+      setStatusMessage({
+        type: "error",
+        text: "Please enter at least one judge email address.",
+      });
+      return;
+    }
+
     setShowConfirmDialog(true);
   };
 
@@ -173,7 +181,7 @@ function SendEmailsTab() {
           recipientType,
           status: recipientType === "status" ? selectedStatus : undefined,
           specificEmails:
-            recipientType === "specific"
+            (recipientType === "specific" || recipientType === "specific-judges")
               ? specificEmails
                   .split(",")
                   .map((e) => e.trim())
@@ -221,6 +229,10 @@ function SendEmailsTab() {
       case "specific": {
         const count = specificEmails.split(",").filter((e) => e.trim()).length;
         return `${count} specific email${count !== 1 ? "s" : ""}`;
+      }
+      case "specific-judges": {
+        const count = specificEmails.split(",").filter((e) => e.trim()).length;
+        return `${count} specific judge email${count !== 1 ? "s" : ""}`;
       }
       case "judges":
         return "all judges";
@@ -299,6 +311,24 @@ function SendEmailsTab() {
                 <Input
                   type="text"
                   placeholder="email1@example.com, email2@example.com"
+                  value={specificEmails}
+                  onChange={(e) => setSpecificEmails(e.target.value)}
+                  className="w-full"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="specific-judges" id="specific-judges" className="mt-1" />
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="specific-judges" className="font-normal cursor-pointer">
+                Specific judge emails
+              </Label>
+              {recipientType === "specific-judges" && (
+                <Input
+                  type="text"
+                  placeholder="judge1@example.com, judge2@example.com"
                   value={specificEmails}
                   onChange={(e) => setSpecificEmails(e.target.value)}
                   className="w-full"
