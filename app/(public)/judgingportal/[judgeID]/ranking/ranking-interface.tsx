@@ -136,8 +136,9 @@ export function RankingInterface({
 
   return (
     <div className="space-y-6">
+      {/* URL don't have trailing slash, so ../ would us to the grandparent 'folder' path, not 'parent'. Only "./" takes us to parent path */}
       <Link
-        href={`../`}
+        href={`./`}
         className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
       >
         <ChevronLeft size={16} aria-hidden="true" />
