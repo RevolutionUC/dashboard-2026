@@ -106,7 +106,7 @@ export default async function ProjectsPage() {
                   allProjects.map((project) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium">
-                          <span className={project.disqualifyReason && "line-through"}>{project.name}</span>
+                          <span className={project.disqualifyReason ? "line-through" : ""}>{project.name}</span>
                       </TableCell>
                       <TableCell>
                         <span
