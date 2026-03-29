@@ -13,42 +13,41 @@ import { saveCategoryRelevance, saveEvaluationScore } from "./actions";
 import { NoteInput } from "./note-input";
 import { ProjectScoreForm } from "./project-score-form";
 
-interface ProjectWithScores {
-  id: string;
-  name: string;
-  location: string;
-  location2: string;
-  url: string | null;
-  status: string;
+interface Evaluation {
+  projectId: string;
+  categoryId: string;
+  projectName: string;
+  projectLocation: string;
+  projectLocation2: string;
+  projectUrl: string | null;
+  projectStatus: string;
   scores: (number | null)[];
   categoryRelevance: number;
   note: string | null;
 }
 
 interface ScoringInterfaceProps {
-  projects: ProjectWithScores[];
+  evaluations: Evaluation[];
   judgeId: string;
   categoryType: string;
   showNoteInput?: boolean;
 }
 
 export function ScoringInterface({
-  projects,
+  evaluations,
   judgeId,
   categoryType,
   showNoteInput = false,
 }: ScoringInterfaceProps) {
-  const isSponsor = categoryType === "Sponsor";
-  const isInhouse = categoryType === "Inhouse";
-  const isGeneral = categoryType === "General";
+  const isCategoricalJudge = categoryType === 'Inhouse' || categoryType === 'Sponsor'
 
   const [saving, setSaving] = useState<string | null>(null);
   const [localScores, setLocalScores] = useState<
     Record<string, (number | null)[]>
   >(() => {
     const initial: Record<string, (number | null)[]> = {};
-    projects.forEach((p) => {
-      initial[p.id] = p.scores;
+    evaluations.forEach((e) => {
+      initial[e.projectId] = e.scores;
     });
     return initial;
   });
@@ -56,15 +55,14 @@ export function ScoringInterface({
   const [localRelevance, setLocalRelevance] = useState<Record<string, number>>(
     () => {
       const initial: Record<string, number> = {};
-      projects.forEach((p) => {
-        initial[p.id] = p.categoryRelevance;
+      evaluations.forEach((e) => {
+        initial[e.projectId] = e.categoryRelevance;
       });
       return initial;
     },
   );
 
-  const [selectedProject, setSelectedProject] =
-    useState<ProjectWithScores | null>(null);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
 
   const handleScoreChange = async (
     projectId: string,
@@ -97,24 +95,23 @@ export function ScoringInterface({
     setSaving(null);
   };
 
-  const allScored = useMemo(() => {
-    return projects.every((project) => {
-      const scores = localScores[project.id];
+  const isAllScored = useMemo(() => {
+    return evaluations.every((evaluation) => {
+      const scores = localScores[evaluation.projectId];
       const hasAllScores = scores?.every((s) => s !== null && s >= 1 && s <= 5);
-      if (isSponsor) {
-        const hasRelevance =
-          localRelevance[project.id] >= 1 && localRelevance[project.id] <= 5;
+      if (isCategoricalJudge && evaluation.categoryId !== 'general') {
+        const hasRelevance = localRelevance[evaluation.projectId] >= 1 && localRelevance[evaluation.projectId] <= 5;
         return hasAllScores && hasRelevance;
       }
       return hasAllScores;
     });
-  }, [projects, localScores, localRelevance, isSponsor]);
+  }, [evaluations, localScores, localRelevance, isCategoricalJudge]);
 
   return (
     <>
       <ul className="space-y-4">
-        {projects.map((project, index) => (
-          <li key={project.id}>
+        {evaluations.map((evaluation, index) => (
+          <li key={evaluation.projectId}>
             <div className="rounded-lg bg-white p-4 shadow-sm">
               <div className="mb-4">
                 <div className="flex items-center gap-2">
@@ -122,11 +119,11 @@ export function ScoringInterface({
                     {index + 1}
                   </span>
                   <span className="font-semibold text-slate-900">
-                    {project.name}
+                    {evaluation.projectName}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setSelectedProject(project)}
+                    onClick={() => setSelectedEvaluation(evaluation)}
                     className="ml-auto rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                     title="View project details"
                   >
@@ -136,16 +133,21 @@ export function ScoringInterface({
                 <div className="mt-2 flex items-center gap-1 text-sm text-slate-500">
                   <MapPin size={16} />
                   <span>
-                    {project.location}
-                    {project.location2 ? ` - ${project.location2}` : ""}
+                    {evaluation.projectLocation}
+                    {evaluation.projectLocation2 ? ` - ${evaluation.projectLocation2}` : ""}
                   </span>
+                  {evaluation.categoryId === 'general' && (
+                    <span className="text-xs text-slate-400">(General-only)</span>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-3 border-t border-slate-100 pt-4">
+                {/* Category judges can also be assigned General-only projects to help speed up judging */}
+                {/* So we display the categoryRelevance scoring only if evaluation is not General */}
                 <ProjectScoreForm
-                  projectId={project.id}
-                  shouldShowCategoryRelevanceScoring={isSponsor || isInhouse}
+                  projectId={evaluation.projectId}
+                  shouldShowCategoryRelevanceScoring={isCategoricalJudge && evaluation.categoryId !== 'general'}
                   localScores={localScores}
                   localRelevance={localRelevance}
                   saving={saving}
@@ -158,10 +160,10 @@ export function ScoringInterface({
         ))}
       </ul>
 
-      {selectedProject && (
+      {selectedEvaluation && (
         <Sheet
-          open={!!selectedProject}
-          onOpenChange={() => setSelectedProject(null)}
+          open={!!selectedEvaluation}
+          onOpenChange={() => setSelectedEvaluation(null)}
         >
           <SheetContent
             side="bottom"
@@ -172,31 +174,31 @@ export function ScoringInterface({
             </SheetHeader>
             <div className="space-y-2">
               <p className="font-semibold text-slate-900">
-                {selectedProject.name}
+                {selectedEvaluation.projectName}
               </p>
               <p className="flex items-center gap-1 text-sm text-slate-600">
                 <MapPin size={14} />
-                {selectedProject.location}
-                {selectedProject.location2
-                  ? ` - ${selectedProject.location2}`
+                {selectedEvaluation.projectLocation}
+                {selectedEvaluation.projectLocation2
+                  ? ` - ${selectedEvaluation.projectLocation2}`
                   : ""}
               </p>
-              {selectedProject.url && (
+              {selectedEvaluation.projectUrl && (
                 <a
-                  href={selectedProject.url}
+                  href={selectedEvaluation.projectUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-sm text-blue-600 hover:underline"
                 >
-                  {selectedProject.url}
+                  {selectedEvaluation.projectUrl}
                 </a>
               )}
             </div>
             <div className="mt-3 space-y-3 border-t pt-3">
               <p className="text-sm font-medium text-slate-700">Scores</p>
               <ProjectScoreForm
-                projectId={selectedProject.id}
-                shouldShowCategoryRelevanceScoring={isSponsor || isInhouse}
+                projectId={selectedEvaluation.projectId}
+                shouldShowCategoryRelevanceScoring={isCategoricalJudge && selectedEvaluation.categoryId !== 'general'}
                 localScores={localScores}
                 localRelevance={localRelevance}
                 saving={saving}
@@ -207,8 +209,8 @@ export function ScoringInterface({
             {showNoteInput && (
               <div className="mt-3 border-t pt-3">
                 <NoteInput
-                  projectId={selectedProject.id}
-                  initialNote={selectedProject.note || ""}
+                  projectId={selectedEvaluation.projectId}
+                  initialNote={selectedEvaluation.note || ""}
                   judgeId={judgeId}
                 />
               </div>
@@ -219,27 +221,23 @@ export function ScoringInterface({
 
       <div className="mt-6">
         <Link
-          href={
-            isGeneral
-              ? "/judgingportal/finished"
-              : `/judgingportal/${judgeId}/ranking`
-          }
+          href={ isCategoricalJudge ? `/judgingportal/${judgeId}/ranking` : `/judgingportal/finished` }
           className={`block w-full rounded-lg py-3 text-center font-semibold transition-colors ${
-            allScored
+            isAllScored
               ? "bg-blue-600 text-white hover:bg-blue-700"
               : "cursor-not-allowed bg-slate-200 text-slate-400"
           }`}
           onClick={(e) => {
-            if (!allScored) {
+            if (!isAllScored) {
               e.preventDefault();
             }
           }}
         >
-          {isGeneral ? "Finish" : "Start ranking"}
+          {isCategoricalJudge ? "Start ranking" : "Finish"}
         </Link>
-        {!allScored && (
+        {!isAllScored && (
           <p className="mt-2 text-center text-xs text-slate-500">
-            Score all projects to {isGeneral ? "finish" : "enable ranking"}
+            Score all projects to {isCategoricalJudge ? "enable ranking" : "finish"}
           </p>
         )}
       </div>

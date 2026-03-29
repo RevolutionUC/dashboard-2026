@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, ne, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import {
@@ -34,7 +34,7 @@ export default async function RankingPage({
     })
     .from(evaluations)
     .innerJoin(projects, eq(evaluations.projectId, projects.id))
-    .where(eq(evaluations.judgeId, judgeID));
+    .where(and(eq(evaluations.judgeId, judgeID), ne(evaluations.categoryId, 'general')));
 
   const evaluationsWithScores: EvaluationWithScore[] = evaluationRows.map(
     (row) => {

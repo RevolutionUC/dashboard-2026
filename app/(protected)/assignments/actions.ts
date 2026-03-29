@@ -13,6 +13,7 @@ import {
   submissions,
 } from "@/lib/db/schema";
 import { RotatingQueue } from "@/lib/rotating-queue";
+import { MinHeap } from "@/lib/min-heap";
 
 const SUGGESTED_JUDGE_GROUP_COUNT_PER_SUBMISSION_BASED_ON_CATEGORY_TYPE = {
   General: 1,
@@ -24,12 +25,8 @@ const SUGGESTED_JUDGE_GROUP_COUNT_PER_SUBMISSION_BASED_ON_CATEGORY_TYPE = {
 interface JudgeGroupWithCount {
   id: number;
   categoryId: string;
+  categoryType: string;
   judgeCount: number;
-}
-
-interface AssignmentToInsert {
-  projectId: string;
-  judgeGroupId: number;
 }
 
 export async function assignProjectsToJudgeGroups(
@@ -62,17 +59,17 @@ export async function assignProjectsToJudgeGroups(
     }
 
     // Preconditions: Check minimum General judges
-    const [{count: generalJudgesCount}] = await db
-      .select({ count: count() })
-      .from(judges)
-      .where(eq(judges.categoryId, generalCategoryId));
+    // const [{count: generalJudgesCount}] = await db
+    //   .select({ count: count() })
+    //   .from(judges)
+    //   .where(eq(judges.categoryId, generalCategoryId));
 
-    if (generalJudgesCount < minimumJudgesPerProject) {
-      return {
-        success: false,
-        error: `There must be at least ${minimumJudgesPerProject} General judges. Currently have ${generalJudgesCount}.`,
-      };
-    }
+    // if (generalJudgesCount < minimumJudgesPerProject) {
+    //   return {
+    //     success: false,
+    //     error: `There must be at least ${minimumJudgesPerProject} General judges. Currently have ${generalJudgesCount}.`,
+    //   };
+    // }
 
     // Fetch all submissions with category info
     const allSubmissions = await db
@@ -84,16 +81,18 @@ export async function assignProjectsToJudgeGroups(
       .from(submissions)
       .innerJoin(categories, eq(submissions.categoryId, categories.id));
 
-    // Fetch all judge groups with judge counts
+    // Fetch all judge groups with judge counts and category type
     const judgeGroupsWithCounts = await db
       .select({
         id: judgeGroups.id,
         categoryId: judgeGroups.categoryId,
+        categoryType: categories.type,
         judgeCount: count(judges.id),
       })
       .from(judgeGroups)
+      .innerJoin(categories, eq(judgeGroups.categoryId, categories.id))
       .leftJoin(judges, eq(judgeGroups.id, judges.judgeGroupId))
-      .groupBy(judgeGroups.id, judgeGroups.categoryId);
+      .groupBy(judgeGroups.id, judgeGroups.categoryId, categories.type);
 
     if (judgeGroupsWithCounts.length === 0) {
       return {
@@ -114,7 +113,7 @@ export async function assignProjectsToJudgeGroups(
       return acc;
     }, new Map<string, RotatingQueue<JudgeGroupWithCount>>());
 
-    const assignmentList: Array<{ projectId: string; judgeGroup: JudgeGroupWithCount }> = [];
+    const assignmentList: Array<{ projectId: string; judgeGroup: JudgeGroupWithCount, submissionCategoryId: string }> = [];
 
     for (const submission of allSubmissions) {
       if (submission.categoryId === 'general') {
@@ -132,14 +131,14 @@ export async function assignProjectsToJudgeGroups(
 
       // Continously rotate through available groups to asign project
       for (let i = 0; i < howManyJudgeGroupsToAssign; i++) {
-        assignmentList.push({ projectId: submission.projectId, judgeGroup: groupsQueue.getNext() });
+        assignmentList.push({ projectId: submission.projectId, judgeGroup: groupsQueue.getNext(), submissionCategoryId: submission.categoryId });
       }
     }
 
-    // Phase 2: Assign additional General groups for projects with insufficient judges
+    // Phase 2: General-only projects will have insufficient judges so we assign additional groups for these
     const assignmentsByProject = new Map<
       string,
-      Array<{ projectId: string; judgeGroup: JudgeGroupWithCount }>
+      Array<{ projectId: string; judgeGroup: JudgeGroupWithCount, submissionCategoryId: string }>
     >();
 
     // Fist, we organize assignments by projectId to see how many judges per project already
@@ -152,7 +151,8 @@ export async function assignProjectsToJudgeGroups(
 
     const generalGroupQueue = groupsQueueByCategory.get("general");
 
-    if (generalGroupQueue) {
+    if (generalGroupQueue && generalGroupQueue.length > 0) {
+      // If there are General groups, we use them to handle insufficient-judge project
       for (const [projectId, projectAssignments] of assignmentsByProject) {
         let howManyJudgesAlready = projectAssignments.reduce((sum, a) => sum + a.judgeGroup.judgeCount, 0);
         const alreadyUsedGroupIds = new Set(projectAssignments.map((a) => a.judgeGroup.id));
@@ -164,18 +164,88 @@ export async function assignProjectsToJudgeGroups(
 
           if (alreadyUsedGroupIds.has(nextGeneralGroup.id)) continue
 
-          assignmentList.push({ projectId, judgeGroup: nextGeneralGroup });
+          assignmentList.push({ projectId, judgeGroup: nextGeneralGroup, submissionCategoryId: "general" });
           alreadyUsedGroupIds.add(nextGeneralGroup.id);
           howManyJudgesAlready += nextGeneralGroup.judgeCount;
 
           safetyCounterToPreventInfiniteLoop += 1;
         }
       }
+    } else {
+      // With this system, Inhouse (or even Sponsor judges - but let's stay with Inhouse now) can also judge General
+      // So we can use Inhouse groups when no General judges available (or when we delibrately set 0 General judges)
+      // We will distribute projects into Inhouse groups prioritizing lower project-count group first
+      const inhouseGroups = judgeGroupsWithCounts.filter(g => g.categoryType === "Inhouse" && g.judgeCount > 0);
+
+      if (inhouseGroups.length === 0) {
+        return {
+          success: false,
+          error: "No General judges and no Inhouse groups available. Cannot assign minimum judges per project.",
+        };
+      }
+
+      // Track project count per Inhouse group
+      const inhouseGroupProjectCounts = new Map<number, number>();
+      for (const group of inhouseGroups) {
+        inhouseGroupProjectCounts.set(group.id, 0);
+      }
+
+      for (const assignment of assignmentList) {
+        const groupId = assignment.judgeGroup.id;
+        if (inhouseGroupProjectCounts.has(groupId)) {
+          inhouseGroupProjectCounts.set(groupId, (inhouseGroupProjectCounts.get(groupId) || 0) + 1);
+        }
+      }
+
+      // Build min-heap prioritized by project count (ascending)
+      const inhouseHeap = new MinHeap<JudgeGroupWithCount>((a, b) => {
+        const countA = inhouseGroupProjectCounts.get(a.id) || 0;
+        const countB = inhouseGroupProjectCounts.get(b.id) || 0;
+        return countA - countB;
+      });
+
+      for (const group of inhouseGroups) {
+        inhouseHeap.insert(group);
+      }
+
+      // Now we distribute projects
+      for (const [projectId, projectAssignments] of assignmentsByProject) {
+        let howManyJudgesAlready = projectAssignments.reduce((sum, a) => sum + a.judgeGroup.judgeCount, 0);
+        const alreadyUsedGroupIds = new Set(projectAssignments.map((a) => a.judgeGroup.id));
+
+        const skippedGroups: JudgeGroupWithCount[] = [];
+
+        let safetyCounterToPreventInfiniteLoop = 0;
+        while (howManyJudgesAlready < minimumJudgesPerProject && safetyCounterToPreventInfiniteLoop < 100) {
+          const nextInhouseGroup = inhouseHeap.extractMin();
+
+          if (!nextInhouseGroup) break;
+
+          if (alreadyUsedGroupIds.has(nextInhouseGroup.id)) {
+            skippedGroups.push(nextInhouseGroup);
+            continue;
+          }
+
+          assignmentList.push({ projectId, judgeGroup: nextInhouseGroup, submissionCategoryId: "general" });
+          alreadyUsedGroupIds.add(nextInhouseGroup.id);
+          howManyJudgesAlready += nextInhouseGroup.judgeCount;
+
+          // Update project count and re-heapify by re-inserting
+          const newCount = (inhouseGroupProjectCounts.get(nextInhouseGroup.id) || 0) + 1;
+          inhouseGroupProjectCounts.set(nextInhouseGroup.id, newCount);
+          inhouseHeap.insert(nextInhouseGroup);
+
+          safetyCounterToPreventInfiniteLoop += 1;
+        }
+
+        // Put skipped groups back into heap
+        for (const group of skippedGroups) {
+          inhouseHeap.insert(group);
+        }
+      }
     }
 
     // Post-condition: Check that all projects have sufficient number of judges
-    const finalAssignmentsByProject = new Map<string, number>();
-
     const judgeCountPerProject = assignmentList.reduce((acc, assignment) => {
       const currentCount = acc.get(assignment.projectId) || 0;
       acc.set(assignment.projectId, currentCount + assignment.judgeGroup.judgeCount);
@@ -213,6 +283,7 @@ export async function assignProjectsToJudgeGroups(
       (a) => ({
         projectId: a.projectId,
         judgeGroupId: a.judgeGroup.id,
+        submissionCategoryId: a.submissionCategoryId
       }),
     );
 
@@ -228,7 +299,7 @@ export async function assignProjectsToJudgeGroups(
       return judges.map((judge) => ({
         projectId: assignment.projectId,
         judgeId: judge.id,
-        categoryId: judge.categoryId,
+        categoryId: assignment.submissionCategoryId,
       }));
     });
 
@@ -246,7 +317,7 @@ export async function assignProjectsToJudgeGroups(
     return {
       success: true,
       count: assignmentsToInsert.length,
-      projectsAssigned: finalAssignmentsByProject.size,
+      projectsAssigned: judgeCountPerProject.size,
       evaluationsCreated: evaluationsToInsert.length,
     };
   } catch (error) {
