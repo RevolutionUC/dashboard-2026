@@ -81,7 +81,7 @@ export function NoteInput({
         value={note}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Add notes about this project..."
-        className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
+        className="w-full rounded-md border border-slate-200 px-2 py-1.5 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
         rows={6}
       />
     </>
