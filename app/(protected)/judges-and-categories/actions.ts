@@ -15,6 +15,23 @@ interface CreateCategoryInput {
   type: CategoryType;
 }
 
+export async function deleteCategoryAction(categoryId: string) {
+  await assertAuthorization();
+
+  try {
+    await db.delete(categories).where(eq(categories.id, categoryId));
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete category",
+    };
+  }
+}
+
 export const createCategory = withAuth(
   async (data: CreateCategoryInput) => {
     await db.insert(categories).values({
@@ -128,6 +145,23 @@ export async function updateJudgeAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update judge",
+    };
+  }
+}
+
+export async function deleteJudgeAction(judgeId: string) {
+  await assertAuthorization();
+
+  try {
+    await db.delete(judges).where(eq(judges.id, judgeId));
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting judge:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete judge",
     };
   }
 }

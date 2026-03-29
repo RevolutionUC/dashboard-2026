@@ -20,6 +20,8 @@ import { NewJudgeModal } from "./new-judge-modal";
 import { JudgeCheckinCheckbox } from "./judge-checkin-checkbox";
 import { ClearAbsentJudgesButton } from "./clear-absent-judges-button";
 import { TransferJudgeModal } from "./transfer-judge-modal";
+import { DeleteCategoryButton } from "./delete-category-button";
+import { DeleteJudgeButton } from "./delete-judge-button";
 
 export default async function JudgeAndCategoriesPage() {
   const [allCategories, allJudges, allJudgeGroups, allAssignments] =
@@ -126,7 +128,13 @@ export default async function JudgeAndCategoriesPage() {
                           {category.projectCount ?? 0}
                         </TableCell>
                         <TableCell>
-                          <EditCategoryModal category={category} />
+                          <div className="flex items-center gap-1">
+                            <EditCategoryModal category={category} />
+                            <DeleteCategoryButton
+                              categoryId={category.id}
+                              categoryName={category.name}
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -210,6 +218,10 @@ export default async function JudgeAndCategoriesPage() {
                               categories={allCategories}
                             />
                             <LoginAsJudgeButton
+                              judgeId={judge.id}
+                              judgeName={judge.name}
+                            />
+                            <DeleteJudgeButton
                               judgeId={judge.id}
                               judgeName={judge.name}
                             />
