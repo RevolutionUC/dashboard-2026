@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   TrendingUp,
   Trophy,
+  ChartLine,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -50,6 +51,11 @@ const items = [
     title: "QR",
     url: "/qr",
     icon: QrCode,
+  },
+  {
+    title: "Event Stats",
+    url: "/event-stats",
+    icon: ChartLine,
   },
   {
     title: "Emails",
