@@ -338,3 +338,26 @@ export async function assignProjectsToJudgeGroups(
     };
   }
 }
+
+export async function clearAllAssignmentsAction() {
+  try {
+    await assertAuthorization();
+
+    await db.transaction(async (tx) => {
+      await tx.delete(evaluations);
+      await tx.delete(assignments);
+    });
+
+    revalidatePath("/assignments");
+    return { success: true };
+  } catch (error) {
+    console.error("Error clearing assignments:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to clear assignments",
+    };
+  }
+}

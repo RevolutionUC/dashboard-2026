@@ -1,4 +1,4 @@
-import { count, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { db } from "@/lib/db";
-import { categories, judgeGroups, judges, submissions } from "@/lib/db/schema";
+import { assignments, categories, judgeGroups, judges, submissions } from "@/lib/db/schema";
 import { CategoryBadge } from "@/components/category-badge";
 import { AssignJudgesToGroupsButton } from "./assign-judges-button";
 import { EditCategoryModal } from "./edit-category-modal";
@@ -19,51 +19,55 @@ import { NewCategoryModal } from "./new-category-modal";
 import { NewJudgeModal } from "./new-judge-modal";
 import { JudgeCheckinCheckbox } from "./judge-checkin-checkbox";
 import { ClearAbsentJudgesButton } from "./clear-absent-judges-button";
+import { TransferJudgeModal } from "./transfer-judge-modal";
 
 export default async function JudgeAndCategoriesPage() {
-  const [allCategories, allJudges, allJudgeGroups] = await Promise.all([
-    db
-      .select({
-        id: categories.id,
-        name: categories.name,
-        type: categories.type,
-        judgeCount: sql<number>`count(distinct ${judges.id})`.mapWith(Number),
-        projectCount: sql<number>`count(distinct ${submissions.projectId})`.mapWith(Number),
-      })
-      .from(categories)
-      .leftJoin(judges, eq(judges.categoryId, categories.id))
-      .leftJoin(submissions, eq(submissions.categoryId, categories.id))
-      .groupBy(categories.id, categories.name, categories.type)
-      .orderBy(categories.name),
-    db
-      .select({
-        id: judges.id,
-        name: judges.name,
-        email: judges.email,
-        categoryId: judges.categoryId,
-        categoryName: categories.name,
-        categoryType: categories.type,
-        judgeGroupId: judges.judgeGroupId,
-        judgeGroupName: judgeGroups.name,
-        isCheckedin: judges.isCheckedin,
-        createdAt: judges.createdAt,
-      })
-      .from(judges)
-      .innerJoin(categories, eq(judges.categoryId, categories.id))
-      .leftJoin(judgeGroups, eq(judges.judgeGroupId, judgeGroups.id))
-      .orderBy(categories.id, judges.name),
-    db
-      .select({
-        id: judgeGroups.id,
-        name: judgeGroups.name,
-        categoryId: judgeGroups.categoryId,
-        categoryName: categories.name,
-        categoryType: categories.type,
-      })
-      .from(judgeGroups)
-      .innerJoin(categories, eq(judgeGroups.categoryId, categories.id))
-      .orderBy(judgeGroups.name),
-  ]);
+  const [allCategories, allJudges, allJudgeGroups, allAssignments] =
+    await Promise.all([
+      db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          type: categories.type,
+          judgeCount: sql<number>`count(distinct ${judges.id})`.mapWith(Number),
+          projectCount: sql<number>`count(distinct ${submissions.projectId})`.mapWith(Number),
+        })
+        .from(categories)
+        .leftJoin(judges, eq(judges.categoryId, categories.id))
+        .leftJoin(submissions, eq(submissions.categoryId, categories.id))
+        .groupBy(categories.id, categories.name, categories.type)
+        .orderBy(categories.name),
+      db
+        .select({
+          id: judges.id,
+          name: judges.name,
+          email: judges.email,
+          categoryId: judges.categoryId,
+          categoryName: categories.name,
+          categoryType: categories.type,
+          judgeGroupId: judges.judgeGroupId,
+          judgeGroupName: judgeGroups.name,
+          isCheckedin: judges.isCheckedin,
+          createdAt: judges.createdAt,
+        })
+        .from(judges)
+        .innerJoin(categories, eq(judges.categoryId, categories.id))
+        .leftJoin(judgeGroups, eq(judges.judgeGroupId, judgeGroups.id))
+        .orderBy(categories.id, judges.name),
+      db
+        .select({
+          id: judgeGroups.id,
+          name: judgeGroups.name,
+          categoryId: judgeGroups.categoryId,
+          categoryName: categories.name,
+          categoryType: categories.type,
+        })
+        .from(judgeGroups)
+        .innerJoin(categories, eq(judgeGroups.categoryId, categories.id))
+        .orderBy(judgeGroups.name),
+      db.select({ projectId: assignments.projectId }).from(assignments).limit(1),
+    ]);
+
 
   return (
     <main className="mx-auto w-full max-w-6xl p-6">
@@ -236,6 +240,10 @@ export default async function JudgeAndCategoriesPage() {
                   const groupMembers = allJudges.filter(
                     (j) => j.judgeGroupId === group.id,
                   );
+
+                  const groupsOfSameCategory = allJudgeGroups.filter(
+                    (g) => g.categoryId === group.categoryId && g.id !== group.id,
+                  );
                   return (
                     <div
                       key={group.id}
@@ -267,6 +275,20 @@ export default async function JudgeAndCategoriesPage() {
                                   {member.email}
                                 </span>
                               </div>
+                              {member.judgeGroupId && groupsOfSameCategory.length > 0 && (
+                                <TransferJudgeModal
+                                  judge={{
+                                    id: member.id,
+                                    name: member.name,
+                                    judgeGroupId: member.judgeGroupId,
+                                    judgeGroupName: member.judgeGroupName ?? "",
+                                    categoryId: group.categoryId,
+                                  }}
+                                  availableGroups={groupsOfSameCategory}
+                                  disabled={allAssignments.length > 0}
+                                  key={member.id}
+                                />
+                              )}
                             </div>
                           ))}
                         </div>
