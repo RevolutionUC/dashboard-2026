@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -11,6 +12,7 @@ import {
 import { db } from "@/lib/db";
 import { categories, projects, submissions } from "@/lib/db/schema";
 import { ImportProjectsModal } from "./import-projects-modal";
+import { MassDisqualifyModal } from "./mass-disqualify-modal";
 
 interface ProjectWithCategories {
   id: string;
@@ -72,7 +74,10 @@ export default async function ProjectsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>All Projects ({allProjects.length})</CardTitle>
-          <ImportProjectsModal projectsCount={allProjects.length} />
+          <div className="flex gap-2">
+            <MassDisqualifyModal />
+            <ImportProjectsModal projectsCount={allProjects.length} />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -101,7 +106,7 @@ export default async function ProjectsPage() {
                   allProjects.map((project) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium">
-                        {project.name}
+                          <span className={project.disqualifyReason && "line-through"}>{project.name}</span>
                       </TableCell>
                       <TableCell>
                         <span

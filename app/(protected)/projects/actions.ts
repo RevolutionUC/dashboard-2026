@@ -180,3 +180,60 @@ export async function importProjectsFromDevpost(
     };
   }
 }
+
+interface MassDisqualifyState {
+  success?: boolean;
+  error?: string;
+  updated?: number;
+}
+
+export async function massDisqualifyProjects(
+  prevState: MassDisqualifyState | null,
+  formData: FormData,
+): Promise<MassDisqualifyState> {
+  try {
+    await assertAuthorization();
+
+    const csvContent = formData.get("csvContent") as string;
+    if (!csvContent || csvContent.trim().length === 0) {
+      return { success: false, error: "CSV content is empty" };
+    }
+
+    const parsed = parse(csvContent.trim(), {
+      skipEmptyLines: true,
+      columns: ["project_name", "disqualify_reason"],
+    }) as Record<string, string>[];
+
+    const updates: { name: string; reason: string }[] = [];
+
+    for (const row of parsed) {
+      const name = row["project_name"]?.trim();
+      const reason = row["disqualify_reason"]?.trim();
+      if (name && reason) {
+        updates.push({ name, reason });
+      }
+    }
+
+    if (updates.length === 0) {
+      return { success: false, error: "No valid entries found. CSV must have project_name and disqualify_reason columns" };
+    }
+
+    await db.transaction(async (tx) => {
+      for (const { name, reason } of updates) {
+        await tx
+          .update(projects)
+          .set({ disqualifyReason: reason, status: "disqualified" })
+          .where(eq(projects.name, name));
+      }
+    });
+
+    revalidatePath("/projects");
+    return { success: true, updated: updates.length };
+  } catch (error) {
+    console.error("Error mass disqualifying projects:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to disqualify projects",
+    };
+  }
+}
