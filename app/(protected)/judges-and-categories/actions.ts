@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { assertAuthorization } from "@/lib/auth";
 import { withAuth } from "@/lib/action-wrapper";
 import { db } from "@/lib/db";
-import { categories, judgeGroups, judges } from "@/lib/db/schema";
+import { assignments, categories, judgeGroups, judges } from "@/lib/db/schema";
 
 export type CategoryType = "Sponsor" | "Inhouse" | "General" | "MLH";
 
@@ -13,6 +13,23 @@ interface CreateCategoryInput {
   id: string;
   name: string;
   type: CategoryType;
+}
+
+export async function deleteCategoryAction(categoryId: string) {
+  await assertAuthorization();
+
+  try {
+    await db.delete(categories).where(eq(categories.id, categoryId));
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete category",
+    };
+  }
 }
 
 export const createCategory = withAuth(
@@ -128,6 +145,23 @@ export async function updateJudgeAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update judge",
+    };
+  }
+}
+
+export async function deleteJudgeAction(judgeId: string) {
+  await assertAuthorization();
+
+  try {
+    await db.delete(judges).where(eq(judges.id, judgeId));
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting judge:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete judge",
     };
   }
 }
@@ -324,3 +358,44 @@ export async function assignJudgesToGroups() {
     };
   }
 }
+
+interface TransferJudgeInput {
+  judgeId: string;
+  targetGroupId: number;
+}
+
+export const transferJudgeToGroup = withAuth(
+  async (data: TransferJudgeInput) => {
+    const [judge] = await db
+      .select({ judgeGroupId: judges.judgeGroupId })
+      .from(judges)
+      .where(eq(judges.id, data.judgeId));
+
+    if (!judge || !judge.judgeGroupId) {
+      return { success: false, error: "Judge is not assigned to a group" };
+    }
+
+    const existingAssignments = await db
+      .select()
+      .from(assignments)
+      .limit(1);
+
+    if (existingAssignments.length > 0) {
+      return {
+        success: false,
+        error: "Cannot transfer: assignments already exist",
+      };
+    }
+
+    await db
+      .update(judges)
+      .set({ judgeGroupId: data.targetGroupId })
+      .where(eq(judges.id, data.judgeId));
+
+    revalidatePath("/judges-and-categories");
+    return { success: true };
+  },
+  "transfer judge to group",
+  "/judges-and-categories",
+);
+

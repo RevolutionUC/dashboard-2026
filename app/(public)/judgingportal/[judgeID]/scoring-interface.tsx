@@ -70,7 +70,7 @@ export function ScoringInterface({
   );
 
   const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
-  const [sortBy, setSortBy] = useState<"location" | "unranked">("location");
+  const [sortBy, setSortBy] = useState<"location-asc" | "location-desc" | "unranked">("location-asc");
 
   const isEvaluationScored = useCallback((evaluation: Evaluation) => {
     const scores = localScores[evaluation.projectId];
@@ -93,29 +93,44 @@ export function ScoringInterface({
     }
 
     const groups: Record<string, Evaluation[]> = {};
-    const sortedLocations: number[] = [];
+    const sortedGroupKeys: string[] = [];
 
     evaluations.forEach((evaluation) => {
       const locationNum = parseInt(evaluation.projectLocation, 10);
-      if (isNaN(locationNum)) return;
+      const location2 = isNaN(locationNum) 
+        ? "Unknown" 
+        : (evaluation.projectLocation2 || "Unknown");
       
-      const groupKey = Math.floor((locationNum - 1) / 10);
-      const groupLabel = `Locations ${groupKey * 10 + 1}-${(groupKey + 1) * 10}`;
-      
-      if (!groups[groupLabel]) {
-        groups[groupLabel] = [];
-        sortedLocations.push(groupKey);
+      if (!groups[location2]) {
+        groups[location2] = [];
+        sortedGroupKeys.push(location2);
       }
-      groups[groupLabel].push(evaluation);
+      groups[location2].push(evaluation);
     });
 
-    sortedLocations.sort((a, b) => a - b);
+    const isAsc = sortBy === "location-asc";
+    sortedGroupKeys.sort((a, b) => {
+      if (a === "Unknown") return 1;
+      if (b === "Unknown") return -1;
+      return isAsc ? a.localeCompare(b) : b.localeCompare(a);
+    });
     
-    return sortedLocations.map((key) => {
-      const groupLabel = `Locations ${key * 10 + 1}-${(key + 1) * 10}`;
+    return sortedGroupKeys.map((location2) => {
+      const evals = groups[location2];
+      const locationNums = evals
+        .map(e => parseInt(e.projectLocation, 10))
+        .filter(n => !isNaN(n))
+        .sort((a, b) => a - b);
+      
+      const minLoc = locationNums[0];
+      const maxLoc = locationNums[locationNums.length - 1];
+      const label = location2 === "Unknown" || !minLoc || !maxLoc
+        ? location2
+        : `${location2} - ${minLoc}-${maxLoc}`;
+      
       return {
-        label: groupLabel,
-        evaluations: groups[groupLabel].sort((a, b) => 
+        label,
+        evaluations: evals.sort((a, b) => 
           parseInt(a.projectLocation, 10) - parseInt(b.projectLocation, 10)
         ),
       };
@@ -170,13 +185,14 @@ export function ScoringInterface({
       <div className="mb-4 flex items-center justify-end">
         <Select
           value={sortBy}
-          onValueChange={(value) => setSortBy(value as "location" | "unranked")}
+          onValueChange={(value) => setSortBy(value as "location-asc" | "location-desc" | "unranked")}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="location">By Location</SelectItem>
+            <SelectItem value="location-asc">By Location (A-Z)</SelectItem>
+            <SelectItem value="location-desc">By Location (Z-A)</SelectItem>
             <SelectItem value="unranked">Unranked First</SelectItem>
           </SelectContent>
         </Select>

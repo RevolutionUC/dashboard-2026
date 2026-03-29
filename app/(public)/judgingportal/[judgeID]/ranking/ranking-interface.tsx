@@ -128,7 +128,7 @@ export function RankingInterface({
   };
 
   const handleFinalize = async () => {
-    if (!confirm("No backsies! Are you sure you want to finalize?")) return;
+    if (!confirm("Are you sure you want to finalize your rankings? Once submitted, you will not be able to make changes.")) return;
     setSaving("finalize");
     await finalizeRankings(judgeId);
     router.push(`/judgingportal/finished`);
