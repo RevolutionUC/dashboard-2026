@@ -1,5 +1,5 @@
 {
-  "id": "d7d42345-1ab3-41fe-8f58-807cfeff74b6",
+  "id": "20bc2168-1086-47be-b42c-0f311cab3bea",
   "prevId": "7cd5a197-fd05-4a3d-bdb5-287e6a6311c9",
   "version": "7",
   "dialect": "postgresql",
@@ -822,6 +822,12 @@
         "category_borda_score": {
           "name": "category_borda_score",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }

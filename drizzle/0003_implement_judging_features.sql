@@ -35,6 +35,7 @@ CREATE TABLE "evaluations" (
 	"scores" integer[],
 	"category_relevance" integer DEFAULT 0 NOT NULL,
 	"category_borda_score" integer,
+	"note" text,
 	CONSTRAINT "evaluations_judge_id_project_id_pk" PRIMARY KEY("judge_id","project_id")
 );
 --> statement-breakpoint

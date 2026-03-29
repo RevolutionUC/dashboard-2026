@@ -174,3 +174,40 @@ export async function saveCategoryRelevance(
     };
   }
 }
+
+export async function saveNote(
+  judgeId: string,
+  projectId: string,
+  note: string,
+) {
+  if (note.length > 10000) {
+    return { success: false, error: "Note cannot exceed 10000 characters" };
+  }
+
+  try {
+    await db
+      .update(evaluations)
+      .set({ note })
+      .where(
+        and(
+          eq(evaluations.judgeId, judgeId),
+          eq(evaluations.projectId, projectId),
+        ),
+      );
+
+    revalidatePath(`/judgingportal/${judgeId}`);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error saving note:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to save note",
+    };
+  }
+}

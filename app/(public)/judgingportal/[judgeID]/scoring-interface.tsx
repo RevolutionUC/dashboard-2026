@@ -1,8 +1,8 @@
 "use client";
 
-import { Info, MapPin, Star } from "lucide-react";
+import { Info, MapPin } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -10,6 +10,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { saveCategoryRelevance, saveEvaluationScore } from "./actions";
+import { NoteInput } from "./note-input";
+import { ProjectScoreForm } from "./project-score-form";
 
 interface ProjectWithScores {
   id: string;
@@ -20,109 +22,21 @@ interface ProjectWithScores {
   status: string;
   scores: (number | null)[];
   categoryRelevance: number;
+  note: string | null;
 }
 
 interface ScoringInterfaceProps {
   projects: ProjectWithScores[];
   judgeId: string;
   categoryType: string;
-}
-
-function StarRating({
-  score,
-  onChange,
-  disabled,
-  label,
-}: {
-  score: number | null;
-  onChange: (score: number) => void;
-  disabled: boolean;
-  label: string;
-}) {
-  const displayScore = score ?? 0;
-
-  return (
-    <div className="flex items-center">
-      <span className="w-20 text-sm font-medium text-slate-700">{label}</span>
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(star)}
-            className="transition-transform disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
-            aria-label={`Rate ${star} out of 5`}
-          >
-            <Star
-              size={28}
-              className={`${
-                star <= displayScore
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "fill-gray-200 text-gray-200"
-              }`}
-              strokeWidth={1}
-            ></Star>
-          </button>
-        ))}
-        {disabled && (
-          <span className="ml-2 text-xs text-slate-500">Saving...</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const SCORE_LABELS = ["Originality", "Execution", "Learning"];
-
-function ProjectScoreForm({
-  projectId,
-  shouldShowCategoryRelevanceScoring,
-  localScores,
-  localRelevance,
-  saving,
-  onScoreChange,
-  onRelevanceChange,
-}: {
-  projectId: string;
-  shouldShowCategoryRelevanceScoring: boolean;
-  localScores: Record<string, (number | null)[]>;
-  localRelevance: Record<string, number>;
-  saving: string | null;
-  onScoreChange: (projectId: string, scoreIndex: number, score: number) => void;
-  onRelevanceChange: (projectId: string, score: number) => void;
-}) {
-  return (
-    <div className="space-y-3">
-      {[0, 1, 2].map((scoreIndex) => (
-        <StarRating
-          key={scoreIndex}
-          label={SCORE_LABELS[scoreIndex]}
-          score={localScores[projectId]?.[scoreIndex] ?? null}
-          onChange={(score) => onScoreChange(projectId, scoreIndex, score)}
-          disabled={saving === `${projectId}-${scoreIndex}`}
-        />
-      ))}
-      {shouldShowCategoryRelevanceScoring && (
-        <StarRating
-          label="Relevance"
-          score={
-            localRelevance[projectId] > 0
-              ? localRelevance[projectId]
-              : null
-          }
-          onChange={(score) => onRelevanceChange(projectId, score)}
-          disabled={saving === `${projectId}-relevance`}
-        />
-      )}
-    </div>
-  );
+  showNoteInput?: boolean;
 }
 
 export function ScoringInterface({
   projects,
   judgeId,
   categoryType,
+  showNoteInput = false,
 }: ScoringInterfaceProps) {
   const isSponsor = categoryType === "Sponsor";
   const isInhouse = categoryType === "Inhouse";
@@ -157,7 +71,6 @@ export function ScoringInterface({
     scoreIndex: number,
     score: number,
   ) => {
-    // Optimistically update local state
     setLocalScores((prev) => ({
       ...prev,
       [projectId]: prev[projectId]?.map((s, i) =>
@@ -174,7 +87,6 @@ export function ScoringInterface({
     projectId: string,
     relevance: number,
   ) => {
-    // Optimistically update local state
     setLocalRelevance((prev) => ({
       ...prev,
       [projectId]: relevance,
@@ -253,12 +165,12 @@ export function ScoringInterface({
         >
           <SheetContent
             side="bottom"
-            className="max-w-sm rounded-t-xl h-[75vh] p-4"
+            className="max-w-sm rounded-t-xl h-[90vh] p-4"
           >
-            <SheetHeader>
+            <SheetHeader className="mb-2">
               <SheetTitle>Project Details</SheetTitle>
             </SheetHeader>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <p className="font-semibold text-slate-900">
                 {selectedProject.name}
               </p>
@@ -280,7 +192,7 @@ export function ScoringInterface({
                 </a>
               )}
             </div>
-            <div className="mt-6 space-y-4 border-t pt-4">
+            <div className="mt-3 space-y-3 border-t pt-3">
               <p className="text-sm font-medium text-slate-700">Scores</p>
               <ProjectScoreForm
                 projectId={selectedProject.id}
@@ -292,6 +204,15 @@ export function ScoringInterface({
                 onRelevanceChange={handleRelevanceChange}
               />
             </div>
+            {showNoteInput && (
+              <div className="mt-3 border-t pt-3">
+                <NoteInput
+                  projectId={selectedProject.id}
+                  initialNote={selectedProject.note || ""}
+                  judgeId={judgeId}
+                />
+              </div>
+            )}
           </SheetContent>
         </Sheet>
       )}

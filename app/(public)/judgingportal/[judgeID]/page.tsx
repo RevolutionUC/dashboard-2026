@@ -16,6 +16,7 @@ interface ProjectWithScores {
   status: string;
   scores: (number | null)[];
   categoryRelevance: number;
+  note: string | null;
 }
 
 export default async function JudgingPortalPage({
@@ -40,6 +41,7 @@ export default async function JudgingPortalPage({
       projectStatus: projects.status,
       scores: evaluations.scores,
       categoryRelevance: evaluations.categoryRelevance,
+      note: evaluations.note,
     })
     .from(evaluations)
     .innerJoin(projects, eq(evaluations.projectId, projects.id))
@@ -55,6 +57,7 @@ export default async function JudgingPortalPage({
     status: row.projectStatus,
     scores: row.scores || [null, null, null],
     categoryRelevance: row.categoryRelevance,
+    note: row.note,
   }));
 
   return (
@@ -101,6 +104,7 @@ export default async function JudgingPortalPage({
             projects={assignedProjects}
             judgeId={judgeID}
             categoryType={categoryType}
+            showNoteInput={true}
           />
         )}
       </div>
