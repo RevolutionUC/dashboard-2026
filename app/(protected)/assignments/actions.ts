@@ -149,6 +149,13 @@ export async function assignProjectsToJudgeGroups(
       assignmentsByProject.get(assignment.projectId)!.push(assignment);
     }
 
+    // There might be projects that don't have any assignment yet due to being General-only, so we must init them with []
+    for (const submission of allSubmissions) {
+      if (!assignmentsByProject.get(submission.projectId)) {
+        assignmentsByProject.set(submission.projectId, [])
+      }
+    }
+
     const generalGroupQueue = groupsQueueByCategory.get("general");
 
     if (generalGroupQueue && generalGroupQueue.length > 0) {
