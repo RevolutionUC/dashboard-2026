@@ -1,0 +1,127 @@
+"use client";
+
+import { Pencil } from "lucide-react";
+import { useId, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FormFooter, FormMessage } from "@/components/form-dialog";
+import { type CategoryType, updateCategory } from "./actions";
+
+const CATEGORY_TYPES: CategoryType[] = ["Sponsor", "Inhouse", "General"];
+
+interface EditCategoryModalProps {
+  category: {
+    id: string;
+    name: string;
+    type: CategoryType;
+  };
+}
+
+export function EditCategoryModal({ category }: EditCategoryModalProps) {
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const id = useId();
+
+  const [newId, setNewId] = useState(category.id);
+  const [name, setName] = useState(category.name);
+  const [type, setType] = useState<CategoryType>(category.type);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    const result = await updateCategory({
+      id: category.id,
+      newId: newId !== category.id ? newId : undefined,
+      name,
+      type,
+    });
+
+    setIsLoading(false);
+
+    if (result.success) {
+      setSuccess("Category updated successfully!");
+      setTimeout(() => {
+        setOpen(false);
+        setSuccess(null);
+      }, 1500);
+    } else {
+      setError(result.error || "Failed to update category");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Pencil className="h-4 w-4" />
+          <span className="sr-only">Edit {category.name}</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Category</DialogTitle>
+          <DialogDescription>Update category details for {category.id}.</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-shortcode`}>Shortcode (ID)</Label>
+            <Input id={`${id}-shortcode`} value={newId} onChange={(e) => setNewId(e.target.value)} required />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-name`}>Name</Label>
+            <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-type`}>Type</Label>
+            <Select value={type} onValueChange={(value) => setType(value as CategoryType)}>
+              <SelectTrigger id={`${id}-type`}>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {error && <FormMessage error={error} />}
+          {success && <FormMessage success={success} />}
+
+          <FormFooter
+            isLoading={isLoading}
+            onCancel={() => setOpen(false)}
+            submitLabel="Save Changes"
+            loadingLabel="Saving..."
+          />
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,9 +1,12 @@
-"use client";
+"use client"
 
 import {
   CalendarDays,
   CalendarRange,
   ChevronRight,
+  ClipboardList,
+  FolderKanban,
+  Gavel,
   Home,
   Inbox,
   QrCode,
@@ -11,6 +14,8 @@ import {
   ScrollText,
   Search,
   ShieldCheck,
+  TrendingUp,
+  Trophy,
   ChartLine,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -33,8 +38,9 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
+import Link from "next/link";
 
-// Menu items (without Plan, which has sub-items).
+// Menu items (without Plan and Judging, which have sub-items).
 const items = [
   {
     title: "Dashboard",
@@ -77,6 +83,34 @@ const planSubItems = [
   },
 ];
 
+const judgingSubItems = [
+  {
+    title: "Judges & Categories",
+    url: "/judges-and-categories",
+    icon: Gavel,
+  },
+  {
+    title: "Projects",
+    url: "/projects",
+    icon: FolderKanban,
+  },
+  {
+    title: "Assignments",
+    url: "/assignments",
+    icon: ClipboardList,
+  },
+  {
+    title: "General Scorings",
+    url: "/generalScorings",
+    icon: TrendingUp,
+  },
+  {
+    title: "Category Scorings",
+    url: "/categoryScorings",
+    icon: Trophy,
+  },
+];
+
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
   const [dashboardRole, setDashboardRole] = useState<string | null>(null);
@@ -112,10 +146,10 @@ export function AppSidebar() {
                 .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -136,10 +170,10 @@ export function AppSidebar() {
                       {planSubItems.map((item) => (
                         <SidebarMenuSubItem key={item.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={item.url}>
+                            <Link href={item.url}>
                               <item.icon />
                               <span>{item.title}</span>
-                            </a>
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
@@ -148,6 +182,33 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               </Collapsible>
               )}
+
+              {/* Judging with collapsible sub-menu */}
+              <Collapsible defaultOpen className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                      <Gavel />
+                      <span>Judging</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {judgingSubItems.map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton asChild>
+                            <Link href={item.url}>
+                              <item.icon />
+                              <span>{item.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

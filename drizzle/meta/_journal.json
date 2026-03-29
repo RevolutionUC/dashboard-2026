@@ -15,6 +15,20 @@
       "when": 1774300000000,
       "tag": "0001_add_confirm_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774703764174,
+      "tag": "0002_add_dashboard_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774744093219,
+      "tag": "0003_implement_judging_features",
+      "breakpoints": true
     }
   ]
 }

@@ -107,6 +107,17 @@ export const auth = betterAuth({
   },
 });
 
+/**
+ * Assert that the current request is authenticated.
+ * Throws an error if the user is not logged in.
+ */
+export async function assertAuthorization(): Promise<void> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+}
+
 export async function getSessionWithRole() {
   const session = await auth.api.getSession({
     headers: await headers(),

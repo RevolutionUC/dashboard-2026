@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -5,6 +6,7 @@ import {
   json,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -225,7 +227,7 @@ export const dayOfSchedule = pgTable(
 export const eventRegistrations = pgTable(
   "event_registrations",
   {
-    // unique index for evernts regsitration table
+    // unique index for evernts registration table
     id: uuid("id").primaryKey().defaultRandom(),
     participant_id: uuid("participant_id")
       .notNull()
@@ -317,5 +319,261 @@ export const auditLogs = pgTable(
     index("audit_logs_user_id_idx").on(table.user_id),
     index("audit_logs_action_idx").on(table.action),
     index("audit_logs_event_time_idx").on(table.event_time),
+  ]
+)
+// Judge and Category Tables
+// ============================================
+
+export const judgingPhase = pgEnum("judging_phase", ["scoring", "finalized"]);
+
+export const categoryType = pgEnum("category_type", [
+  "Sponsor",
+  "Inhouse",
+  "General",
+  "MLH",
+]);
+
+export const categories = pgTable(
+  "categories",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    type: categoryType("type").notNull().default("General"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("categories_type_idx").on(table.type)],
+);
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  judgeGroups: many(judgeGroups),
+  judges: many(judges),
+  evaluations: many(evaluations),
+}));
+
+export const judgeGroups = pgTable(
+  "judge_groups",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    name: text("name").notNull(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("judge_groups_category_idx").on(table.categoryId),
+    index("judge_groups_name_idx").on(table.name),
   ],
 );
+
+export const judgeGroupsRelations = relations(judgeGroups, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [judgeGroups.categoryId],
+    references: [categories.id],
+  }),
+  judges: many(judges),
+  assignments: many(assignments),
+}));
+
+export const judges = pgTable(
+  "judges",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    judgeGroupId: integer("judge_group_id").references(() => judgeGroups.id, {
+      onDelete: "set null",
+    }),
+    judgingPhase: judgingPhase("judging_phase").notNull().default("scoring"),
+    isCheckedin: boolean("is_checkedin").default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("judges_category_idx").on(table.categoryId),
+    index("judges_group_idx").on(table.judgeGroupId),
+  ],
+);
+
+export const judgesRelations = relations(judges, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [judges.categoryId],
+    references: [categories.id],
+  }),
+  judgeGroup: one(judgeGroups, {
+    fields: [judges.judgeGroupId],
+    references: [judgeGroups.id],
+  }),
+  evaluations: many(evaluations),
+}));
+
+// ============================================
+// Project Tables
+// ============================================
+
+export const projectStatus = pgEnum("project_status", [
+  "created",
+  "disqualified",
+]);
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    status: projectStatus("status").notNull().default("created"),
+    url: text("url"),
+    location: text("location").notNull(),
+    location2: text("location2").notNull(),
+    disqualifyReason: text("disqualify_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("projects_status_idx").on(table.status),
+    index("projects_location_idx").on(table.location),
+  ],
+);
+
+export const projectsRelations = relations(projects, ({ many }) => ({
+  submissions: many(submissions),
+  assignments: many(assignments),
+  evaluations: many(evaluations),
+}));
+
+export const submissions = pgTable(
+  "submissions",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.categoryId] }),
+    index("submissions_project_idx").on(table.projectId),
+    index("submissions_category_idx").on(table.categoryId),
+  ],
+);
+
+export const submissionsRelations = relations(submissions, ({ one }) => ({
+  project: one(projects, {
+    fields: [submissions.projectId],
+    references: [projects.id],
+  }),
+  category: one(categories, {
+    fields: [submissions.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+// ============================================
+// Assignment Tables (Project to Judge Group)
+// ============================================
+
+export const assignments = pgTable(
+  "assignments",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    judgeGroupId: integer("judge_group_id")
+      .notNull()
+      .references(() => judgeGroups.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.judgeGroupId, table.projectId] }),
+    index("assignments_project_idx").on(table.projectId),
+    index("assignments_judge_group_idx").on(table.judgeGroupId),
+  ],
+);
+
+export const assignmentsRelations = relations(assignments, ({ one }) => ({
+  judgeGroup: one(judgeGroups, {
+    fields: [assignments.judgeGroupId],
+    references: [judgeGroups.id],
+  }),
+  project: one(projects, {
+    fields: [assignments.projectId],
+    references: [projects.id],
+  }),
+}));
+
+// ============================================
+// Evaluation Table (Judge scoring for projects)
+// ============================================
+
+export const evaluations = pgTable(
+  "evaluations",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    judgeId: uuid("judge_id")
+      .notNull()
+      .references(() => judges.id, { onDelete: "cascade" }),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    scores: integer("scores").array(),
+    categoryRelevance: integer("category_relevance").notNull().default(0),
+    categoryBordaScore: integer("category_borda_score"),
+    note: text("note"),
+  },
+  (table) => [
+    primaryKey({ columns: [table.judgeId, table.projectId] }),
+    index("evaluations_project_idx").on(table.projectId),
+    index("evaluations_judge_idx").on(table.judgeId),
+    index("evaluations_category_idx").on(table.categoryId),
+  ],
+);
+
+export const evaluationsRelations = relations(evaluations, ({ one }) => ({
+  project: one(projects, {
+    fields: [evaluations.projectId],
+    references: [projects.id],
+  }),
+  judge: one(judges, {
+    fields: [evaluations.judgeId],
+    references: [judges.id],
+  }),
+  category: one(categories, {
+    fields: [evaluations.categoryId],
+    references: [categories.id],
+  }),
+}));

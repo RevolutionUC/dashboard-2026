@@ -8,11 +8,11 @@ import {
 import formData from "form-data";
 import Mailgun from "mailgun.js";
 import { db } from "@/lib/db";
-import { accessRequests, confirmTokens, participants } from "@/lib/db/schema";
+import { accessRequests, confirmTokens, participants, judges } from "@/lib/db/schema";
 import { eq, inArray, isNull, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
-type RecipientType = "all" | "status" | "specific";
+type RecipientType = "all" | "status" | "specific" | "specific-judges" | "judges";
 
 interface SendEmailRequest {
     templateId: string;
@@ -23,6 +23,7 @@ interface SendEmailRequest {
 
 // Templates that use per-recipient confirmation URLs
 const CONFIRM_ATTENDANCE_ID = "confirm-attendance";
+const JUDGE_PORTAL_LINK_ID = "judge-portal-link";
 
 export async function POST(request: NextRequest) {
     try {
@@ -136,6 +137,34 @@ export async function POST(request: NextRequest) {
                     participantMap.set(p.email, { firstName: p.firstName, userId: p.userId });
                 }
                 recipients = specificEmails || [];
+            } else if (recipientType === "specific-judges") {
+                const knownJudges = await db
+                    .select({ email: judges.email, name: judges.name, id: judges.id })
+                    .from(judges)
+                    .where(inArray(judges.email, specificEmails ?? []));
+                for (const j of knownJudges) {
+                    participantMap.set(j.email, { firstName: j.name, userId: j.id });
+                }
+                recipients = specificEmails || [];
+
+                const foundEmails = new Set(knownJudges.map((j) => j.email));
+                const notFoundEmails = (specificEmails ?? []).filter(
+                    (email) => !foundEmails.has(email),
+                );
+                if (notFoundEmails.length > 0) {
+                    return NextResponse.json(
+                        { error: `Judge email(s) not found: ${notFoundEmails.join(", ")}` },
+                        { status: 400 },
+                    );
+                }
+            } else if (recipientType === "judges") {
+                const allJudges = await db
+                    .select({ email: judges.email, name: judges.name, id: judges.id })
+                    .from(judges);
+                for (const j of allJudges) {
+                    participantMap.set(j.email, { firstName: j.name, userId: j.id });
+                }
+                recipients = allJudges.map((j) => j.email);
             }
         } catch (dbError) {
             console.error("Database query error:", dbError);
@@ -169,6 +198,9 @@ export async function POST(request: NextRequest) {
                     yesConfirmationUrl: true,
                     noConfirmationUrl: true,
                 }),
+                ...(templateId === JUDGE_PORTAL_LINK_ID && (recipientType === "judges" || recipientType === "specific-judges") && {
+                    portalUrl: true,
+                }),
             };
             const unsatisfied = template.requiredProps.filter(
                 (prop) => !(prop in providedProps) || !providedProps[prop],
@@ -197,6 +229,7 @@ export async function POST(request: NextRequest) {
 
         const emailSubject = template.subject;
         const isConfirmAttendance = templateId === CONFIRM_ATTENDANCE_ID;
+        const isJudgePortalLink = templateId === JUDGE_PORTAL_LINK_ID;
         const baseUrl = "https://revolutionuc.com";
 
         // Generate short-lived confirmation tokens for confirm-attendance emails
@@ -254,6 +287,9 @@ export async function POST(request: NextRequest) {
                 yesConfirmationUrl: "%recipient.yesUrl%",
                 noConfirmationUrl: "%recipient.noUrl%",
             }),
+            ...(isJudgePortalLink && {
+                portalUrl: "%recipient.portalUrl%",
+            }),
         };
 
         const [html, text] = await Promise.all([
@@ -285,6 +321,10 @@ export async function POST(request: NextRequest) {
                     vars.yesUrl = `${baseUrl}/confirm?response=yes`;
                     vars.noUrl = `${baseUrl}/confirm?response=no`;
                 }
+            }
+            if (isJudgePortalLink && participant?.userId) {
+                const judgingPortalUrl = process.env.NEXT_PUBLIC_JUDGING_PORTAL_URL || "https://dashboard.revolutionuc.com/judgingportal";
+                vars.portalUrl = `${judgingPortalUrl}/${participant.userId}`;
             }
             recipientVariables[email] = vars;
         }
