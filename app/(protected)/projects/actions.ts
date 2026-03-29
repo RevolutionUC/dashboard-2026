@@ -7,8 +7,6 @@ import { assertAuthorization } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   categories,
-  judgeGroups,
-  judges,
   projects,
   submissions,
 } from "@/lib/db/schema";
@@ -24,8 +22,8 @@ const devPostCsvColsMapping = {
   "Submitter First Name": "submitterFirstName",
   "Submitter Last Name": "submitterLastName",
   "Submitter Email": "submitterEmail",
-  "What Is The Table Number You Have Been Assigned By Organizers (Eg. 50)":
-    "location",
+  "location": "location",
+  "location2": "location2",
   "What School Do You Attend? If You Are No Longer In School, What University Did You Attend Most Recently?":
     "school",
   "List All Of The Domain Names Your Team Has Registered With .Tech During This Hackathon.":
@@ -127,7 +125,7 @@ export async function importProjectsFromDevpost(
           .values({
             name: p.title,
             location: p.location,
-            location2: "",
+            location2: p.location2,
             url: p.url,
             status: "created",
           })
