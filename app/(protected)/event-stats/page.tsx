@@ -61,6 +61,37 @@ interface RawEventStatsResponse {
   lastUpdated?: string;
 }
 
+function AttendeeTable({ attendees }: { attendees: CheckinAttendee[] }) {
+  return (
+    <div className="max-h-[420px] overflow-auto rounded-md border">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40">
+          <tr className="text-left">
+            <th className="px-3 py-2 font-medium">Name</th>
+            <th className="px-3 py-2 font-medium">Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          {attendees.length === 0 ? (
+            <tr>
+              <td className="px-3 py-3 text-muted-foreground" colSpan={2}>
+                No attendees found.
+              </td>
+            </tr>
+          ) : (
+            attendees.map((attendee) => (
+              <tr key={attendee.id} className="border-t">
+                <td className="px-3 py-2">{attendee.name}</td>
+                <td className="px-3 py-2 text-muted-foreground">{attendee.email || "—"}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function normalizeRegistration(reg: RawRegistration) {
   return {
     id: reg.id,
@@ -232,7 +263,6 @@ export default function EventStatsPage() {
 
                 {(data?.workshops ?? []).map((workshop) => {
                   const selected = workshop.id === selectedWorkshopId;
-                  const total = workshop.totalRegistered ?? 0;
                   return (
                     <button
                       key={workshop.id}
@@ -267,34 +297,7 @@ export default function EventStatsPage() {
                 {!selectedWorkshop ? (
                   <p className="text-sm text-muted-foreground">Select a workshop to view who checked in.</p>
                 ) : (
-                  <>
-                    <div className="max-h-[420px] overflow-auto rounded-md border">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/40">
-                          <tr className="text-left">
-                            <th className="px-3 py-2 font-medium">Name</th>
-                            <th className="px-3 py-2 font-medium">Email</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredWorkshopAttendees.length === 0 ? (
-                            <tr>
-                              <td className="px-3 py-3 text-muted-foreground" colSpan={2}>
-                                No attendees found.
-                              </td>
-                            </tr>
-                          ) : (
-                            filteredWorkshopAttendees.map((a) => (
-                              <tr key={a.id} className="border-t">
-                                <td className="px-3 py-2">{a.name}</td>
-                                <td className="px-3 py-2 text-muted-foreground">{a.email || "—"}</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
+                  <AttendeeTable attendees={filteredWorkshopAttendees} />
                 )}
               </CardContent>
             </Card>
@@ -348,34 +351,7 @@ export default function EventStatsPage() {
                     Select a food checkpoint to view who checked in.
                   </p>
                 ) : (
-                  <>
-                    <div className="max-h-[420px] overflow-auto rounded-md border">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/40">
-                          <tr className="text-left">
-                            <th className="px-3 py-2 font-medium">Name</th>
-                            <th className="px-3 py-2 font-medium">Email</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredFoodAttendees.length === 0 ? (
-                            <tr>
-                              <td className="px-3 py-3 text-muted-foreground" colSpan={2}>
-                                No attendees found.
-                              </td>
-                            </tr>
-                          ) : (
-                            filteredFoodAttendees.map((a) => (
-                              <tr key={a.id} className="border-t">
-                                <td className="px-3 py-2">{a.name}</td>
-                                <td className="px-3 py-2 text-muted-foreground">{a.email || "—"}</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
+                  <AttendeeTable attendees={filteredFoodAttendees} />
                 )}
               </CardContent>
             </Card>
