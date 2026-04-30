@@ -2,6 +2,7 @@
 
 import { Pencil } from "lucide-react";
 import { useId, useState } from "react";
+import { CategoryTypeSelectField } from "@/components/category-type-select-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,13 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { type CategoryType, updateCategory } from "./actions";
 
@@ -95,21 +89,12 @@ export function EditCategoryModal({ category }: EditCategoryModalProps) {
             <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-type`}>Type</Label>
-            <Select value={type} onValueChange={(value) => setType(value as CategoryType)}>
-              <SelectTrigger id={`${id}-type`}>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CategoryTypeSelectField
+            id={`${id}-type`}
+            value={type}
+            onValueChange={(value) => setType(value as CategoryType)}
+            types={CATEGORY_TYPES}
+          />
 
           {error && <FormMessage error={error} />}
           {success && <FormMessage success={success} />}

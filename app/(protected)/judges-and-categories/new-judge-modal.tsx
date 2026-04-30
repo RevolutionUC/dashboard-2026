@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { CsvImportFormSection } from "@/components/csv-import-form-section";
 import { TwoModeCreateDialog } from "@/components/two-mode-create-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createJudge, createJudgesBulk } from "./actions";
@@ -175,37 +175,24 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
       )}
       bulkContent={(
         <form ref={bulkFormRef} onSubmit={handleBulkSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-csv`}>CSV Data</Label>
-            <p className="text-xs text-muted-foreground">
-              Format: <code>name,email,categoryId</code> (no header row)
-            </p>
-            <Textarea
-              id={`${id}-csv`}
-              name="csv"
-              placeholder={`John Doe,john@example.com,SPONSOR_01
+          <CsvImportFormSection
+            id={`${id}-csv`}
+            formatHint={<>Format: <code>name,email,categoryId</code> (no header row)</>}
+            placeholder={`John Doe,john@example.com,SPONSOR_01
 Jane Smith,jane@example.com,INHOUSE_01
 Bob Wilson,bob@example.com,SPONSOR_02`}
-              className="min-h-37.5 font-mono text-sm"
-              required
-            />
-          </div>
-
-          <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-            <p className="font-medium mb-1">Available Categories:</p>
-            <ul className="list-disc list-inside max-h-25 overflow-y-auto">
-              {categories.map((c) => (
-                <li key={c.id}>
-                  <code>{c.id}</code> - {c.name}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {error && <FormMessage error={error} />}
-          {success && <FormMessage success={success} />}
-
-          <FormFooter
+            infoTitle="Available Categories:"
+            infoContent={(
+              <ul className="list-disc list-inside max-h-25 overflow-y-auto">
+                {categories.map((c) => (
+                  <li key={c.id}>
+                    <code>{c.id}</code> - {c.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+            error={error}
+            success={success}
             isLoading={isLoading}
             onCancel={() => setOpen(false)}
             submitLabel="Import CSV"

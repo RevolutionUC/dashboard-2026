@@ -1,17 +1,11 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { CategoryTypeSelectField } from "@/components/category-type-select-field";
+import { CsvImportFormSection } from "@/components/csv-import-form-section";
 import { TwoModeCreateDialog } from "@/components/two-mode-create-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createCategoriesBulk, createCategory } from "./actions";
@@ -128,25 +122,12 @@ export function NewCategoryModal() {
             <Input id={`${id}-name`} name="name" placeholder="e.g., Best Sponsor Project" required />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-type`}>Type</Label>
-            <Select
-              value={typeValue}
-              onValueChange={(value) => setTypeValue(value as CategoryType)}
-              name="type"
-            >
-              <SelectTrigger id={`${id}-type`}>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CategoryTypeSelectField
+            id={`${id}-type`}
+            value={typeValue}
+            onValueChange={(value) => setTypeValue(value as CategoryType)}
+            types={CATEGORY_TYPES}
+          />
 
           {error && <FormMessage error={error} />}
           {success && <FormMessage success={success} />}
@@ -161,35 +142,22 @@ export function NewCategoryModal() {
       )}
       bulkContent={(
         <form ref={bulkFormRef} onSubmit={handleBulkSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-csv`}>CSV Data</Label>
-            <p className="text-xs text-muted-foreground">
-              Format: <code>id,name,type</code> (no header row)
-            </p>
-            <Textarea
-              id={`${id}-csv`}
-              name="csv"
-              placeholder={`SPONSOR_01,Best AI Project,Sponsor
+          <CsvImportFormSection
+            id={`${id}-csv`}
+            formatHint={<>Format: <code>id,name,type</code> (no header row)</>}
+            placeholder={`SPONSOR_01,Best AI Project,Sponsor
 SPONSOR_02,Best Web App,Sponsor
 INHOUSE_01,Innovation Award,Inhouse`}
-              className="min-h-37.5 font-mono text-sm"
-              required
-            />
-          </div>
-
-          <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-            <p className="font-medium mb-1">Valid types:</p>
-            <ul className="list-disc list-inside">
-              <li>Sponsor</li>
-              <li>Inhouse</li>
-              <li>General</li>
-            </ul>
-          </div>
-
-          {error && <FormMessage error={error} />}
-          {success && <FormMessage success={success} />}
-
-          <FormFooter
+            infoTitle="Valid types:"
+            infoContent={(
+              <ul className="list-disc list-inside">
+                <li>Sponsor</li>
+                <li>Inhouse</li>
+                <li>General</li>
+              </ul>
+            )}
+            error={error}
+            success={success}
             isLoading={isLoading}
             onCancel={() => setOpen(false)}
             submitLabel="Import CSV"
