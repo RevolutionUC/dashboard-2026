@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logAction } from "@/lib/audit";
 import { getSessionWithRole } from "@/lib/auth";
 
 interface AuthorizedSession {
@@ -44,4 +45,50 @@ export function getRequiredIdFromRequest(request: NextRequest): string | NextRes
     return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
   }
   return id;
+}
+
+type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+type SessionWithUser = {
+  user: SessionUser;
+};
+
+type SessionWithIdResult =
+  | { error: NextResponse }
+  | { session: SessionWithUser; id: string };
+
+export async function requireSessionWithId(
+  request: NextRequest,
+): Promise<SessionWithIdResult> {
+  const auth = await requireNonOrganizerSession();
+  if ("error" in auth) {
+    return { error: auth.error };
+  }
+
+  const idOrError = getRequiredIdFromRequest(request);
+  if (typeof idOrError !== "string") {
+    return { error: idOrError };
+  }
+
+  return { session: auth.session, id: idOrError };
+}
+
+export async function logNamedTargetAction(
+  session: SessionWithUser,
+  action: string,
+  targetId: string,
+  targetName: string,
+) {
+  await logAction({
+    userId: session.user.id,
+    name: session.user.name,
+    email: session.user.email,
+    action,
+    targetId,
+    details: { name: targetName },
+  });
 }

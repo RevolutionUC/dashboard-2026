@@ -2,8 +2,7 @@ import { desc, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
-import { logAction } from "@/lib/audit";
-import { getRequiredIdFromRequest, requireNonOrganizerSession } from "@/lib/api/route-utils";
+import { logNamedTargetAction, requireNonOrganizerSession, requireSessionWithId } from "@/lib/api/route-utils";
 
 // GET all events
 export async function GET() {
@@ -59,14 +58,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
     
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "CREATE_EVENT",
-      targetId: newEvent.id,
-      details: { name: newEvent.name },
-    });
+    await logNamedTargetAction(session, "CREATE_EVENT", newEvent.id, newEvent.name);
 
     return NextResponse.json(newEvent, { status: 201 });
   } catch (error) {
@@ -78,17 +70,11 @@ export async function POST(request: NextRequest) {
 // PATCH update an event
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await requireNonOrganizerSession();
-    if ("error" in auth) {
-      return auth.error;
+    const sessionAndId = await requireSessionWithId(request);
+    if ("error" in sessionAndId) {
+      return sessionAndId.error;
     }
-    const { session } = auth;
-
-    const idOrError = getRequiredIdFromRequest(request);
-    if (typeof idOrError !== "string") {
-      return idOrError;
-    }
-    const id = idOrError;
+    const { session, id } = sessionAndId;
 
     const body = await request.json();
     const { name, description, eventType, startTime, endTime, location, capacity } = body;
@@ -120,14 +106,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "UPDATE_EVENT",
-      targetId: updatedEvent.id,
-      details: { name: updatedEvent.name },
-    });
+    await logNamedTargetAction(session, "UPDATE_EVENT", updatedEvent.id, updatedEvent.name);
 
     return NextResponse.json(updatedEvent);
   } catch (error) {
@@ -139,17 +118,11 @@ export async function PATCH(request: NextRequest) {
 // DELETE an event
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = await requireNonOrganizerSession();
-    if ("error" in auth) {
-      return auth.error;
+    const sessionAndId = await requireSessionWithId(request);
+    if ("error" in sessionAndId) {
+      return sessionAndId.error;
     }
-    const { session } = auth;
-
-    const idOrError = getRequiredIdFromRequest(request);
-    if (typeof idOrError !== "string") {
-      return idOrError;
-    }
-    const id = idOrError;
+    const { session, id } = sessionAndId;
 
     const [deletedEvent] = await db.delete(events).where(eq(events.id, id)).returning();
 
@@ -157,14 +130,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
     
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "DELETE_EVENT",
-      targetId: deletedEvent.id,
-      details: { name: deletedEvent.name },
-    });
+    await logNamedTargetAction(session, "DELETE_EVENT", deletedEvent.id, deletedEvent.name);
     
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {

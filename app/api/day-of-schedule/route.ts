@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { dayOfSchedule, user } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
-import { logAction } from "@/lib/audit";
-import { getRequiredIdFromRequest, requireNonOrganizerSession } from "@/lib/api/route-utils";
+import { logNamedTargetAction, requireNonOrganizerSession, requireSessionWithId } from "@/lib/api/route-utils";
 
 // GET all day-of schedule events with creator info
 export async function GET() {
@@ -73,14 +72,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
     
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "CREATE_SCHEDULE",
-      targetId: newScheduleItem.id,
-      details: { name: newScheduleItem.name },
-    });
+    await logNamedTargetAction(session, "CREATE_SCHEDULE", newScheduleItem.id, newScheduleItem.name);
 
     return NextResponse.json(newScheduleItem, { status: 201 });
   } catch (error) {
@@ -92,17 +84,11 @@ export async function POST(request: NextRequest) {
 // PATCH update a day-of schedule event
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await requireNonOrganizerSession();
-    if ("error" in auth) {
-      return auth.error;
+    const sessionAndId = await requireSessionWithId(request);
+    if ("error" in sessionAndId) {
+      return sessionAndId.error;
     }
-    const { session } = auth;
-
-    const idOrError = getRequiredIdFromRequest(request);
-    if (typeof idOrError !== "string") {
-      return idOrError;
-    }
-    const id = idOrError;
+    const { session, id } = sessionAndId;
 
     const body = await request.json();
     const { name, startTime, endTime, location, capacity, visibility } = body;
@@ -133,14 +119,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "UPDATE_SCHEDULE",
-      targetId: updatedItem.id,
-      details: { name: updatedItem.name },
-    });
+    await logNamedTargetAction(session, "UPDATE_SCHEDULE", updatedItem.id, updatedItem.name);
 
     return NextResponse.json(updatedItem);
   } catch (error) {
@@ -152,17 +131,11 @@ export async function PATCH(request: NextRequest) {
 // DELETE a day-of schedule event
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = await requireNonOrganizerSession();
-    if ("error" in auth) {
-      return auth.error;
+    const sessionAndId = await requireSessionWithId(request);
+    if ("error" in sessionAndId) {
+      return sessionAndId.error;
     }
-    const { session } = auth;
-
-    const idOrError = getRequiredIdFromRequest(request);
-    if (typeof idOrError !== "string") {
-      return idOrError;
-    }
-    const id = idOrError;
+    const { session, id } = sessionAndId;
 
     const [deletedItem] = await db
       .delete(dayOfSchedule)
@@ -173,14 +146,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
     
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "DELETE_SCHEDULE",
-      targetId: deletedItem.id,
-      details: { name: deletedItem.name },
-    });
+    await logNamedTargetAction(session, "DELETE_SCHEDULE", deletedItem.id, deletedItem.name);
 
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
