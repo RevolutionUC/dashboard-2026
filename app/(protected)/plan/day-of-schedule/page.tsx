@@ -6,15 +6,15 @@ import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { CreateEventDialog } from "@/components/create-event-dialog";
 import { EventSchedulingFields } from "@/components/event-scheduling-fields";
 import { EventDetailsDialog } from "@/components/event-details-dialog";
+import { EventNameField } from "@/components/event-name-field";
+import { FormErrorAlert } from "@/components/form-error-alert";
+import { SubmitCancelFooter } from "@/components/submit-cancel-footer";
 import { VisibilitySelectField } from "@/components/visibility-select-field";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -375,23 +375,14 @@ export default function DayOfSchedule() {
           </DialogHeader>
           <form onSubmit={handleEditSubmit}>
             <div className="grid gap-4 py-4">
-              {editError && (
-                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                  {editError}
-                </div>
-              )}
-
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Name *</Label>
-                <Input
-                  id="edit-name"
-                  name="name"
-                  value={editForm.name}
-                  onChange={handleEditChange}
-                  placeholder="Enter name"
-                  required
-                />
-              </div>
+              <FormErrorAlert error={editError} />
+              <EventNameField
+                id="edit-name"
+                label="Name *"
+                value={editForm.name}
+                onChange={handleEditChange}
+                placeholder="Enter name"
+              />
 
               <VisibilitySelectField
                 id="edit-visibility"
@@ -406,19 +397,12 @@ export default function DayOfSchedule() {
               />
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditingItem(null)}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
+            <SubmitCancelFooter
+              isSubmitting={isSaving}
+              onCancel={() => setEditingItem(null)}
+              submitLabel="Save Changes"
+              submittingLabel="Saving..."
+            />
           </form>
         </DialogContent>
       </Dialog>

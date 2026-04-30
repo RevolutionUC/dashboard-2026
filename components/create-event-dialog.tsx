@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { EventNameField } from "@/components/event-name-field";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormErrorAlert } from "@/components/form-error-alert";
 import { EventSchedulingFields } from "@/components/event-scheduling-fields";
+import { SubmitCancelFooter } from "@/components/submit-cancel-footer";
 import { VisibilitySelectField } from "@/components/visibility-select-field";
 import { postJson } from "@/lib/client-api";
 import { toISOStringWithTimezone } from "@/lib/date-time";
@@ -94,23 +94,8 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {error && (
-              <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                {error}
-              </div>
-            )}
-
-            <div className="grid gap-2">
-              <Label htmlFor="name">Event Name *</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Enter event name"
-                required
-              />
-            </div>
+            <FormErrorAlert error={error} />
+            <EventNameField value={formData.name} onChange={handleInputChange} />
 
             <VisibilitySelectField
               id="visibility"
@@ -121,19 +106,12 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
             <EventSchedulingFields values={formData} onChange={handleInputChange} />
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Event"}
-            </Button>
-          </DialogFooter>
+          <SubmitCancelFooter
+            isSubmitting={isLoading}
+            onCancel={() => setOpen(false)}
+            submitLabel="Create Event"
+            submittingLabel="Creating..."
+          />
         </form>
       </DialogContent>
     </Dialog>

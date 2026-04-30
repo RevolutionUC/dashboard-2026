@@ -4,15 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { EventSchedulingFields } from "@/components/event-scheduling-fields";
 import { EventTypeSelect } from "@/components/event-type-select";
+import { EventNameField } from "@/components/event-name-field";
+import { FormErrorAlert } from "@/components/form-error-alert";
+import { SubmitCancelFooter } from "@/components/submit-cancel-footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -235,23 +235,8 @@ export default function Events() {
               </DialogHeader>
               <form onSubmit={handleSubmit}>
                 <div className="grid gap-4 py-4">
-                  {error && (
-                    <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Event Name *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter event name"
-                      required
-                    />
-                  </div>
+                  <FormErrorAlert error={error} />
+                  <EventNameField value={formData.name} onChange={handleInputChange} />
 
                   <div className="grid gap-2">
                     <Label htmlFor="description">Description</Label>
@@ -278,19 +263,12 @@ export default function Events() {
                   />
                 </div>
 
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogOpen(false)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Creating..." : "Create Event"}
-                  </Button>
-                </DialogFooter>
+                <SubmitCancelFooter
+                  isSubmitting={isSubmitting}
+                  onCancel={() => setDialogOpen(false)}
+                  submitLabel="Create Event"
+                  submittingLabel="Creating..."
+                />
               </form>
             </DialogContent>
           </Dialog>
@@ -393,23 +371,12 @@ export default function Events() {
           </DialogHeader>
           <form onSubmit={handleEditSubmit}>
             <div className="grid gap-4 py-4">
-              {editError && (
-                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                  {editError}
-                </div>
-              )}
-
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Event Name *</Label>
-                <Input
-                  id="edit-name"
-                  name="name"
-                  value={editForm.name}
-                  onChange={handleEditChange}
-                  placeholder="Enter event name"
-                  required
-                />
-              </div>
+              <FormErrorAlert error={editError} />
+              <EventNameField
+                id="edit-name"
+                value={editForm.name}
+                onChange={handleEditChange}
+              />
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-description">Description</Label>
@@ -437,19 +404,12 @@ export default function Events() {
               />
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditingEvent(null)}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
+            <SubmitCancelFooter
+              isSubmitting={isSaving}
+              onCancel={() => setEditingEvent(null)}
+              submitLabel="Save Changes"
+              submittingLabel="Saving..."
+            />
           </form>
         </DialogContent>
       </Dialog>
