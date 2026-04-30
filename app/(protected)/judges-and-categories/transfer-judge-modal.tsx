@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeftRight } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { ActionStateMessage } from "@/components/action-state-message";
 import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTimedActionMessage } from "@/hooks/use-timed-action-message";
 import { transferJudgeToGroup } from "./actions";
 
 interface TransferJudgeModalProps {
@@ -57,22 +58,13 @@ export function TransferJudgeModal({
     },
     null,
   );
-  const [showMessage, setShowMessage] = useState(false);
+  const showMessage = useTimedActionMessage(state, {
+    onSuccess: () => {
+      setOpen(false);
+      setSelectedGroupId("");
+    },
+  });
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (state?.error || state?.success) {
-      setShowMessage(true);
-      const timer = setTimeout(() => {
-        setShowMessage(false);
-        if (state?.success) {
-          setOpen(false);
-          setSelectedGroupId("");
-        }
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [state]);
 
   const otherGroups = availableGroups.filter(
     (g) => g.id !== judge.judgeGroupId,

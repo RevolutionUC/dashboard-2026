@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil } from "lucide-react";
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useId } from "react";
 import { ActionStateMessage } from "@/components/action-state-message";
 import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTimedActionMessage } from "@/hooks/use-timed-action-message";
 import { type CategoryType, updateJudgeAction } from "./actions";
 
 interface EditJudgeModalProps {
@@ -41,18 +42,10 @@ interface EditJudgeModalProps {
 
 export function EditJudgeModal({ judge, categories }: EditJudgeModalProps) {
   const [state, formAction, pending] = useActionState(updateJudgeAction, null);
-  const [showMessage, setShowMessage] = useState(false);
+  const showMessage = useTimedActionMessage(state, {
+    durationMs: 1000,
+  });
   const id = useId();
-
-  useEffect(() => {
-    if (state?.error || state?.success) {
-      setShowMessage(true);
-      const timer = setTimeout(() => {
-        setShowMessage(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [state]);
 
   return (
     <Dialog>

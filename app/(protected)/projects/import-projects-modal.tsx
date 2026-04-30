@@ -1,7 +1,7 @@
 "use client";
 
 import { Upload } from "lucide-react";
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useId, useState } from "react";
 import { ActionStateMessage } from "@/components/action-state-message";
 import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTimedActionMessage } from "@/hooks/use-timed-action-message";
 import { importProjectsFromDevpost } from "./actions";
 
 interface ImportProjectsModalProps {
@@ -29,21 +30,10 @@ export function ImportProjectsModal({
     importProjectsFromDevpost,
     null,
   );
-  const [showMessage, setShowMessage] = useState(false);
+  const showMessage = useTimedActionMessage(state, {
+    onSuccess: () => setOpen(false),
+  });
   const id = useId();
-
-  useEffect(() => {
-    if (state?.error || state?.success) {
-      setShowMessage(true);
-      const timer = setTimeout(() => {
-        setShowMessage(false);
-        if (state?.success) {
-          setOpen(false);
-        }
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [state]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

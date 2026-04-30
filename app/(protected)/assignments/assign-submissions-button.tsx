@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { ActionStateMessage } from "@/components/action-state-message";
 import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTimedActionMessage } from "@/hooks/use-timed-action-message";
 import { assignProjectsToJudgeGroups } from "./actions";
 
 export function AssignSubmissionsButton() {
@@ -23,20 +24,10 @@ export function AssignSubmissionsButton() {
     assignProjectsToJudgeGroups,
     null,
   );
-  const [showMessage, setShowMessage] = useState(false);
-
-  useEffect(() => {
-    if (state?.error || state?.success) {
-      setShowMessage(true);
-      const timer = setTimeout(() => {
-        setShowMessage(false);
-        if (state?.success) {
-          setOpen(false);
-        }
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [state]);
+  const showMessage = useTimedActionMessage(state, {
+    durationMs: 2000,
+    onSuccess: () => setOpen(false),
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

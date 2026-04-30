@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useId, useState } from "react";
 import { ActionStateMessage } from "@/components/action-state-message";
 import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useTimedActionMessage } from "@/hooks/use-timed-action-message";
 import { massDisqualifyProjects } from "./actions";
 
 export function MassDisqualifyModal() {
@@ -22,21 +23,10 @@ export function MassDisqualifyModal() {
     massDisqualifyProjects,
     null,
   );
-  const [showMessage, setShowMessage] = useState(false);
+  const showMessage = useTimedActionMessage(state, {
+    onSuccess: () => setOpen(false),
+  });
   const id = useId();
-
-  useEffect(() => {
-    if (state?.error || state?.success) {
-      setShowMessage(true);
-      const timer = setTimeout(() => {
-        setShowMessage(false);
-        if (state?.success) {
-          setOpen(false);
-        }
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [state]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
