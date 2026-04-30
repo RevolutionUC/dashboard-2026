@@ -12,7 +12,7 @@ import {
     TravelReimbursementPartial,
 } from "./components/partials";
 
-export const meta = {
+export const confirmAttendanceFollowUpMeta = {
     id: "confirm-attendance-follow-up",
     name: "Confirm Attendance Follow Up",
     subject: "Thanks for confirming your attendance!",

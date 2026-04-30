@@ -15,4 +15,3 @@ export const HackSubmissionsPartial: React.FC = () => {
     );
 };
 
-export default HackSubmissionsPartial;

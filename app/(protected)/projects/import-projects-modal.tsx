@@ -2,6 +2,8 @@
 
 import { Upload } from "lucide-react";
 import { useActionState, useEffect, useId, useState } from "react";
+import { ActionStateMessage } from "@/components/action-state-message";
+import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -77,28 +79,20 @@ export function ImportProjectsModal({
             </p>
           </div>
 
-          {showMessage && state?.error && (
-            <div className="text-sm text-red-500">{state.error}</div>
-          )}
-          {showMessage && state?.success && (
-            <div className="text-sm text-green-500">
-              Successfully imported {state.imported} project(s)
-              {(state.skipped ?? 0) > 0 &&
-                ` (skipped ${state.skipped} draft project(s))`}
-              !
-            </div>
-          )}
+          <ActionStateMessage
+            show={showMessage}
+            error={state?.error}
+            success={state?.success}
+            successText={`Successfully imported ${state?.imported ?? 0} project(s)${
+              (state?.skipped ?? 0) > 0 ? ` (skipped ${state?.skipped} draft project(s))` : ""
+            }!`}
+          />
 
-          <div className="flex justify-end gap-2 pt-2">
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogTrigger>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Importing..." : "Import Projects"}
-            </Button>
-          </div>
+          <DialogActionFooter
+            pending={pending}
+            pendingLabel="Importing..."
+            submitLabel="Import Projects"
+          />
         </form>
       </DialogContent>
     </Dialog>

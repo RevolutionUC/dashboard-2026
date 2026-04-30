@@ -273,4 +273,3 @@ const copyright = {
   overflowWrap: "break-word" as const,
 };
 
-export default EmailLayout;

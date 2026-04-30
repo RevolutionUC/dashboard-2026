@@ -23,4 +23,3 @@ export const SchedulePartial: React.FC = () => {
     );
 };
 
-export default SchedulePartial;

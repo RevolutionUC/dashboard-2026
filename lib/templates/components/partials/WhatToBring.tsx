@@ -16,4 +16,3 @@ export const WhatToBringPartial: React.FC = () => {
     );
 };
 
-export default WhatToBringPartial;

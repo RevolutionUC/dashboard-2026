@@ -1,9 +1,9 @@
 import { desc, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
-import { getSessionWithRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { logAction } from "@/lib/audit";
+import { getRequiredIdFromRequest, requireNonOrganizerSession } from "@/lib/api/route-utils";
 
 // GET all events
 export async function GET() {
@@ -20,19 +20,11 @@ export async function GET() {
 // POST create a new event
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const sessionInfo = await getSessionWithRole();
-
-    if (!sessionInfo) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireNonOrganizerSession();
+    if ("error" in auth) {
+      return auth.error;
     }
-
-    const { session, dashboardRole } = sessionInfo;
-
-    // Block organizers from creating events
-    if (dashboardRole === "organizer") {
-      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
-    }
+    const { session } = auth;
 
     const body = await request.json();
     const { name, description, eventType, startTime, endTime, location, capacity } = body;
@@ -86,25 +78,17 @@ export async function POST(request: NextRequest) {
 // PATCH update an event
 export async function PATCH(request: NextRequest) {
   try {
-    const sessionInfo = await getSessionWithRole();
-
-    if (!sessionInfo) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireNonOrganizerSession();
+    if ("error" in auth) {
+      return auth.error;
     }
+    const { session } = auth;
 
-    const { session, dashboardRole } = sessionInfo;
-
-    // Block organizers from updating events
-    if (dashboardRole === "organizer") {
-      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
+    const idOrError = getRequiredIdFromRequest(request);
+    if (typeof idOrError !== "string") {
+      return idOrError;
     }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
-    }
+    const id = idOrError;
 
     const body = await request.json();
     const { name, description, eventType, startTime, endTime, location, capacity } = body;
@@ -155,26 +139,17 @@ export async function PATCH(request: NextRequest) {
 // DELETE an event
 export async function DELETE(request: NextRequest) {
   try {
-    // Check authentication
-    const sessionInfo = await getSessionWithRole();
-
-    if (!sessionInfo) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireNonOrganizerSession();
+    if ("error" in auth) {
+      return auth.error;
     }
+    const { session } = auth;
 
-    const { session, dashboardRole } = sessionInfo;
-
-    // Block organizers from deleting events
-    if (dashboardRole === "organizer") {
-      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
+    const idOrError = getRequiredIdFromRequest(request);
+    if (typeof idOrError !== "string") {
+      return idOrError;
     }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
-    }
+    const id = idOrError;
 
     const [deletedEvent] = await db.delete(events).where(eq(events.id, id)).returning();
 

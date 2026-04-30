@@ -56,4 +56,3 @@ export const EmailButton: React.FC<EmailButtonProps> = ({
     );
 };
 
-export default EmailButton;

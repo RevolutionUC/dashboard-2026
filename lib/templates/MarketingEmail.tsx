@@ -4,7 +4,7 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const meta = {
+export const marketingEmailMeta = {
     id: "marketing",
     name: "Marketing Email",
     subject: "Join us at RevolutionUC!",

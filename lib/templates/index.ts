@@ -26,15 +26,15 @@ import * as VerifyEmail from "./VerifyEmail";
 import * as WaiverUpdate from "./WaiverUpdate";
 import * as WelcomeEmail from "./WelcomeEmail";
 
-export interface SharedEmailProps {
+interface SharedEmailProps {
     firstName?: string;
 }
 
-export interface GeneralEmailProps extends SharedEmailProps {
+interface GeneralEmailProps extends SharedEmailProps {
     body?: string;
 }
 
-export type EmailTemplateProps =
+type EmailTemplateProps =
     | SharedEmailProps
     | GeneralEmailProps
     | Record<string, never>;
@@ -48,7 +48,7 @@ export interface EmailTemplateMeta {
     requiredProps?: string[];
 }
 
-export interface TemplateMeta {
+interface TemplateMeta {
     id: string;
     name: string;
     subject: string;
@@ -61,7 +61,22 @@ interface TemplateModule {
     default?: React.ComponentType<any>;
 }
 
-const modules: TemplateModule[] = [
+type TemplateNamespace = {
+    default?: React.ComponentType<any>;
+    [key: string]: unknown;
+};
+
+function extractTemplateMeta(module: TemplateNamespace): TemplateMeta | undefined {
+    if (module.meta && typeof module.meta === "object") {
+        return module.meta as TemplateMeta;
+    }
+    const namedMeta = Object.entries(module).find(
+        ([key, value]) => key.endsWith("Meta") && value && typeof value === "object",
+    );
+    return namedMeta?.[1] as TemplateMeta | undefined;
+}
+
+const rawModules: TemplateNamespace[] = [
     ConfirmAttendance, ConfirmAttendanceFollowUp, DateChange,
     GeneralEmail, InfoEmail1, InfoEmail2, InfoEmail3, InfoEmail4,
     InfoEmailCTF, InfoEmailJudges, InfoEmailWaitlist, InfoEmailWaitlist2,
@@ -69,6 +84,11 @@ const modules: TemplateModule[] = [
     MarketingEmail, PostEventEmail, PostEventJudgeEmail, PostEventSurveyReminder,
     RegistrationOpen, SubmissionReminder, VerifyEmail, WaiverUpdate, WelcomeEmail,
 ];
+
+const modules: TemplateModule[] = rawModules.map((module) => ({
+    meta: extractTemplateMeta(module),
+    default: module.default,
+}));
 
 export const emailTemplates: EmailTemplateMeta[] = modules
     .filter((m): m is Required<TemplateModule> => !!m.meta && !!m.default)
@@ -78,7 +98,7 @@ export function getTemplateById(id: string): EmailTemplateMeta | undefined {
     return emailTemplates.find((template) => template.id === id);
 }
 
-export function getAllTemplates(): EmailTemplateMeta[] {
+function getAllTemplates(): EmailTemplateMeta[] {
     return emailTemplates;
 }
 

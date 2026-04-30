@@ -2,6 +2,8 @@
 
 import { ArrowLeftRight } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
+import { ActionStateMessage } from "@/components/action-state-message";
+import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,7 +46,7 @@ export function TransferJudgeModal({
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
 
   const [state, formAction, pending] = useActionState(
-    async (prevState: { success?: boolean; error?: string } | null) => {
+    async (_prevState: { success?: boolean; error?: string } | null) => {
       if (!selectedGroupId) {
         return { success: false, error: "Please select a target group" };
       }
@@ -132,25 +134,19 @@ export function TransferJudgeModal({
             </Select>
           </div>
 
-          {showMessage && state?.error && (
-            <div className="text-sm text-red-500">{state.error}</div>
-          )}
-          {showMessage && state?.success && (
-            <div className="text-sm text-green-500">
-              Judge transferred successfully!
-            </div>
-          )}
+          <ActionStateMessage
+            show={showMessage}
+            error={state?.error}
+            success={state?.success}
+            successText="Judge transferred successfully!"
+          />
 
-          <div className="flex justify-end gap-2 pt-2">
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogTrigger>
-            <Button type="submit" disabled={pending || !selectedGroupId}>
-              {pending ? "Transferring..." : "Transfer"}
-            </Button>
-          </div>
+          <DialogActionFooter
+            pending={pending}
+            pendingLabel="Transferring..."
+            submitLabel="Transfer"
+            submitDisabled={!selectedGroupId}
+          />
         </form>
       </DialogContent>
     </Dialog>

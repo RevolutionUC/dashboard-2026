@@ -9,7 +9,7 @@ import {
     SocialsPartial,
 } from "./components/partials";
 
-export const meta = {
+export const infoEmail1Meta = {
     id: "info-email-1",
     name: "Info Email 1 (3 weeks out)",
     subject: "RevolutionUC is less than 3 weeks away!",

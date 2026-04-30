@@ -6,12 +6,9 @@ export class MinHeap<T> {
     this.compare = compareFn;
   }
 
+  // fallow-ignore-next-line unused-class-member
   get length() {
     return this.items.length;
-  }
-
-  get items_(): T[] {
-    return this.items;
   }
 
   private parent(index: number): number {
@@ -74,12 +71,4 @@ export class MinHeap<T> {
     return min;
   }
 
-  peek(): T | undefined {
-    return this.items[0];
-  }
-
-  updatePriority(index: number): void {
-    this.heapifyUp(index);
-    this.heapifyDown(index);
-  }
 }

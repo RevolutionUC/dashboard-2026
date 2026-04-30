@@ -47,6 +47,40 @@ interface ScoringInterfaceProps {
   showNoteInput?: boolean;
 }
 
+interface RubricRow {
+  stars: string;
+  description: React.ReactNode;
+}
+
+interface RubricSection {
+  title: string;
+  rows: RubricRow[];
+}
+
+function RubricSectionTable({ title, rows }: RubricSection) {
+  return (
+    <div>
+      <h3 className="mb-2 text-lg font-semibold">{title}</h3>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className="pb-2 text-left font-medium">Stars</th>
+            <th className="pb-2 text-left font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.stars} className={index < rows.length - 1 ? "border-b" : ""}>
+              <td className="py-2 pr-4 align-top">{row.stars}</td>
+              <td className="py-2">{row.description}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function ScoringInterface({
   evaluations,
   judgeId,
@@ -78,6 +112,38 @@ export function ScoringInterface({
 
   const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
   const [sortBy, setSortBy] = useState<"location-asc" | "location-desc" | "unranked">("location-asc");
+  const rubricSections: RubricSection[] = [
+    {
+      title: "Originality",
+      rows: [
+        { stars: "1 Star", description: <><strong>Derivative</strong>: A direct clone of an existing app or a standard &quot;Hello World&quot; style tutorial project.</> },
+        { stars: "2 Stars", description: <><strong>Slight Variation</strong>: A familiar idea with a very minor change, but no real surprise or innovation.</> },
+        { stars: "3 Stars", description: <><strong>Solid Take</strong>: A fresh application of known concepts; a new combination of existing tools to solve a standard problem.</> },
+        { stars: "4 Stars", description: <><strong>Distinctive</strong>: A clever solution that provides a very unique &quot;twist&quot; - <em>&quot;I could imagine that but haven&apos;t seen someone combine those systems before&quot;</em></> },
+        { stars: "5 Stars", description: <><strong>Inspirational</strong>: A &quot;Wow!&quot; idea. A genuinely surprising and remarkably insightful solution that stands out; - <em>&quot;I&apos;ve never thought of that before.&quot;</em></> },
+      ],
+    },
+    {
+      title: "Execution",
+      rows: [
+        { stars: "1 Star", description: <><strong>Non-functional</strong>: The project does not run; entirely based on mockups or a slide deck with no working logic.</> },
+        { stars: "2 Stars", description: <><strong>Proof-of-Concept</strong>: Only the absolute barest functionality works; prone to crashing during the presentation.</> },
+        { stars: "3 Stars", description: <><strong>Working Prototype</strong>: The core features work as intended, allowing for a successful end-to-end demo. Still has minor visual rough edges - still feels a bit unpolished.</> },
+        { stars: "4 Stars", description: <><strong>Polished Demo</strong>: Very cohesive flow, impressive user interface, and clearly optimized to deliver a flawless pitch presentation. The user experience feels &quot;finished&quot; and professional. No &quot;hacks&quot; were visible.</> },
+        { stars: "5 Stars", description: <><strong>Seamless MVP</strong>: An exceptional hackathon build. The presented feature set works without a hitch and the design feels intentional and &quot;complete&quot; for the scope of the project - <em>&quot;I can&apos;t believe they built this in a weekend&quot;</em>.</> },
+      ],
+    },
+    {
+      title: "Learning",
+      rows: [
+        { stars: "1 Star", description: <><strong>Inside Comfort Zone</strong>: The team stuck to tools they already master; no significant evidence of new skills acquired.</> },
+        { stars: "2 Stars", description: <><strong>Minor Attempt</strong>: Evidence of trying one or two small new libraries, but the implementation is very surface-level.</> },
+        { stars: "3 Stars", description: <><strong>Growth Path</strong>: Clearly stepped outside their usual technology stack or solved a domain problem that was new to them.</> },
+        { stars: "4 Stars", description: <><strong>Ambitious Challenge</strong>: Tackled a significant and unfamiliar technical or conceptual curve (e.g., implementing an AI model, new API integration, or unfamiliar backend structure).</> },
+        { stars: "5 Stars", description: <><strong>Remarkable Leap</strong>: The team clearly mastered a complex or difficult technology during the hackathon and used it to create a functioning result that surprised the judges given the time constraint.</> },
+      ],
+    },
+  ];
 
   const isEvaluationScored = useCallback((evaluation: Evaluation) => {
     const scores = localScores[evaluation.projectId];
@@ -206,137 +272,9 @@ export function ScoringInterface({
               <DialogTitle>Judging Rubric</DialogTitle>
             </DialogHeader>
             <div className="space-y-6">
-              <div>
-                <h3 className="mb-2 text-lg font-semibold">Originality</h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="pb-2 text-left font-medium">Stars</th>
-                      <th className="pb-2 text-left font-medium">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">1 Star</td>
-                      <td className="py-2">
-                        <strong>Derivative</strong>: A direct clone of an existing app or a standard &quot;Hello World&quot; style tutorial project.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">2 Stars</td>
-                      <td className="py-2">
-                        <strong>Slight Variation</strong>: A familiar idea with a very minor change, but no real surprise or innovation.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">3 Stars</td>
-                      <td className="py-2">
-                        <strong>Solid Take</strong>: A fresh application of known concepts; a new combination of existing tools to solve a standard problem.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">4 Stars</td>
-                      <td className="py-2">
-                        <strong>Distinctive</strong>: A clever solution that provides a very unique &quot;twist&quot; - <em>&quot;I could imagine that but haven&apos;t seen someone combine those systems before&quot;</em>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 pr-4 align-top">5 Stars</td>
-                      <td className="py-2">
-                        <strong>Inspirational</strong>: A &quot;Wow!&quot; idea. A genuinely surprising and remarkably insightful solution that stands out; - <em>&quot;I&apos;ve never thought of that before.&quot;</em>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div>
-                <h3 className="mb-2 text-lg font-semibold">Execution</h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="pb-2 text-left font-medium">Stars</th>
-                      <th className="pb-2 text-left font-medium">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">1 Star</td>
-                      <td className="py-2">
-                        <strong>Non-functional</strong>: The project does not run; entirely based on mockups or a slide deck with no working logic.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">2 Stars</td>
-                      <td className="py-2">
-                        <strong>Proof-of-Concept</strong>: Only the absolute barest functionality works; prone to crashing during the presentation.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">3 Stars</td>
-                      <td className="py-2">
-                        <strong>Working Prototype</strong>: The core features work as intended, allowing for a successful end-to-end demo. Still has minor visual rough edges - still feels a bit unpolished.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">4 Stars</td>
-                      <td className="py-2">
-                        <strong>Polished Demo</strong>: Very cohesive flow, impressive user interface, and clearly optimized to deliver a flawless pitch presentation. The user experience feels &quot;finished&quot; and professional. No &quot;hacks&quot; were visible.
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 pr-4 align-top">5 Stars</td>
-                      <td className="py-2">
-                        <strong>Seamless MVP</strong>: An exceptional hackathon build. The presented feature set works without a hitch and the design feels intentional and &quot;complete&quot; for the scope of the project - <em>&quot;I can&apos;t believe they built this in a weekend&quot;</em>.
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div>
-                <h3 className="mb-2 text-lg font-semibold">Learning</h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="pb-2 text-left font-medium">Stars</th>
-                      <th className="pb-2 text-left font-medium">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">1 Star</td>
-                      <td className="py-2">
-                        <strong>Inside Comfort Zone</strong>: The team stuck to tools they already master; no significant evidence of new skills acquired.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">2 Stars</td>
-                      <td className="py-2">
-                        <strong>Minor Attempt</strong>: Evidence of trying one or two small new libraries, but the implementation is very surface-level.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">3 Stars</td>
-                      <td className="py-2">
-                        <strong>Growth Path</strong>: Clearly stepped outside their usual technology stack or solved a domain problem that was new to them.
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 align-top">4 Stars</td>
-                      <td className="py-2">
-                        <strong>Ambitious Challenge</strong>: Tackled a significant and unfamiliar technical or conceptual curve (e.g., implementing an AI model, new API integration, or unfamiliar backend structure).
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 pr-4 align-top">5 Stars</td>
-                      <td className="py-2">
-                        <strong>Remarkable Leap</strong>: The team clearly mastered a complex or difficult technology during the hackathon and used it to create a functioning result that surprised the judges given the time constraint.
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              {rubricSections.map((section) => (
+                <RubricSectionTable key={section.title} {...section} />
+              ))}
             </div>
           </DialogContent>
         </Dialog>

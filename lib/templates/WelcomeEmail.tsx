@@ -3,7 +3,7 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 
-export const meta = {
+export const welcomeEmailMeta = {
     id: "welcome",
     name: "Welcome Email",
     subject: "Welcome to RevolutionUC!",

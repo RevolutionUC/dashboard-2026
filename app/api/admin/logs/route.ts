@@ -1,26 +1,8 @@
 import { desc, eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { auditLogs } from "@/lib/db/schema";
-
-async function getAdminSession() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const userRole = (session.user as { role?: string }).role;
-  if (userRole !== "admin") {
-    return null;
-  }
-
-  return session;
-}
+import { getAdminSession } from "@/lib/api/admin-auth";
 
 // GET /api/admin/logs - Fetch audit logs with optional filters
 export async function GET(request: Request) {

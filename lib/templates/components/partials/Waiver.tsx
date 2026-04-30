@@ -20,4 +20,3 @@ export const WaiverPartial: React.FC = () => {
     );
 };
 
-export default WaiverPartial;

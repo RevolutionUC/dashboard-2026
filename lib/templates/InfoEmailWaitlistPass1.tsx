@@ -3,7 +3,7 @@ import { EmailLayout } from "./components/EmailLayout";
 import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 
-export const meta = {
+export const infoEmailWaitlistPass1Meta = {
     id: "info-email-waitlist-pass-1",
     name: "Waitlist Pass 1 Notification",
     subject: "RevolutionUC Waitlist Information",

@@ -21,4 +21,3 @@ export const InpersonPartial: React.FC = () => {
     );
 };
 
-export default InpersonPartial;

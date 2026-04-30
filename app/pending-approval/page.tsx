@@ -1,24 +1,13 @@
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { accessRequests } from "@/lib/db/schema";
+import { getDashboardAccessInfo } from "@/lib/dashboard-access";
 import { PendingApprovalClient } from "./client";
 
 export default async function PendingApprovalPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    redirect("/sign-in");
-  }
-
-  const userRole = (session.user as { role?: string }).role;
-
-  // Admins are always approved
-  if (userRole === "admin") {
+  const access = await getDashboardAccessInfo();
+  if (access.isAdmin) {
     redirect("/dashboard");
   }
 
@@ -29,7 +18,7 @@ export default async function PendingApprovalPage() {
       requestedAt: accessRequests.requestedAt,
     })
     .from(accessRequests)
-    .where(eq(accessRequests.userId, session.user.id))
+    .where(eq(accessRequests.userId, access.userId))
     .limit(1);
 
   // If approved, redirect to dashboard
@@ -39,11 +28,11 @@ export default async function PendingApprovalPage() {
 
   return (
     <PendingApprovalClient
-      userName={session.user.name}
-      userEmail={session.user.email}
-      userImage={session.user.image}
+      userName={access.userName}
+      userEmail={access.userEmail}
+      userImage={access.userImage}
       status={request?.status ?? "pending"}
-      userId={session.user.id}
+      userId={access.userId}
     />
   );
 }

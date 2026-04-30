@@ -30,14 +30,14 @@ const devPostCsvColsMapping = {
     "domains",
 } as const;
 
-export type RawDevPostProject = Record<
+type RawDevPostProject = Record<
   keyof typeof devPostCsvColsMapping,
   string
 > & {
   [key: string]: string;
 };
 
-export type TransformedDevPostProject = Record<
+type TransformedDevPostProject = Record<
   (typeof devPostCsvColsMapping)[keyof typeof devPostCsvColsMapping],
   string
 > & {

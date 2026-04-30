@@ -23,4 +23,3 @@ export const SocialsPartial: React.FC = () => {
     );
 };
 
-export default SocialsPartial;

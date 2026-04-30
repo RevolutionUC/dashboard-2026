@@ -3,7 +3,7 @@ import { Section } from "@react-email/components";
 import { EmailLayout } from "./components/EmailLayout";
 import { EmailText } from "./components/EmailText";
 
-export const meta = {
+export const generalEmailMeta = {
     id: "general",
     name: "General Email",
     subject: "A message from RevolutionUC",

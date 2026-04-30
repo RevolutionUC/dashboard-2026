@@ -5,7 +5,7 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const meta = {
+export const judgePortalLinkMeta = {
     id: "judge-portal-link",
     name: "Judge Portal Link",
     subject: "Your RevolutionUC Judging Portal",

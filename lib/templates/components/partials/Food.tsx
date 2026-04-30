@@ -16,4 +16,3 @@ export const FoodPartial: React.FC = () => {
     );
 };
 
-export default FoodPartial;

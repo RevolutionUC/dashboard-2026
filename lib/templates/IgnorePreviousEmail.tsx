@@ -2,7 +2,7 @@ import * as React from "react";
 import { EmailLayout } from "./components/EmailLayout";
 import { EmailText } from "./components/EmailText";
 
-export const meta = {
+export const ignorePreviousEmailMeta = {
     id: "ignore-previous-email",
     name: "Ignore Previous Email",
     subject: "Ignore Previous Email",

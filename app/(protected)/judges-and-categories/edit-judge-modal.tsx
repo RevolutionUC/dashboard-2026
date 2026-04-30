@@ -2,6 +2,8 @@
 
 import { Pencil } from "lucide-react";
 import { useActionState, useEffect, useId, useState } from "react";
+import { ActionStateMessage } from "@/components/action-state-message";
+import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -113,25 +115,18 @@ export function EditJudgeModal({ judge, categories }: EditJudgeModalProps) {
             </Select>
           </div>
 
-          {showMessage && state?.error && (
-            <div className="text-sm text-red-500">{state.error}</div>
-          )}
-          {showMessage && state?.success && (
-            <div className="text-sm text-green-500">
-              Judge updated successfully!
-            </div>
-          )}
+          <ActionStateMessage
+            show={showMessage}
+            error={state?.error}
+            success={state?.success}
+            successText="Judge updated successfully!"
+          />
 
-          <div className="flex justify-end gap-2 pt-2">
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogTrigger>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
+          <DialogActionFooter
+            pending={pending}
+            pendingLabel="Saving..."
+            submitLabel="Save Changes"
+          />
         </form>
       </DialogContent>
     </Dialog>

@@ -13,5 +13,4 @@ export { TeamsPartial } from "./Teams";
 export { TransportationPartial } from "./Transportation";
 export { HackSubmissionsPartial } from "./HackSubmissions";
 export { AvailableSoftwarePartial } from "./AvailableSoftware";
-export { WristbandsPartial } from "./Wristbands";
 export { TravelReimbursementPartial } from "./TravelReimbursement";

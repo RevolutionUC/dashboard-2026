@@ -2,18 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { MapPin, Users, Eye, EyeOff, Trash2, Pencil } from "lucide-react";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { CreateEventDialog } from "@/components/create-event-dialog";
+import { EventSchedulingFields } from "@/components/event-scheduling-fields";
 import { EventDetailsDialog } from "@/components/event-details-dialog";
+import { VisibilitySelectField } from "@/components/visibility-select-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -23,15 +19,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { authClient } from "@/lib/auth-client";
-
-function toISOStringWithTimezone(datetimeLocal: string): string {
-  const date = new Date(datetimeLocal);
-  const offset = -date.getTimezoneOffset();
-  const sign = offset >= 0 ? "+" : "-";
-  const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, "0");
-  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
-  return `${datetimeLocal}:00${sign}${offsetHours}:${offsetMinutes}`;
-}
+import { deleteById, patchJson } from "@/lib/client-api";
+import { toISOStringWithTimezone } from "@/lib/date-time";
 
 interface DbEvent {
   id: string;
@@ -141,10 +130,7 @@ export default function DayOfSchedule() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/day-of-schedule?id=${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      if (response.ok) {
+      if (await deleteById(`/api/day-of-schedule?id=${deleteTarget.id}`)) {
         setDeleteTarget(null);
         fetchItems();
       }
@@ -193,16 +179,11 @@ export default function DayOfSchedule() {
         startTime: editForm.startTime ? toISOStringWithTimezone(editForm.startTime) : "",
         endTime: editForm.endTime ? toISOStringWithTimezone(editForm.endTime) : "",
       };
-      const response = await fetch(`/api/day-of-schedule?id=${editingItem.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update item");
-      }
+      await patchJson(
+        `/api/day-of-schedule?id=${editingItem.id}`,
+        payload,
+        "Failed to update item",
+      );
 
       setEditingItem(null);
       fetchItems();
@@ -412,81 +393,17 @@ export default function DayOfSchedule() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="edit-visibility">Visibility *</Label>
-                <Select
-                  value={editForm.visibility}
-                  onValueChange={(value) => handleEditSelectChange("visibility", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select visibility" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="public">
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-blue-500" />
-                        Public
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="internal">
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-red-500" />
-                        Internal
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <VisibilitySelectField
+                id="edit-visibility"
+                value={editForm.visibility}
+                onValueChange={(value) => handleEditSelectChange("visibility", value)}
+              />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-startTime">Start Time</Label>
-                  <Input
-                    id="edit-startTime"
-                    name="startTime"
-                    type="datetime-local"
-                    value={editForm.startTime}
-                    onChange={handleEditChange}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-endTime">End Time</Label>
-                  <Input
-                    id="edit-endTime"
-                    name="endTime"
-                    type="datetime-local"
-                    value={editForm.endTime}
-                    onChange={handleEditChange}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-location">Location</Label>
-                  <Input
-                    id="edit-location"
-                    name="location"
-                    value={editForm.location}
-                    onChange={handleEditChange}
-                    placeholder="Enter location"
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-capacity">Capacity</Label>
-                  <Input
-                    id="edit-capacity"
-                    name="capacity"
-                    type="number"
-                    min="1"
-                    value={editForm.capacity}
-                    onChange={handleEditChange}
-                    placeholder="Max attendees"
-                  />
-                </div>
-              </div>
+              <EventSchedulingFields
+                values={editForm}
+                onChange={handleEditChange}
+                idPrefix="edit-"
+              />
             </div>
 
             <DialogFooter>
@@ -507,32 +424,14 @@ export default function DayOfSchedule() {
       </Dialog>
 
       {/* Delete Confirm Dialog */}
-      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Delete Schedule Item</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete &quot;{deleteTarget?.title}&quot;? This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Schedule Item"
+        description={`Are you sure you want to delete "${deleteTarget?.title ?? ""}"? This cannot be undone.`}
+        isDeleting={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

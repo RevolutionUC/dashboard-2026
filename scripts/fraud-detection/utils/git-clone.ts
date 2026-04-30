@@ -166,7 +166,7 @@ function parseGitLog(logOutput: string): CommitInfo[] {
   return commits;
 }
 
-export async function checkRepoAccessible(repoUrl: string): Promise<boolean> {
+async function checkRepoAccessible(repoUrl: string): Promise<boolean> {
   try {
     const git = simpleGit();
     await git.listRemote([repoUrl]);

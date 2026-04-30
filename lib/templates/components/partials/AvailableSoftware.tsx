@@ -26,4 +26,3 @@ export const AvailableSoftwarePartial: React.FC = () => {
     );
 };
 
-export default AvailableSoftwarePartial;

@@ -4,7 +4,7 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const meta = {
+export const latticeResetPasswordMeta = {
     id: "lattice-reset-password",
     name: "Lattice Password Reset",
     subject: "Reset your Lattice password",

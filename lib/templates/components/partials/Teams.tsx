@@ -14,4 +14,3 @@ export const TeamsPartial: React.FC = () => {
     );
 };
 
-export default TeamsPartial;

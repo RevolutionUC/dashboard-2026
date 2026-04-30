@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { dayOfSchedule, user } from "@/lib/db/schema";
-import { getSessionWithRole } from "@/lib/auth";
 import { desc, eq } from "drizzle-orm";
 import { logAction } from "@/lib/audit";
+import { getRequiredIdFromRequest, requireNonOrganizerSession } from "@/lib/api/route-utils";
 
 // GET all day-of schedule events with creator info
 export async function GET() {
@@ -37,19 +37,11 @@ export async function GET() {
 // POST create a new day-of schedule event
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const sessionInfo = await getSessionWithRole();
-
-    if (!sessionInfo) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireNonOrganizerSession();
+    if ("error" in auth) {
+      return auth.error;
     }
-
-    const { session, dashboardRole } = sessionInfo;
-
-    // Block organizers from creating schedule items
-    if (dashboardRole === "organizer") {
-      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
-    }
+    const { session } = auth;
 
     const body = await request.json();
 
@@ -100,25 +92,17 @@ export async function POST(request: NextRequest) {
 // PATCH update a day-of schedule event
 export async function PATCH(request: NextRequest) {
   try {
-    const sessionInfo = await getSessionWithRole();
-
-    if (!sessionInfo) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireNonOrganizerSession();
+    if ("error" in auth) {
+      return auth.error;
     }
+    const { session } = auth;
 
-    const { session, dashboardRole } = sessionInfo;
-
-    // Block organizers from updating schedule items
-    if (dashboardRole === "organizer") {
-      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
+    const idOrError = getRequiredIdFromRequest(request);
+    if (typeof idOrError !== "string") {
+      return idOrError;
     }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
-    }
+    const id = idOrError;
 
     const body = await request.json();
     const { name, startTime, endTime, location, capacity, visibility } = body;
@@ -168,26 +152,17 @@ export async function PATCH(request: NextRequest) {
 // DELETE a day-of schedule event
 export async function DELETE(request: NextRequest) {
   try {
-    // Check authentication
-    const sessionInfo = await getSessionWithRole();
-
-    if (!sessionInfo) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireNonOrganizerSession();
+    if ("error" in auth) {
+      return auth.error;
     }
+    const { session } = auth;
 
-    const { session, dashboardRole } = sessionInfo;
-
-    // Block organizers from deleting schedule items
-    if (dashboardRole === "organizer") {
-      return NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 });
+    const idOrError = getRequiredIdFromRequest(request);
+    if (typeof idOrError !== "string") {
+      return idOrError;
     }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
-    }
+    const id = idOrError;
 
     const [deletedItem] = await db
       .delete(dayOfSchedule)

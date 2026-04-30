@@ -24,14 +24,6 @@ export const EmailLink: React.FC<EmailLinkProps> = ({ href, children }) => {
     );
 };
 
-interface EmailStrongProps {
-    children: React.ReactNode;
-}
-
-export const EmailStrong: React.FC<EmailStrongProps> = ({ children }) => {
-    return <strong style={strong}>{children}</strong>;
-};
-
 // Styles
 const paragraph = {
     color: brandColors.darkText,
@@ -46,9 +38,3 @@ const link = {
     textDecoration: "none",
 };
 
-const strong = {
-    fontWeight: "700" as const,
-    color: brandColors.darkNavy,
-};
-
-export default EmailText;

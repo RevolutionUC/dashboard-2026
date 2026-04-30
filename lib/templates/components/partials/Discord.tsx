@@ -17,4 +17,3 @@ export const DiscordPartial: React.FC = () => {
     );
 };
 
-export default DiscordPartial;

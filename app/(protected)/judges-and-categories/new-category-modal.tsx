@@ -1,16 +1,7 @@
 "use client";
 
-import { Plus, Upload } from "lucide-react";
 import { useId, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { TwoModeCreateDialog } from "@/components/two-mode-create-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { parseCSV } from "@/lib/csv-parser";
@@ -118,109 +108,95 @@ export function NewCategoryModal() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Category
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-125">
-        <DialogHeader>
-          <DialogTitle>Create New Category</DialogTitle>
-          <DialogDescription>Add a single category or import multiple via CSV.</DialogDescription>
-        </DialogHeader>
+    <TwoModeCreateDialog
+      open={open}
+      onOpenChange={setOpen}
+      triggerLabel="New Category"
+      title="Create New Category"
+      description="Add a single category or import multiple via CSV."
+      singleTabLabel="Single Category"
+      bulkTabLabel="Bulk Import (CSV)"
+      singleContent={(
+        <form ref={singleFormRef} onSubmit={handleSingleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-shortcode`}>Shortcode (ID)</Label>
+            <Input id={`${id}-shortcode`} name="shortcode" placeholder="e.g., SPONSOR_01" required />
+          </div>
 
-        <Tabs defaultValue="single" className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="single">Single Category</TabsTrigger>
-            <TabsTrigger value="bulk">Bulk Import (CSV)</TabsTrigger>
-          </TabsList>
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-name`}>Name</Label>
+            <Input id={`${id}-name`} name="name" placeholder="e.g., Best Sponsor Project" required />
+          </div>
 
-          <TabsContent value="single" className="mt-4">
-            <form ref={singleFormRef} onSubmit={handleSingleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`${id}-shortcode`}>Shortcode (ID)</Label>
-                <Input id={`${id}-shortcode`} name="shortcode" placeholder="e.g., SPONSOR_01" required />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-type`}>Type</Label>
+            <Select
+              value={typeValue}
+              onValueChange={(value) => setTypeValue(value as CategoryType)}
+              name="type"
+            >
+              <SelectTrigger id={`${id}-type`}>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor={`${id}-name`}>Name</Label>
-                <Input id={`${id}-name`} name="name" placeholder="e.g., Best Sponsor Project" required />
-              </div>
+          {error && <FormMessage error={error} />}
+          {success && <FormMessage success={success} />}
 
-              <div className="space-y-2">
-                <Label htmlFor={`${id}-type`}>Type</Label>
-                <Select
-                  value={typeValue}
-                  onValueChange={(value) => setTypeValue(value as CategoryType)}
-                  name="type"
-                >
-                  <SelectTrigger id={`${id}-type`}>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORY_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {error && <FormMessage error={error} />}
-              {success && <FormMessage success={success} />}
-
-              <FormFooter
-                isLoading={isLoading}
-                onCancel={() => setOpen(false)}
-                submitLabel="Create Category"
-                loadingLabel="Creating..."
-              />
-            </form>
-          </TabsContent>
-
-          <TabsContent value="bulk" className="mt-4">
-            <form ref={bulkFormRef} onSubmit={handleBulkSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`${id}-csv`}>CSV Data</Label>
-                <p className="text-xs text-muted-foreground">
-                  Format: <code>id,name,type</code> (no header row)
-                </p>
-                <Textarea
-                  id={`${id}-csv`}
-                  name="csv"
-                  placeholder={`SPONSOR_01,Best AI Project,Sponsor
+          <FormFooter
+            isLoading={isLoading}
+            onCancel={() => setOpen(false)}
+            submitLabel="Create Category"
+            loadingLabel="Creating..."
+          />
+        </form>
+      )}
+      bulkContent={(
+        <form ref={bulkFormRef} onSubmit={handleBulkSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-csv`}>CSV Data</Label>
+            <p className="text-xs text-muted-foreground">
+              Format: <code>id,name,type</code> (no header row)
+            </p>
+            <Textarea
+              id={`${id}-csv`}
+              name="csv"
+              placeholder={`SPONSOR_01,Best AI Project,Sponsor
 SPONSOR_02,Best Web App,Sponsor
 INHOUSE_01,Innovation Award,Inhouse`}
-                  className="min-h-37.5 font-mono text-sm"
-                  required
-                />
-              </div>
+              className="min-h-37.5 font-mono text-sm"
+              required
+            />
+          </div>
 
-              <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                <p className="font-medium mb-1">Valid types:</p>
-                <ul className="list-disc list-inside">
-                  <li>Sponsor</li>
-                  <li>Inhouse</li>
-                  <li>General</li>
-                </ul>
-              </div>
+          <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+            <p className="font-medium mb-1">Valid types:</p>
+            <ul className="list-disc list-inside">
+              <li>Sponsor</li>
+              <li>Inhouse</li>
+              <li>General</li>
+            </ul>
+          </div>
 
-              {error && <FormMessage error={error} />}
-              {success && <FormMessage success={success} />}
+          {error && <FormMessage error={error} />}
+          {success && <FormMessage success={success} />}
 
-              <FormFooter
-                isLoading={isLoading}
-                onCancel={() => setOpen(false)}
-                submitLabel="Import CSV"
-                loadingLabel="Importing..."
-              />
-            </form>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+          <FormFooter
+            isLoading={isLoading}
+            onCancel={() => setOpen(false)}
+            submitLabel="Import CSV"
+            loadingLabel="Importing..."
+          />
+        </form>
+      )}
+    />
   );
 }

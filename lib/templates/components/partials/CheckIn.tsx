@@ -16,4 +16,3 @@ export const CheckInPartial: React.FC = () => {
     );
 };
 
-export default CheckInPartial;

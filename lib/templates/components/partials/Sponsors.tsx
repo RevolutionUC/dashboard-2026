@@ -18,4 +18,3 @@ export const SponsorsPartial: React.FC = () => {
     );
 };
 
-export default SponsorsPartial;

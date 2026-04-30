@@ -1,17 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { EventSchedulingFields } from "@/components/event-scheduling-fields";
+import { EventTypeSelect } from "@/components/event-type-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -23,16 +19,9 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
+import { deleteById, patchJson, postJson } from "@/lib/client-api";
+import { toISOStringWithTimezone } from "@/lib/date-time";
 import { Plus, Trash2, Pencil, UtensilsCrossed, Presentation, MapPin, Users, Clock } from "lucide-react";
-
-function toISOStringWithTimezone(datetimeLocal: string): string {
-  const date = new Date(datetimeLocal);
-  const offset = -date.getTimezoneOffset();
-  const sign = offset >= 0 ? "+" : "-";
-  const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, "0");
-  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
-  return `${datetimeLocal}:00${sign}${offsetHours}:${offsetMinutes}`;
-}
 
 interface Event {
   id: string;
@@ -118,16 +107,7 @@ export default function Events() {
         startTime: formData.startTime ? toISOStringWithTimezone(formData.startTime) : "",
         endTime: formData.endTime ? toISOStringWithTimezone(formData.endTime) : "",
       };
-      const response = await fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create event");
-      }
+      await postJson("/api/events", payload, "Failed to create event");
 
       setFormData({
         name: "",
@@ -151,10 +131,7 @@ export default function Events() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/events?id=${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      if (response.ok) {
+      if (await deleteById(`/api/events?id=${deleteTarget.id}`)) {
         setDeleteTarget(null);
         fetchEvents();
       }
@@ -200,16 +177,11 @@ export default function Events() {
         startTime: editForm.startTime ? toISOStringWithTimezone(editForm.startTime) : "",
         endTime: editForm.endTime ? toISOStringWithTimezone(editForm.endTime) : "",
       };
-      const response = await fetch(`/api/events?id=${editingEvent.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update event");
-      }
+      await patchJson(
+        `/api/events?id=${editingEvent.id}`,
+        payload,
+        "Failed to update event",
+      );
 
       setEditingEvent(null);
       fetchEvents();
@@ -293,83 +265,17 @@ export default function Events() {
                     />
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="eventType">Event Type *</Label>
-                    <Select
-                      value={formData.eventType}
-                      onValueChange={(value) => handleSelectChange("eventType", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select event type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="WORKSHOP">
-                          <span className="flex items-center gap-2">
-                            <Presentation className="h-3.5 w-3.5 text-violet-500" />
-                            Workshop
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="FOOD">
-                          <span className="flex items-center gap-2">
-                            <UtensilsCrossed className="h-3.5 w-3.5 text-orange-500" />
-                            Food
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <EventTypeSelect
+                    id="eventType"
+                    value={formData.eventType}
+                    onValueChange={(value) => handleSelectChange("eventType", value)}
+                  />
 
-                  <div className={`grid gap-4 ${formData.eventType === "WORKSHOP" ? "grid-cols-2" : ""}`}>
-                    <div className="grid gap-2">
-                      <Label htmlFor="startTime">Start Time</Label>
-                      <Input
-                        id="startTime"
-                        name="startTime"
-                        type="datetime-local"
-                        value={formData.startTime}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    {formData.eventType === "WORKSHOP" && (
-                      <div className="grid gap-2">
-                        <Label htmlFor="endTime">End Time</Label>
-                        <Input
-                          id="endTime"
-                          name="endTime"
-                          type="datetime-local"
-                          value={formData.endTime}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleInputChange}
-                        placeholder="Enter location"
-                      />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="capacity">Capacity</Label>
-                      <Input
-                        id="capacity"
-                        name="capacity"
-                        type="number"
-                        min="1"
-                        value={formData.capacity}
-                        onChange={handleInputChange}
-                        placeholder="Max attendees"
-                      />
-                    </div>
-                  </div>
+                  <EventSchedulingFields
+                    values={formData}
+                    onChange={handleInputChange}
+                    showEndTime={formData.eventType === "WORKSHOP"}
+                  />
                 </div>
 
                 <DialogFooter>
@@ -517,83 +423,18 @@ export default function Events() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="edit-eventType">Event Type *</Label>
-                <Select
-                  value={editForm.eventType}
-                  onValueChange={(value) => handleEditSelectChange("eventType", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select event type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="WORKSHOP">
-                      <span className="flex items-center gap-2">
-                        <Presentation className="h-3.5 w-3.5 text-violet-500" />
-                        Workshop
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="FOOD">
-                      <span className="flex items-center gap-2">
-                        <UtensilsCrossed className="h-3.5 w-3.5 text-orange-500" />
-                        Food
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <EventTypeSelect
+                id="edit-eventType"
+                value={editForm.eventType}
+                onValueChange={(value) => handleEditSelectChange("eventType", value)}
+              />
 
-              <div className={`grid gap-4 ${editForm.eventType === "WORKSHOP" ? "grid-cols-2" : ""}`}>
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-startTime">Start Time</Label>
-                  <Input
-                    id="edit-startTime"
-                    name="startTime"
-                    type="datetime-local"
-                    value={editForm.startTime}
-                    onChange={handleEditChange}
-                  />
-                </div>
-
-                {editForm.eventType === "WORKSHOP" && (
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-endTime">End Time</Label>
-                    <Input
-                      id="edit-endTime"
-                      name="endTime"
-                      type="datetime-local"
-                      value={editForm.endTime}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-location">Location</Label>
-                  <Input
-                    id="edit-location"
-                    name="location"
-                    value={editForm.location}
-                    onChange={handleEditChange}
-                    placeholder="Enter location"
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-capacity">Capacity</Label>
-                  <Input
-                    id="edit-capacity"
-                    name="capacity"
-                    type="number"
-                    min="1"
-                    value={editForm.capacity}
-                    onChange={handleEditChange}
-                    placeholder="Max attendees"
-                  />
-                </div>
-              </div>
+              <EventSchedulingFields
+                values={editForm}
+                onChange={handleEditChange}
+                idPrefix="edit-"
+                showEndTime={editForm.eventType === "WORKSHOP"}
+              />
             </div>
 
             <DialogFooter>
@@ -614,32 +455,14 @@ export default function Events() {
       </Dialog>
 
       {/* Delete Confirm Dialog */}
-      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Delete Event</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Event"
+        description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? This cannot be undone.`}
+        isDeleting={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

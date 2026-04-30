@@ -2,6 +2,8 @@
 
 import { Plus } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
+import { ActionStateMessage } from "@/components/action-state-message";
+import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,26 +85,20 @@ export function AssignSubmissionsButton() {
             </ul>
           </div>
 
-          {showMessage && state?.error && (
-            <div className="text-sm text-red-500">{state.error}</div>
-          )}
-          {showMessage && state?.success && (
-            <div className="text-sm text-green-500">
-              Successfully created {state.count} assignment(s) for{" "}
-              {state.projectsAssigned} project(s)!
-            </div>
-          )}
+          <ActionStateMessage
+            show={showMessage}
+            error={state?.error}
+            success={state?.success}
+            successText={`Successfully created ${state?.count ?? 0} assignment(s) for ${
+              state?.projectsAssigned ?? 0
+            } project(s)!`}
+          />
 
-          <div className="flex justify-end gap-2 pt-2">
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogTrigger>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Assigning..." : "Assign Projects"}
-            </Button>
-          </div>
+          <DialogActionFooter
+            pending={pending}
+            pendingLabel="Assigning..."
+            submitLabel="Assign Projects"
+          />
         </form>
       </DialogContent>
     </Dialog>

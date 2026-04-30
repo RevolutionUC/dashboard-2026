@@ -4,7 +4,7 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const meta = {
+export const postEventJudgeEmailMeta = {
     id: "post-event-judge",
     name: "Post Event Judge Email",
     subject: "Thank you for judging at RevolutionUC!",

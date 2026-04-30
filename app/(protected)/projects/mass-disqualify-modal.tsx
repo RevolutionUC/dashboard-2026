@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useId, useState } from "react";
+import { ActionStateMessage } from "@/components/action-state-message";
+import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,25 +68,18 @@ export function MassDisqualifyModal() {
             </p>
           </div>
 
-          {showMessage && state?.error && (
-            <div className="text-sm text-red-500">{state.error}</div>
-          )}
-          {showMessage && state?.success && (
-            <div className="text-sm text-green-500">
-              Successfully disqualified {state.updated} project(s)!
-            </div>
-          )}
+          <ActionStateMessage
+            show={showMessage}
+            error={state?.error}
+            success={state?.success}
+            successText={`Successfully disqualified ${state?.updated ?? 0} project(s)!`}
+          />
 
-          <div className="flex justify-end gap-2 pt-2">
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogTrigger>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Processing..." : "Disqualify"}
-            </Button>
-          </div>
+          <DialogActionFooter
+            pending={pending}
+            pendingLabel="Processing..."
+            submitLabel="Disqualify"
+          />
         </form>
       </DialogContent>
     </Dialog>

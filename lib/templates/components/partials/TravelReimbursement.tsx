@@ -18,4 +18,3 @@ export const TravelReimbursementPartial: React.FC = () => {
     );
 };
 
-export default TravelReimbursementPartial;

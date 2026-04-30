@@ -1,7 +1,7 @@
 import type { FraudFlag, GitAnalysis, Project, ProjectAnalysis, RiskLevel } from "../types";
 import { runGitChecks } from "./git-checks";
 
-export function calculateFraudScore(flags: FraudFlag[]): number {
+function calculateFraudScore(flags: FraudFlag[]): number {
   let score = 0;
   for (const flag of flags) {
     score += flag.scoreImpact;
@@ -9,7 +9,7 @@ export function calculateFraudScore(flags: FraudFlag[]): number {
   return Math.min(100, score);
 }
 
-export function getRiskLevel(score: number): RiskLevel {
+function getRiskLevel(score: number): RiskLevel {
   if (score >= 70) return "DISQUALIFY";
   if (score >= 40) return "REVIEW";
   if (score >= 20) return "WATCH";
@@ -63,4 +63,3 @@ export function sortByRisk(analyses: ProjectAnalysis[]): ProjectAnalysis[] {
   return [...analyses].sort((a, b) => b.fraudScore - a.fraudScore);
 }
 
-export { runGitChecks };

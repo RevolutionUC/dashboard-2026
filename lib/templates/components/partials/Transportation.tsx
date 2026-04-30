@@ -59,4 +59,3 @@ export const TransportationPartial: React.FC = () => {
     );
 };
 
-export default TransportationPartial;

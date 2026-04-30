@@ -52,4 +52,3 @@ export const EmailHeading: React.FC<EmailHeadingProps> = ({
     );
 };
 
-export default EmailHeading;

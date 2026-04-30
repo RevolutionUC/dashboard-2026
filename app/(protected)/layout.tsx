@@ -1,31 +1,21 @@
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthHeader } from "@/components/auth-header";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { accessRequests } from "@/lib/db/schema";
+import { getDashboardAccessInfo } from "@/lib/dashboard-access";
 
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  // Not authenticated - redirect to sign-in
-  if (!session?.user) {
-    redirect("/sign-in");
-  }
-
-  const userRole = (session.user as { role?: string }).role;
+  const access = await getDashboardAccessInfo();
 
   // Admins always have access
-  if (userRole === "admin") {
+  if (access.isAdmin) {
     return (
       <SidebarProvider>
         <AppSidebar />
@@ -44,7 +34,7 @@ export default async function ProtectedLayout({
   const [request] = await db
     .select({ status: accessRequests.status })
     .from(accessRequests)
-    .where(eq(accessRequests.userId, session.user.id))
+    .where(eq(accessRequests.userId, access.userId))
     .limit(1);
 
   if (!request || request.status !== "approved") {

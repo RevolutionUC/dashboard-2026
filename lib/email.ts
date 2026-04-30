@@ -21,7 +21,7 @@ interface EmailOptions {
 /**
  * Send an email using Mailgun
  */
-export async function sendEmail(
+async function sendEmail(
   options: EmailOptions,
 ): Promise<{ success: boolean; error?: string }> {
   if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {

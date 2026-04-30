@@ -21,7 +21,7 @@ interface FormDialogProps {
   maxWidth?: string;
 }
 
-export function FormDialog({
+function FormDialog({
   open,
   onOpenChange,
   trigger,

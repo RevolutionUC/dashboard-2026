@@ -11,7 +11,7 @@ import {
     WaiverPartial,
 } from "./components/partials";
 
-export const meta = {
+export const infoEmail2Meta = {
     id: "info-email-2",
     name: "Info Email 2 (2 weeks out)",
     subject: "RevolutionUC is less than 2 weeks away!",

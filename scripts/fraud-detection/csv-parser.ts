@@ -62,7 +62,7 @@ function transformRow(row: CSVRow): Project | null {
   };
 }
 
-export function extractGitHubUrls(links: string): string[] {
+function extractGitHubUrls(links: string): string[] {
   if (!links) return [];
 
   const urls: string[] = [];

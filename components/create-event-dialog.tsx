@@ -13,23 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { EventSchedulingFields } from "@/components/event-scheduling-fields";
+import { VisibilitySelectField } from "@/components/visibility-select-field";
+import { postJson } from "@/lib/client-api";
+import { toISOStringWithTimezone } from "@/lib/date-time";
 import { Plus } from "lucide-react";
-
-function toISOStringWithTimezone(datetimeLocal: string): string {
-  const date = new Date(datetimeLocal);
-  const offset = -date.getTimezoneOffset();
-  const sign = offset >= 0 ? "+" : "-";
-  const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, "0");
-  const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
-  return `${datetimeLocal}:00${sign}${offsetHours}:${offsetMinutes}`;
-}
 
 interface CreateEventDialogProps {
   onEventCreated: () => void;
@@ -60,18 +48,7 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
         startTime: formData.startTime ? toISOStringWithTimezone(formData.startTime) : "",
         endTime: formData.endTime ? toISOStringWithTimezone(formData.endTime) : "",
       };
-      const response = await fetch("/api/day-of-schedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create event");
-      }
+      await postJson("/api/day-of-schedule", payload, "Failed to create event");
 
       // Reset form and close dialog
       setFormData({
@@ -135,81 +112,13 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="visibility">Visibility *</Label>
-              <Select
-                value={formData.visibility}
-                onValueChange={(value) => handleSelectChange("visibility", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select visibility" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-blue-500" />
-                      Public
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="internal">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-red-500" />
-                      Internal
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <VisibilitySelectField
+              id="visibility"
+              value={formData.visibility}
+              onValueChange={(value) => handleSelectChange("visibility", value)}
+            />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input
-                  id="startTime"
-                  name="startTime"
-                  type="datetime-local"
-                  value={formData.startTime}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  name="endTime"
-                  type="datetime-local"
-                  value={formData.endTime}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  placeholder="Enter location"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="capacity">Capacity</Label>
-                <Input
-                  id="capacity"
-                  name="capacity"
-                  type="number"
-                  min="1"
-                  value={formData.capacity}
-                  onChange={handleInputChange}
-                  placeholder="Max attendees"
-                />
-              </div>
-            </div>
+            <EventSchedulingFields values={formData} onChange={handleInputChange} />
           </div>
 
           <DialogFooter>

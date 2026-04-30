@@ -4,7 +4,7 @@ import { EmailHeading } from "./components/EmailHeading";
 import { EmailText, EmailLink } from "./components/EmailText";
 import { EmailButton } from "./components/EmailButton";
 
-export const meta = {
+export const postEventEmailMeta = {
     id: "post-event",
     name: "Post Event Email",
     subject: "Thank you for attending RevolutionUC!",
