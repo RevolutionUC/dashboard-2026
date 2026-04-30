@@ -29,6 +29,39 @@ const RANK_LABELS: Record<number, string> = {
   5: "5th",
 };
 
+function RankSelect({
+  value,
+  disabled,
+  onChange,
+  availableRanks,
+  placeholder,
+}: {
+  value: number | null;
+  disabled: boolean;
+  onChange: (newRank: number | null) => void;
+  availableRanks: number[];
+  placeholder: "unranked" | "select";
+}) {
+  return (
+    <select
+      value={value ?? ""}
+      onChange={(e) => onChange(Number(e.target.value) || null)}
+      disabled={disabled}
+      className="ml-2 rounded border border-slate-300 px-2 py-1 text-sm"
+    >
+      {placeholder === "unranked" && value !== null && (
+        <option value={value}>{RANK_LABELS[value]}</option>
+      )}
+      <option value="">{placeholder === "unranked" ? "Unranked" : "Select rank"}</option>
+      {availableRanks.map((rank) => (
+        <option key={rank} value={rank}>
+          {RANK_LABELS[rank]}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export function RankingInterface({
   evaluations: initialEvaluations,
   judgeId,
@@ -179,25 +212,13 @@ export function RankingInterface({
                     Weighted Score: {eval_.calculatedScore.toFixed(1)}
                   </div>
                 </div>
-                <select
+                <RankSelect
                   value={rank}
-                  onChange={(e) =>
-                    handleRankChange(
-                      eval_.projectId,
-                      Number(e.target.value) || null,
-                    )
-                  }
                   disabled={saving === eval_.projectId}
-                  className="ml-2 rounded border border-slate-300 px-2 py-1 text-sm"
-                >
-                  <option value={rank}>{RANK_LABELS[rank]}</option>
-                  <option value="">Unranked</option>
-                  {availableRanks.map((r) => (
-                    <option key={r} value={r}>
-                      {RANK_LABELS[r]}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(newRank) => handleRankChange(eval_.projectId, newRank)}
+                  availableRanks={availableRanks}
+                  placeholder="unranked"
+                />
               </div>
             </div>
           ))}
@@ -230,24 +251,13 @@ export function RankingInterface({
                     </div>
                   )}
                 </div>
-                <select
-                  value={rankings[eval_.projectId] || ""}
-                  onChange={(e) =>
-                    handleRankChange(
-                      eval_.projectId,
-                      Number(e.target.value) || null,
-                    )
-                  }
+                <RankSelect
+                  value={rankings[eval_.projectId] ?? null}
                   disabled={saving === eval_.projectId}
-                  className="ml-2 rounded border border-slate-300 px-2 py-1 text-sm"
-                >
-                  <option value="">Select rank</option>
-                  {availableRanks.map((r) => (
-                    <option key={r} value={r}>
-                      {RANK_LABELS[r]}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(newRank) => handleRankChange(eval_.projectId, newRank)}
+                  availableRanks={availableRanks}
+                  placeholder="select"
+                />
               </div>
             </div>
           ))}
