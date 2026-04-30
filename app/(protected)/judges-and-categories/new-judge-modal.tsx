@@ -2,19 +2,14 @@
 
 import { useId, useRef, useState } from "react";
 import { CsvImportFormSection } from "@/components/csv-import-form-section";
+import { JudgeCategorySelectField } from "@/components/judge-category-select-field";
 import { TwoModeCreateDialog } from "@/components/two-mode-create-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createJudge, createJudgesBulk } from "./actions";
+import { useSubmissionState } from "./use-submission-state";
 
 interface NewJudgeModalProps {
   categories: {
@@ -26,10 +21,8 @@ interface NewJudgeModalProps {
 
 export function NewJudgeModal({ categories }: NewJudgeModalProps) {
   const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const id = useId();
+  const { isLoading, error, success, start, finish } = useSubmissionState(() => setOpen(false));
 
   const singleFormRef = useRef<HTMLFormElement>(null);
   const bulkFormRef = useRef<HTMLFormElement>(null);
@@ -37,9 +30,7 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
 
   const handleSingleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+    start();
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
@@ -47,8 +38,7 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
     const categoryId = categoryValue;
 
     if (!categoryId) {
-      setError("Please select a category");
-      setIsLoading(false);
+      finish({ success: false, error: "Please select a category" }, "", "Failed to create judge");
       return;
     }
 
@@ -58,26 +48,17 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
       categoryId,
     });
 
-    setIsLoading(false);
-
     if (result.success) {
-      setSuccess("Judge created successfully!");
       singleFormRef.current?.reset();
       setCategoryValue("");
-      setTimeout(() => {
-        setOpen(false);
-        setSuccess(null);
-      }, 1500);
-    } else {
-      setError(result.error || "Failed to create judge");
     }
+
+    finish(result, "Judge created successfully!", "Failed to create judge");
   };
 
   const handleBulkSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+    start();
 
     const csvText = new FormData(e.currentTarget).get("csv") as string;
 
@@ -98,25 +79,17 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
     );
 
     if (result_.error) {
-      setError(result_.error);
-      setIsLoading(false);
+      finish({ success: false, error: result_.error }, "", "Failed to create judges");
       return;
     }
 
     const result = await createJudgesBulk(result_.data);
 
-    setIsLoading(false);
-
     if (result.success) {
-      setSuccess(`Created ${result.count} judges successfully!`);
       bulkFormRef.current?.reset();
-      setTimeout(() => {
-        setOpen(false);
-        setSuccess(null);
-      }, 1500);
-    } else {
-      setError(result.error || "Failed to create judges");
     }
+
+    finish(result, `Created ${result.count} judges successfully!`, "Failed to create judges");
   };
 
   return (
@@ -146,21 +119,12 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-category`}>Category</Label>
-            <Select value={categoryValue} onValueChange={setCategoryValue} name="categoryId">
-              <SelectTrigger id={`${id}-category`}>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name} ({category.type})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <JudgeCategorySelectField
+            id={`${id}-category`}
+            categories={categories}
+            value={categoryValue}
+            onValueChange={setCategoryValue}
+          />
 
           {error && <FormMessage error={error} />}
           {success && <FormMessage success={success} />}

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { authClient } from "@/lib/auth-client";
 import { deleteById, patchJson } from "@/lib/client-api";
-import { toISOStringWithTimezone } from "@/lib/date-time";
+import { createStringFormHandlers, toTimedPayload } from "@/lib/form-utils";
 
 interface DbEvent {
   id: string;
@@ -91,6 +91,8 @@ export default function DayOfSchedule() {
   const [editError, setEditError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { data: session } = authClient.useSession();
+  const { handleInputChange: handleEditChange, handleSelectChange: handleEditSelectChange } =
+    createStringFormHandlers(setEditForm);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -158,15 +160,6 @@ export default function DayOfSchedule() {
     });
   };
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditSelectChange = (name: string, value: string) => {
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem) return;
@@ -174,11 +167,7 @@ export default function DayOfSchedule() {
     setEditError(null);
 
     try {
-      const payload = {
-        ...editForm,
-        startTime: editForm.startTime ? toISOStringWithTimezone(editForm.startTime) : "",
-        endTime: editForm.endTime ? toISOStringWithTimezone(editForm.endTime) : "",
-      };
+      const payload = toTimedPayload(editForm);
       await patchJson(
         `/api/day-of-schedule?id=${editingItem.id}`,
         payload,

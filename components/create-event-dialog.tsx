@@ -16,7 +16,7 @@ import { EventSchedulingFields } from "@/components/event-scheduling-fields";
 import { SubmitCancelFooter } from "@/components/submit-cancel-footer";
 import { VisibilitySelectField } from "@/components/visibility-select-field";
 import { postJson } from "@/lib/client-api";
-import { toISOStringWithTimezone } from "@/lib/date-time";
+import { createStringFormHandlers, toTimedPayload } from "@/lib/form-utils";
 import { Plus } from "lucide-react";
 
 interface CreateEventDialogProps {
@@ -36,6 +36,7 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
     capacity: "",
     visibility: "public",
   });
+  const { handleInputChange, handleSelectChange } = createStringFormHandlers(setFormData);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,11 +44,7 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
     setError(null);
 
     try {
-      const payload = {
-        ...formData,
-        startTime: formData.startTime ? toISOStringWithTimezone(formData.startTime) : "",
-        endTime: formData.endTime ? toISOStringWithTimezone(formData.endTime) : "",
-      };
+      const payload = toTimedPayload(formData);
       await postJson("/api/day-of-schedule", payload, "Failed to create event");
 
       // Reset form and close dialog
@@ -66,15 +63,6 @@ export function CreateEventDialog({ onEventCreated }: CreateEventDialogProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (

@@ -4,6 +4,7 @@ import { Pencil } from "lucide-react";
 import { useActionState, useId } from "react";
 import { ActionStateMessage } from "@/components/action-state-message";
 import { DialogActionFooter } from "@/components/dialog-action-footer";
+import { JudgeCategorySelectField } from "@/components/judge-category-select-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,13 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useTimedActionMessage } from "@/hooks/use-timed-action-message";
 import { type CategoryType, updateJudgeAction } from "./actions";
 
@@ -92,21 +86,11 @@ export function EditJudgeModal({ judge, categories }: EditJudgeModalProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-category`}>Category</Label>
-            <Select name="categoryId" defaultValue={judge.categoryId}>
-              <SelectTrigger id={`${id}-category`}>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name} ({category.type})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <JudgeCategorySelectField
+            id={`${id}-category`}
+            categories={categories}
+            defaultValue={judge.categoryId}
+          />
 
           <ActionStateMessage
             show={showMessage}

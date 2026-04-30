@@ -57,6 +57,23 @@ interface RubricSection {
   rows: RubricRow[];
 }
 
+function hasCompleteScore(
+  evaluation: Evaluation,
+  localScores: Record<string, (number | null)[]>,
+  localRelevance: Record<string, number>,
+  isCategoricalJudge: boolean,
+) {
+  const scores = localScores[evaluation.projectId];
+  const hasAllScores = scores?.every((s) => s !== null && s >= 1 && s <= 5);
+  if (isCategoricalJudge && evaluation.categoryId !== "general") {
+    const hasRelevance =
+      localRelevance[evaluation.projectId] >= 1 &&
+      localRelevance[evaluation.projectId] <= 5;
+    return hasAllScores && hasRelevance;
+  }
+  return hasAllScores;
+}
+
 function RubricSectionTable({ title, rows }: RubricSection) {
   return (
     <div>
@@ -146,13 +163,12 @@ export function ScoringInterface({
   ];
 
   const isEvaluationScored = useCallback((evaluation: Evaluation) => {
-    const scores = localScores[evaluation.projectId];
-    const hasAllScores = scores?.every((s) => s !== null && s >= 1 && s <= 5);
-    if (isCategoricalJudge && evaluation.categoryId !== 'general') {
-      const hasRelevance = localRelevance[evaluation.projectId] >= 1 && localRelevance[evaluation.projectId] <= 5;
-      return hasAllScores && hasRelevance;
-    }
-    return hasAllScores;
+    return hasCompleteScore(
+      evaluation,
+      localScores,
+      localRelevance,
+      isCategoricalJudge,
+    );
   }, [localScores, localRelevance, isCategoricalJudge]);
 
   const groupedEvaluations = useMemo(() => {
@@ -242,15 +258,14 @@ export function ScoringInterface({
   };
 
   const isAllScored = useMemo(() => {
-    return evaluations.every((evaluation) => {
-      const scores = localScores[evaluation.projectId];
-      const hasAllScores = scores?.every((s) => s !== null && s >= 1 && s <= 5);
-      if (isCategoricalJudge && evaluation.categoryId !== 'general') {
-        const hasRelevance = localRelevance[evaluation.projectId] >= 1 && localRelevance[evaluation.projectId] <= 5;
-        return hasAllScores && hasRelevance;
-      }
-      return hasAllScores;
-    });
+    return evaluations.every((evaluation) =>
+      hasCompleteScore(
+        evaluation,
+        localScores,
+        localRelevance,
+        isCategoricalJudge,
+      ),
+    );
   }, [evaluations, localScores, localRelevance, isCategoricalJudge]);
 
   const [rubricOpen, setRubricOpen] = useState(false);

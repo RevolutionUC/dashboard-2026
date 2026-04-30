@@ -20,7 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { deleteById, patchJson, postJson } from "@/lib/client-api";
-import { toISOStringWithTimezone } from "@/lib/date-time";
+import { createStringFormHandlers, toTimedPayload } from "@/lib/form-utils";
 import { Plus, Trash2, Pencil, UtensilsCrossed, Presentation, MapPin, Users, Clock } from "lucide-react";
 
 interface Event {
@@ -68,6 +68,9 @@ export default function Events() {
     location: "",
     capacity: "",
   });
+  const { handleInputChange, handleSelectChange } = createStringFormHandlers(setFormData);
+  const { handleInputChange: handleEditChange, handleSelectChange: handleEditSelectChange } =
+    createStringFormHandlers(setEditForm);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -87,26 +90,13 @@ export default function Events() {
     fetchEvents();
   }, [fetchEvents]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const payload = {
-        ...formData,
-        startTime: formData.startTime ? toISOStringWithTimezone(formData.startTime) : "",
-        endTime: formData.endTime ? toISOStringWithTimezone(formData.endTime) : "",
-      };
+      const payload = toTimedPayload(formData);
       await postJson("/api/events", payload, "Failed to create event");
 
       setFormData({
@@ -156,15 +146,6 @@ export default function Events() {
     });
   };
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditSelectChange = (name: string, value: string) => {
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent) return;
@@ -172,11 +153,7 @@ export default function Events() {
     setEditError(null);
 
     try {
-      const payload = {
-        ...editForm,
-        startTime: editForm.startTime ? toISOStringWithTimezone(editForm.startTime) : "",
-        endTime: editForm.endTime ? toISOStringWithTimezone(editForm.endTime) : "",
-      };
+      const payload = toTimedPayload(editForm);
       await patchJson(
         `/api/events?id=${editingEvent.id}`,
         payload,

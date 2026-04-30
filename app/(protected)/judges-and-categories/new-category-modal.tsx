@@ -9,15 +9,14 @@ import { Label } from "@/components/ui/label";
 import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createCategoriesBulk, createCategory } from "./actions";
+import { useSubmissionState } from "./use-submission-state";
 
 const CATEGORY_TYPES: CategoryType[] = ["Sponsor", "Inhouse", "General"];
 
 export function NewCategoryModal() {
   const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const id = useId();
+  const { isLoading, error, success, start, finish } = useSubmissionState(() => setOpen(false));
 
   const singleFormRef = useRef<HTMLFormElement>(null);
   const bulkFormRef = useRef<HTMLFormElement>(null);
@@ -25,9 +24,7 @@ export function NewCategoryModal() {
 
   const handleSingleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+    start();
 
     const formData = new FormData(e.currentTarget);
     const id = formData.get("shortcode") as string;
@@ -40,26 +37,17 @@ export function NewCategoryModal() {
       type,
     });
 
-    setIsLoading(false);
-
     if (result.success) {
-      setSuccess("Category created successfully!");
       singleFormRef.current?.reset();
       setTypeValue("General");
-      setTimeout(() => {
-        setOpen(false);
-        setSuccess(null);
-      }, 1500);
-    } else {
-      setError(result.error || "Failed to create category");
     }
+
+    finish(result, "Category created successfully!", "Failed to create category");
   };
 
   const handleBulkSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+    start();
 
     const csvText = new FormData(e.currentTarget).get("csv") as string;
 
@@ -80,25 +68,17 @@ export function NewCategoryModal() {
     );
 
     if (result_.error) {
-      setError(result_.error);
-      setIsLoading(false);
+      finish({ success: false, error: result_.error }, "", "Failed to create categories");
       return;
     }
 
     const result = await createCategoriesBulk(result_.data);
 
-    setIsLoading(false);
-
     if (result.success) {
-      setSuccess(`Created ${result.count} categories successfully!`);
       bulkFormRef.current?.reset();
-      setTimeout(() => {
-        setOpen(false);
-        setSuccess(null);
-      }, 1500);
-    } else {
-      setError(result.error || "Failed to create categories");
     }
+
+    finish(result, `Created ${result.count} categories successfully!`, "Failed to create categories");
   };
 
   return (

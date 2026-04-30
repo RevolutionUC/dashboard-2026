@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { dayOfSchedule, user } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
-import { logNamedTargetAction, requireNonOrganizerSession, requireSessionWithId } from "@/lib/api/route-utils";
+import {
+  parseOptionalCapacity,
+  parseOptionalDate,
+  parseOptionalString,
+  validateRequiredName,
+  validateVisibility,
+  withCreateContext,
+  withDeleteContext,
+  withUpdateContext,
+} from "@/lib/api/event-route-shared";
+import { logNamedTargetAction } from "@/lib/api/route-utils";
 
 // GET all day-of schedule events with creator info
 export async function GET() {
@@ -36,45 +46,32 @@ export async function GET() {
 // POST create a new day-of schedule event
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireNonOrganizerSession();
-    if ("error" in auth) {
-      return auth.error;
-    }
-    const { session } = auth;
+    return withCreateContext(request, async ({ session, body }) => {
+      const { name, startTime, endTime, location, capacity, visibility } = body;
 
-    const body = await request.json();
+      const nameError = validateRequiredName(name);
+      if (nameError) return nameError;
 
-    const { name, startTime, endTime, location, capacity, visibility } = body;
+      const visibilityError = validateVisibility(visibility);
+      if (visibilityError) return visibilityError;
 
-    // Validate required fields
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
-    }
+      const [newScheduleItem] = await db
+        .insert(dayOfSchedule)
+        .values({
+          name,
+          startTime: parseOptionalDate(startTime),
+          endTime: parseOptionalDate(endTime),
+          location: parseOptionalString(location),
+          capacity: parseOptionalCapacity(capacity),
+          visibility: visibility || "public",
+          createdBy: session.user.id,
+        })
+        .returning();
 
-    // Validate visibility
-    if (visibility && !["internal", "public"].includes(visibility)) {
-      return NextResponse.json(
-        { error: "Visibility must be 'internal' or 'public'" },
-        { status: 400 },
-      );
-    }
+      await logNamedTargetAction(session, "CREATE_SCHEDULE", newScheduleItem.id, newScheduleItem.name);
 
-    const [newScheduleItem] = await db
-      .insert(dayOfSchedule)
-      .values({
-        name,
-        startTime: startTime ? new Date(startTime) : null,
-        endTime: endTime ? new Date(endTime) : null,
-        location: location || null,
-        capacity: capacity ? Number.parseInt(capacity, 10) : null,
-        visibility: visibility || "public",
-        createdBy: session.user.id,
-      })
-      .returning();
-    
-    await logNamedTargetAction(session, "CREATE_SCHEDULE", newScheduleItem.id, newScheduleItem.name);
-
-    return NextResponse.json(newScheduleItem, { status: 201 });
+      return NextResponse.json(newScheduleItem, { status: 201 });
+    });
   } catch (error) {
     console.error("Error creating day-of schedule item:", error);
     return NextResponse.json({ error: "Failed to create day-of schedule item" }, { status: 500 });
@@ -84,44 +81,35 @@ export async function POST(request: NextRequest) {
 // PATCH update a day-of schedule event
 export async function PATCH(request: NextRequest) {
   try {
-    const sessionAndId = await requireSessionWithId(request);
-    if ("error" in sessionAndId) {
-      return sessionAndId.error;
-    }
-    const { session, id } = sessionAndId;
+    return withUpdateContext(request, async ({ session, id, body }) => {
+      const { name, startTime, endTime, location, capacity, visibility } = body;
 
-    const body = await request.json();
-    const { name, startTime, endTime, location, capacity, visibility } = body;
+      const visibilityError = validateVisibility(visibility);
+      if (visibilityError) return visibilityError;
 
-    if (visibility && !["internal", "public"].includes(visibility)) {
-      return NextResponse.json(
-        { error: "Visibility must be 'internal' or 'public'" },
-        { status: 400 },
-      );
-    }
+      const updateData: Record<string, unknown> = {};
+      if (name !== undefined) updateData.name = name;
+      if (startTime !== undefined) updateData.startTime = parseOptionalDate(startTime);
+      if (endTime !== undefined) updateData.endTime = parseOptionalDate(endTime);
+      if (location !== undefined) updateData.location = parseOptionalString(location);
+      if (capacity !== undefined) updateData.capacity = parseOptionalCapacity(capacity);
+      if (visibility !== undefined) updateData.visibility = visibility;
+      updateData.updatedAt = new Date();
 
-    const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
-    if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null;
-    if (endTime !== undefined) updateData.endTime = endTime ? new Date(endTime) : null;
-    if (location !== undefined) updateData.location = location || null;
-    if (capacity !== undefined) updateData.capacity = capacity ? Number.parseInt(capacity, 10) : null;
-    if (visibility !== undefined) updateData.visibility = visibility;
-    updateData.updatedAt = new Date();
+      const [updatedItem] = await db
+        .update(dayOfSchedule)
+        .set(updateData)
+        .where(eq(dayOfSchedule.id, id))
+        .returning();
 
-    const [updatedItem] = await db
-      .update(dayOfSchedule)
-      .set(updateData)
-      .where(eq(dayOfSchedule.id, id))
-      .returning();
+      if (!updatedItem) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
 
-    if (!updatedItem) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
+      await logNamedTargetAction(session, "UPDATE_SCHEDULE", updatedItem.id, updatedItem.name);
 
-    await logNamedTargetAction(session, "UPDATE_SCHEDULE", updatedItem.id, updatedItem.name);
-
-    return NextResponse.json(updatedItem);
+      return NextResponse.json(updatedItem);
+    });
   } catch (error) {
     console.error("Error updating schedule item:", error);
     return NextResponse.json({ error: "Failed to update schedule item" }, { status: 500 });
@@ -131,24 +119,20 @@ export async function PATCH(request: NextRequest) {
 // DELETE a day-of schedule event
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionAndId = await requireSessionWithId(request);
-    if ("error" in sessionAndId) {
-      return sessionAndId.error;
-    }
-    const { session, id } = sessionAndId;
+    return withDeleteContext(request, async ({ session, id }) => {
+      const [deletedItem] = await db
+        .delete(dayOfSchedule)
+        .where(eq(dayOfSchedule.id, id))
+        .returning();
 
-    const [deletedItem] = await db
-      .delete(dayOfSchedule)
-      .where(eq(dayOfSchedule.id, id))
-      .returning();
+      if (!deletedItem) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
 
-    if (!deletedItem) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
-    
-    await logNamedTargetAction(session, "DELETE_SCHEDULE", deletedItem.id, deletedItem.name);
+      await logNamedTargetAction(session, "DELETE_SCHEDULE", deletedItem.id, deletedItem.name);
 
-    return NextResponse.json({ message: "Event deleted successfully" });
+      return NextResponse.json({ message: "Event deleted successfully" });
+    });
   } catch (error) {
     console.error("Error deleting day-of schedule item:", error);
     return NextResponse.json({ error: "Failed to delete day-of schedule item" }, { status: 500 });

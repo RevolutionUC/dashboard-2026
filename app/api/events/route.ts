@@ -2,7 +2,18 @@ import { desc, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
-import { logNamedTargetAction, requireNonOrganizerSession, requireSessionWithId } from "@/lib/api/route-utils";
+import {
+  parseOptionalCapacity,
+  parseOptionalDate,
+  parseOptionalString,
+  validateEventType,
+  validateRequiredEventType,
+  validateRequiredName,
+  withCreateContext,
+  withDeleteContext,
+  withUpdateContext,
+} from "@/lib/api/event-route-shared";
+import { logNamedTargetAction } from "@/lib/api/route-utils";
 
 // GET all events
 export async function GET() {
@@ -19,48 +30,33 @@ export async function GET() {
 // POST create a new event
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireNonOrganizerSession();
-    if ("error" in auth) {
-      return auth.error;
-    }
-    const { session } = auth;
+    return withCreateContext(request, async ({ session, body }) => {
+      const { name, description, eventType, startTime, endTime, location, capacity } = body;
 
-    const body = await request.json();
-    const { name, description, eventType, startTime, endTime, location, capacity } = body;
+      const nameError = validateRequiredName(name);
+      if (nameError) return nameError;
+      const requiredTypeError = validateRequiredEventType(eventType);
+      if (requiredTypeError) return requiredTypeError;
+      const typeError = validateEventType(eventType);
+      if (typeError) return typeError;
 
-    // Validate required fields
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
-    }
+      const [newEvent] = await db
+        .insert(events)
+        .values({
+          name,
+          description: parseOptionalString(description),
+          eventType,
+          startTime: parseOptionalDate(startTime),
+          endTime: parseOptionalDate(endTime),
+          location: parseOptionalString(location),
+          capacity: parseOptionalCapacity(capacity),
+        })
+        .returning();
 
-    if (!eventType) {
-      return NextResponse.json({ error: "Event type is required" }, { status: 400 });
-    }
+      await logNamedTargetAction(session, "CREATE_EVENT", newEvent.id, newEvent.name);
 
-    // Validate event type
-    if (!["WORKSHOP", "FOOD"].includes(eventType)) {
-      return NextResponse.json(
-        { error: "Event type must be 'WORKSHOP' or 'FOOD'" },
-        { status: 400 },
-      );
-    }
-
-    const [newEvent] = await db
-      .insert(events)
-      .values({
-        name,
-        description: description || null,
-        eventType,
-        startTime: startTime ? new Date(startTime) : null,
-        endTime: endTime ? new Date(endTime) : null,
-        location: location || null,
-        capacity: capacity ? Number.parseInt(capacity, 10) : null,
-      })
-      .returning();
-    
-    await logNamedTargetAction(session, "CREATE_EVENT", newEvent.id, newEvent.name);
-
-    return NextResponse.json(newEvent, { status: 201 });
+      return NextResponse.json(newEvent, { status: 201 });
+    });
   } catch (error) {
     console.error("Error creating event:", error);
     return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
@@ -70,45 +66,36 @@ export async function POST(request: NextRequest) {
 // PATCH update an event
 export async function PATCH(request: NextRequest) {
   try {
-    const sessionAndId = await requireSessionWithId(request);
-    if ("error" in sessionAndId) {
-      return sessionAndId.error;
-    }
-    const { session, id } = sessionAndId;
+    return withUpdateContext(request, async ({ session, id, body }) => {
+      const { name, description, eventType, startTime, endTime, location, capacity } = body;
 
-    const body = await request.json();
-    const { name, description, eventType, startTime, endTime, location, capacity } = body;
+      const typeError = validateEventType(eventType);
+      if (typeError) return typeError;
 
-    if (eventType && !["WORKSHOP", "FOOD"].includes(eventType)) {
-      return NextResponse.json(
-        { error: "Event type must be 'WORKSHOP' or 'FOOD'" },
-        { status: 400 },
-      );
-    }
+      const updateData: Record<string, unknown> = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = parseOptionalString(description);
+      if (eventType !== undefined) updateData.eventType = eventType;
+      if (startTime !== undefined) updateData.startTime = parseOptionalDate(startTime);
+      if (endTime !== undefined) updateData.endTime = parseOptionalDate(endTime);
+      if (location !== undefined) updateData.location = parseOptionalString(location);
+      if (capacity !== undefined) updateData.capacity = parseOptionalCapacity(capacity);
+      updateData.updatedAt = new Date();
 
-    const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description || null;
-    if (eventType !== undefined) updateData.eventType = eventType;
-    if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null;
-    if (endTime !== undefined) updateData.endTime = endTime ? new Date(endTime) : null;
-    if (location !== undefined) updateData.location = location || null;
-    if (capacity !== undefined) updateData.capacity = capacity ? Number.parseInt(capacity, 10) : null;
-    updateData.updatedAt = new Date();
+      const [updatedEvent] = await db
+        .update(events)
+        .set(updateData)
+        .where(eq(events.id, id))
+        .returning();
 
-    const [updatedEvent] = await db
-      .update(events)
-      .set(updateData)
-      .where(eq(events.id, id))
-      .returning();
+      if (!updatedEvent) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
 
-    if (!updatedEvent) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
+      await logNamedTargetAction(session, "UPDATE_EVENT", updatedEvent.id, updatedEvent.name);
 
-    await logNamedTargetAction(session, "UPDATE_EVENT", updatedEvent.id, updatedEvent.name);
-
-    return NextResponse.json(updatedEvent);
+      return NextResponse.json(updatedEvent);
+    });
   } catch (error) {
     console.error("Error updating event:", error);
     return NextResponse.json({ error: "Failed to update event" }, { status: 500 });
@@ -118,21 +105,17 @@ export async function PATCH(request: NextRequest) {
 // DELETE an event
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionAndId = await requireSessionWithId(request);
-    if ("error" in sessionAndId) {
-      return sessionAndId.error;
-    }
-    const { session, id } = sessionAndId;
+    return withDeleteContext(request, async ({ session, id }) => {
+      const [deletedEvent] = await db.delete(events).where(eq(events.id, id)).returning();
 
-    const [deletedEvent] = await db.delete(events).where(eq(events.id, id)).returning();
+      if (!deletedEvent) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
 
-    if (!deletedEvent) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
-    
-    await logNamedTargetAction(session, "DELETE_EVENT", deletedEvent.id, deletedEvent.name);
-    
-    return NextResponse.json({ message: "Event deleted successfully" });
+      await logNamedTargetAction(session, "DELETE_EVENT", deletedEvent.id, deletedEvent.name);
+
+      return NextResponse.json({ message: "Event deleted successfully" });
+    });
   } catch (error) {
     console.error("Error deleting event:", error);
     return NextResponse.json({ error: "Failed to delete event" }, { status: 500 });

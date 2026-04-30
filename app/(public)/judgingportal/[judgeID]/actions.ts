@@ -5,6 +5,25 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { evaluations, judges } from "@/lib/db/schema";
 
+async function runMutation(
+  operation: () => Promise<void>,
+  revalidate: () => void,
+  logPrefix: string,
+  fallbackErrorMessage: string,
+) {
+  try {
+    await operation();
+    revalidate();
+    return { success: true };
+  } catch (error) {
+    console.error(logPrefix, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : fallbackErrorMessage,
+    };
+  }
+}
+
 async function updateEvaluationAndRevalidate(
   judgeId: string,
   projectId: string,
@@ -12,26 +31,24 @@ async function updateEvaluationAndRevalidate(
   logPrefix: string,
   errorMessage: string,
 ) {
-  try {
-    await db
-      .update(evaluations)
-      .set(patch)
-      .where(
-        and(
-          eq(evaluations.judgeId, judgeId),
-          eq(evaluations.projectId, projectId),
-        ),
-      );
-
-    revalidatePath(`/judgingportal/${judgeId}`);
-    return { success: true };
-  } catch (error) {
-    console.error(logPrefix, error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : errorMessage,
-    };
-  }
+  return runMutation(
+    async () => {
+      await db
+        .update(evaluations)
+        .set(patch)
+        .where(
+          and(
+            eq(evaluations.judgeId, judgeId),
+            eq(evaluations.projectId, projectId),
+          ),
+        );
+    },
+    () => {
+      revalidatePath(`/judgingportal/${judgeId}`);
+    },
+    logPrefix,
+    errorMessage,
+  );
 }
 
 export async function saveRanking(
@@ -39,68 +56,57 @@ export async function saveRanking(
   projectId: string,
   bordaScore: number,
 ) {
-  try {
-    await db
-      .update(evaluations)
-      .set({ categoryBordaScore: bordaScore })
-      .where(
-        and(
-          eq(evaluations.judgeId, judgeId),
-          eq(evaluations.projectId, projectId),
-        ),
-      );
-
-    revalidatePath(`/judgingportal/${judgeId}/ranking`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error saving ranking:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to save ranking",
-    };
-  }
+  return runMutation(
+    async () => {
+      await db
+        .update(evaluations)
+        .set({ categoryBordaScore: bordaScore })
+        .where(
+          and(
+            eq(evaluations.judgeId, judgeId),
+            eq(evaluations.projectId, projectId),
+          ),
+        );
+    },
+    () => {
+      revalidatePath(`/judgingportal/${judgeId}/ranking`);
+    },
+    "Error saving ranking:",
+    "Failed to save ranking",
+  );
 }
 
 export async function resetAllRankings(judgeId: string) {
-  try {
-    await db
-      .update(evaluations)
-      .set({ categoryBordaScore: 0 })
-      .where(eq(evaluations.judgeId, judgeId));
-
-    revalidatePath(`/judgingportal/${judgeId}/ranking`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error resetting rankings:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to reset rankings",
-    };
-  }
+  return runMutation(
+    async () => {
+      await db
+        .update(evaluations)
+        .set({ categoryBordaScore: 0 })
+        .where(eq(evaluations.judgeId, judgeId));
+    },
+    () => {
+      revalidatePath(`/judgingportal/${judgeId}/ranking`);
+    },
+    "Error resetting rankings:",
+    "Failed to reset rankings",
+  );
 }
 
 export async function finalizeRankings(judgeId: string) {
-  try {
-    await db
-      .update(judges)
-      .set({ judgingPhase: "finalized" })
-      .where(eq(judges.id, judgeId));
-
-    revalidatePath(`/judgingportal/${judgeId}`);
-    revalidatePath(`/judgingportal/${judgeId}/ranking`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error finalizing rankings:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to finalize rankings",
-    };
-  }
+  return runMutation(
+    async () => {
+      await db
+        .update(judges)
+        .set({ judgingPhase: "finalized" })
+        .where(eq(judges.id, judgeId));
+    },
+    () => {
+      revalidatePath(`/judgingportal/${judgeId}`);
+      revalidatePath(`/judgingportal/${judgeId}/ranking`);
+    },
+    "Error finalizing rankings:",
+    "Failed to finalize rankings",
+  );
 }
 
 export async function saveEvaluationScore(
