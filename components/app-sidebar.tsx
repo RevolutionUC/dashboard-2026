@@ -18,7 +18,7 @@ import {
   Trophy,
   ChartLine,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type ComponentType, useEffect, useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -111,6 +111,50 @@ const judgingSubItems = [
   },
 ];
 
+type SidebarSubItem = {
+  title: string;
+  url: string;
+  icon: ComponentType<{ className?: string }>;
+};
+
+function CollapsibleSidebarSection({
+  icon: Icon,
+  label,
+  items,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  items: SidebarSubItem[];
+}) {
+  return (
+    <Collapsible defaultOpen className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton>
+            <Icon />
+            <span>{label}</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {items.map((item) => (
+              <SidebarMenuSubItem key={item.title}>
+                <SidebarMenuSubButton asChild>
+                  <Link href={item.url}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+}
+
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
   const [dashboardRole, setDashboardRole] = useState<string | null>(null);
@@ -156,59 +200,11 @@ export function AppSidebar() {
 
               {/* Plan with collapsible sub-menu - not for organizers */}
               {!isOrganizer && (
-              <Collapsible defaultOpen className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton>
-                      <NotepadText />
-                      <span>Plan</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {planSubItems.map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link href={item.url}>
-                              <item.icon />
-                              <span>{item.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+                <CollapsibleSidebarSection icon={NotepadText} label="Plan" items={planSubItems} />
               )}
 
               {/* Judging with collapsible sub-menu */}
-              <Collapsible defaultOpen className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton>
-                      <Gavel />
-                      <span>Judging</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {judgingSubItems.map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link href={item.url}>
-                              <item.icon />
-                              <span>{item.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+              <CollapsibleSidebarSection icon={Gavel} label="Judging" items={judgingSubItems} />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

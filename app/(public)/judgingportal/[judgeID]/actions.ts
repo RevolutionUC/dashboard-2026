@@ -5,6 +5,35 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { evaluations, judges } from "@/lib/db/schema";
 
+async function updateEvaluationAndRevalidate(
+  judgeId: string,
+  projectId: string,
+  patch: Partial<typeof evaluations.$inferInsert>,
+  logPrefix: string,
+  errorMessage: string,
+) {
+  try {
+    await db
+      .update(evaluations)
+      .set(patch)
+      .where(
+        and(
+          eq(evaluations.judgeId, judgeId),
+          eq(evaluations.projectId, projectId),
+        ),
+      );
+
+    revalidatePath(`/judgingportal/${judgeId}`);
+    return { success: true };
+  } catch (error) {
+    console.error(logPrefix, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : errorMessage,
+    };
+  }
+}
+
 export async function saveRanking(
   judgeId: string,
   projectId: string,
@@ -146,33 +175,13 @@ export async function saveCategoryRelevance(
     return { success: false, error: "Invalid relevance value" };
   }
 
-  try {
-    // Update the evaluation with category relevance
-    await db
-      .update(evaluations)
-      .set({ categoryRelevance: relevance })
-      .where(
-        and(
-          eq(evaluations.judgeId, judgeId),
-          eq(evaluations.projectId, projectId),
-        ),
-      );
-
-    revalidatePath(`/judgingportal/${judgeId}`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("Error saving category relevance:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to save category relevance",
-    };
-  }
+  return updateEvaluationAndRevalidate(
+    judgeId,
+    projectId,
+    { categoryRelevance: relevance },
+    "Error saving category relevance:",
+    "Failed to save category relevance",
+  );
 }
 
 export async function saveNote(
@@ -184,30 +193,11 @@ export async function saveNote(
     return { success: false, error: "Note cannot exceed 10000 characters" };
   }
 
-  try {
-    await db
-      .update(evaluations)
-      .set({ note })
-      .where(
-        and(
-          eq(evaluations.judgeId, judgeId),
-          eq(evaluations.projectId, projectId),
-        ),
-      );
-
-    revalidatePath(`/judgingportal/${judgeId}`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("Error saving note:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to save note",
-    };
-  }
+  return updateEvaluationAndRevalidate(
+    judgeId,
+    projectId,
+    { note },
+    "Error saving note:",
+    "Failed to save note",
+  );
 }
