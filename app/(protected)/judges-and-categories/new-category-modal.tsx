@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useState } from "react";
 import { CategoryTypeSelectField } from "@/components/category-type-select-field";
 import { CsvImportFormSection } from "@/components/csv-import-form-section";
 import { TwoModeCreateDialog } from "@/components/two-mode-create-dialog";
@@ -10,17 +10,21 @@ import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createCategoriesBulk, createCategory } from "./actions";
 import { useSubmissionState } from "./use-submission-state";
+import { useTwoModeCreateState } from "./use-two-mode-create-state";
 
 const CATEGORY_TYPES: CategoryType[] = ["Sponsor", "Inhouse", "General"];
 
 export function NewCategoryModal() {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-  const { isLoading, error, success, start, finish } = useSubmissionState(() => setOpen(false));
-
-  const singleFormRef = useRef<HTMLFormElement>(null);
-  const bulkFormRef = useRef<HTMLFormElement>(null);
+  const { open, setOpen, id, singleFormRef, bulkFormRef } = useTwoModeCreateState();
+  const { isLoading, error, success, start, finish, finishWithReset } = useSubmissionState(() => setOpen(false));
   const [typeValue, setTypeValue] = useState<CategoryType>("General");
+  const resetSingleForm = () => {
+    singleFormRef.current?.reset();
+    setTypeValue("General");
+  };
+  const resetBulkForm = () => {
+    bulkFormRef.current?.reset();
+  };
 
   const handleSingleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,12 +41,7 @@ export function NewCategoryModal() {
       type,
     });
 
-    if (result.success) {
-      singleFormRef.current?.reset();
-      setTypeValue("General");
-    }
-
-    finish(result, "Category created successfully!", "Failed to create category");
+    finishWithReset(result, "Category created successfully!", "Failed to create category", resetSingleForm);
   };
 
   const handleBulkSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -74,11 +73,7 @@ export function NewCategoryModal() {
 
     const result = await createCategoriesBulk(result_.data);
 
-    if (result.success) {
-      bulkFormRef.current?.reset();
-    }
-
-    finish(result, `Created ${result.count} categories successfully!`, "Failed to create categories");
+    finishWithReset(result, `Created ${result.count} categories successfully!`, "Failed to create categories", resetBulkForm);
   };
 
   return (

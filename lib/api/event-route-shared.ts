@@ -21,6 +21,22 @@ export function parseOptionalCapacity(value: unknown): number | null {
   return Number.parseInt(value, 10);
 }
 
+export function assignSchedulingUpdateFields(
+  updateData: Record<string, unknown>,
+  values: {
+    startTime?: unknown;
+    endTime?: unknown;
+    location?: unknown;
+    capacity?: unknown;
+  },
+) {
+  const { startTime, endTime, location, capacity } = values;
+  if (startTime !== undefined) updateData.startTime = parseOptionalDate(startTime);
+  if (endTime !== undefined) updateData.endTime = parseOptionalDate(endTime);
+  if (location !== undefined) updateData.location = parseOptionalString(location);
+  if (capacity !== undefined) updateData.capacity = parseOptionalCapacity(capacity);
+}
+
 export function validateRequiredName(name: unknown): NextResponse | null {
   if (!name || typeof name !== "string") {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });

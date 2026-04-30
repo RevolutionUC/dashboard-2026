@@ -32,6 +32,18 @@ export function useSubmissionState(onSuccess?: () => void) {
     }
   };
 
+  const finishWithReset = (
+    result: MutationResult,
+    successMessage: string,
+    fallbackErrorMessage: string,
+    reset: () => void,
+  ) => {
+    if (result.success) {
+      reset();
+    }
+    finish(result, successMessage, fallbackErrorMessage);
+  };
+
   return {
     isLoading,
     error,
@@ -39,5 +51,6 @@ export function useSubmissionState(onSuccess?: () => void) {
     setError,
     start,
     finish,
+    finishWithReset,
   };
 }

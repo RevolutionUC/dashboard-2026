@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { logAction } from "@/lib/audit";
+import { getParticipantByUserId } from "@/lib/api/qr-participant";
 
 // GET /api/qr - Get participant info or events list
 export async function GET(request: NextRequest) {
@@ -39,27 +40,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const [participant] = await db
-      .select({
-        user_id: participants.user_id,
-        firstName: participants.firstName,
-        lastName: participants.lastName,
-        email: participants.email,
-        status: participants.status,
-        checkedIn: participants.checkedIn,
-        shirtSize: participants.shirtSize,
-        dietRestrictions: participants.dietRestrictions,
-      })
-      .from(participants)
-      .where(eq(participants.user_id, user_id))
-      .limit(1);
-
-    if (!participant) {
-      return NextResponse.json(
-        { error: "Participant not found" },
-        { status: 404 },
-      );
+    const participantLookup = await getParticipantByUserId(user_id);
+    if ("error" in participantLookup) {
+      return participantLookup.error;
     }
+    const { participant } = participantLookup;
 
     return NextResponse.json(participant);
   } catch (error) {
@@ -90,18 +75,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Find participant
-    const [participant] = await db
-      .select()
-      .from(participants)
-      .where(eq(participants.user_id, user_id))
-      .limit(1);
-
-    if (!participant) {
-      return NextResponse.json(
-        { error: "Participant not found" },
-        { status: 404 },
-      );
+    const participantLookup = await getParticipantByUserId(user_id);
+    if ("error" in participantLookup) {
+      return participantLookup.error;
     }
+    const { participant } = participantLookup;
 
     // Main check-in
     if (mode === "checkin") {

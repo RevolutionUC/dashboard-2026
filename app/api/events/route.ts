@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import {
+  assignSchedulingUpdateFields,
   parseOptionalCapacity,
   parseOptionalDate,
   parseOptionalString,
@@ -76,10 +77,7 @@ export async function PATCH(request: NextRequest) {
       if (name !== undefined) updateData.name = name;
       if (description !== undefined) updateData.description = parseOptionalString(description);
       if (eventType !== undefined) updateData.eventType = eventType;
-      if (startTime !== undefined) updateData.startTime = parseOptionalDate(startTime);
-      if (endTime !== undefined) updateData.endTime = parseOptionalDate(endTime);
-      if (location !== undefined) updateData.location = parseOptionalString(location);
-      if (capacity !== undefined) updateData.capacity = parseOptionalCapacity(capacity);
+      assignSchedulingUpdateFields(updateData, { startTime, endTime, location, capacity });
       updateData.updatedAt = new Date();
 
       const [updatedEvent] = await db

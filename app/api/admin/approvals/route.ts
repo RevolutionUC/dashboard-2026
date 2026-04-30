@@ -4,179 +4,173 @@ import { db } from "@/lib/db";
 import { accessRequests, user as userTable } from "@/lib/db/schema";
 import { sendApprovalEmail, sendDenialEmail } from "@/lib/email";
 import { logAction } from "@/lib/audit";
-import { getAdminSession } from "@/lib/api/admin-auth";
+import { withAdminSession } from "@/lib/api/admin-auth";
 
 // GET /api/admin/approvals - List access requests
 export async function GET(request: Request) {
-  const session = await getAdminSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  return withAdminSession(async () => {
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get("status");
 
-  const { searchParams } = new URL(request.url);
-  const statusFilter = searchParams.get("status");
+    let query = db
+      .select({
+        id: accessRequests.id,
+        userId: accessRequests.userId,
+        email: accessRequests.email,
+        name: accessRequests.name,
+        image: accessRequests.image,
+        status: accessRequests.status,
+        role: accessRequests.role,
+        requestedAt: accessRequests.requestedAt,
+        reviewedAt: accessRequests.reviewedAt,
+        reviewedBy: accessRequests.reviewedBy,
+      })
+      .from(accessRequests)
+      .orderBy(accessRequests.requestedAt)
+      .$dynamic();
 
-  let query = db
-    .select({
-      id: accessRequests.id,
-      userId: accessRequests.userId,
-      email: accessRequests.email,
-      name: accessRequests.name,
-      image: accessRequests.image,
-      status: accessRequests.status,
-      role: accessRequests.role,
-      requestedAt: accessRequests.requestedAt,
-      reviewedAt: accessRequests.reviewedAt,
-      reviewedBy: accessRequests.reviewedBy,
-    })
-    .from(accessRequests)
-    .orderBy(accessRequests.requestedAt)
-    .$dynamic();
+    if (
+      statusFilter &&
+      ["pending", "approved", "denied"].includes(statusFilter)
+    ) {
+      query = query.where(
+        eq(
+          accessRequests.status,
+          statusFilter as "pending" | "approved" | "denied",
+        ),
+      );
+    }
 
-  if (
-    statusFilter &&
-    ["pending", "approved", "denied"].includes(statusFilter)
-  ) {
-    query = query.where(
-      eq(
-        accessRequests.status,
-        statusFilter as "pending" | "approved" | "denied",
-      ),
-    );
-  }
-
-  const requests = await query;
-  return NextResponse.json(requests);
+    const requests = await query;
+    return NextResponse.json(requests);
+  });
 }
 
 // PATCH /api/admin/approvals - Approve or deny a request
 export async function PATCH(request: Request) {
-  const session = await getAdminSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const body = await request.json();
-  const { requestId, action, role } = body as {
-    requestId: string;
-    action: "approve" | "deny" | "revoke";
-    role?: string;
-  };
-
-  if (!requestId || !["approve", "deny", "revoke"].includes(action)) {
-    return NextResponse.json(
-      {
-        error:
-          "Invalid request. Provide requestId and action (approve/deny/revoke).",
-      },
-      { status: 400 },
-    );
-  }
-
-  // Validate role if approving
-  const validRoles = ["lead", "organizer", "admin"];
-  if (action === "approve" && role && !validRoles.includes(role)) {
-    return NextResponse.json(
-      { error: "Invalid role. Must be lead, organizer, or admin." },
-      { status: 400 },
-    );
-  }
-
-  const assignedRole = action === "approve" ? (role || "lead") : undefined;
-
-  // Get the access request
-  const [existingRequest] = await db
-    .select()
-    .from(accessRequests)
-    .where(eq(accessRequests.id, requestId))
-    .limit(1);
-
-  if (!existingRequest) {
-    return NextResponse.json({ error: "Request not found" }, { status: 404 });
-  }
-
-  const newStatus = action === "approve" ? "approved" : "denied";
-
-  // Update the access request
-  await db
-    .update(accessRequests)
-    .set({
-      status: newStatus,
-      ...(assignedRole && { role: assignedRole }),
-      reviewedAt: new Date(),
-      reviewedBy: session.user.id,
-    })
-    .where(eq(accessRequests.id, requestId));
-
-  // If approved, update the user role and dashboard role
-  if (action === "approve") {
-    const updateData: { banned: false; dashboardRole: string; role?: string } = {
-      banned: false,
-      dashboardRole: assignedRole!,
+  return withAdminSession(async (session) => {
+    const body = await request.json();
+    const { requestId, action, role } = body as {
+      requestId: string;
+      action: "approve" | "deny" | "revoke";
+      role?: string;
     };
-    if (assignedRole === "admin") {
-      updateData.role = "admin";
+
+    if (!requestId || !["approve", "deny", "revoke"].includes(action)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid request. Provide requestId and action (approve/deny/revoke).",
+        },
+        { status: 400 },
+      );
     }
+
+    // Validate role if approving
+    const validRoles = ["lead", "organizer", "admin"];
+    if (action === "approve" && role && !validRoles.includes(role)) {
+      return NextResponse.json(
+        { error: "Invalid role. Must be lead, organizer, or admin." },
+        { status: 400 },
+      );
+    }
+
+    const assignedRole = action === "approve" ? (role || "lead") : undefined;
+
+    // Get the access request
+    const [existingRequest] = await db
+      .select()
+      .from(accessRequests)
+      .where(eq(accessRequests.id, requestId))
+      .limit(1);
+
+    if (!existingRequest) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    const newStatus = action === "approve" ? "approved" : "denied";
+
+    // Update the access request
     await db
-      .update(userTable)
-      .set(updateData)
-      .where(eq(userTable.id, existingRequest.userId));
+      .update(accessRequests)
+      .set({
+        status: newStatus,
+        ...(assignedRole && { role: assignedRole }),
+        reviewedAt: new Date(),
+        reviewedBy: session.user.id,
+      })
+      .where(eq(accessRequests.id, requestId));
 
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "APPROVE_USER",
-      details: {
-        targetName: existingRequest.name,
-        targetEmail: existingRequest.email,
-        assignedRole: assignedRole,
-      },
+    // If approved, update the user role and dashboard role
+    if (action === "approve") {
+      const updateData: { banned: false; dashboardRole: string; role?: string } = {
+        banned: false,
+        dashboardRole: assignedRole!,
+      };
+      if (assignedRole === "admin") {
+        updateData.role = "admin";
+      }
+      await db
+        .update(userTable)
+        .set(updateData)
+        .where(eq(userTable.id, existingRequest.userId));
+
+      await logAction({
+        userId: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        action: "APPROVE_USER",
+        details: {
+          targetName: existingRequest.name,
+          targetEmail: existingRequest.email,
+          assignedRole: assignedRole,
+        },
+      });
+    } else if (action === "revoke") {
+      // Revoke: clear dashboard role and ban the user
+      await db
+        .update(userTable)
+        .set({ dashboardRole: null, banned: true, banReason: "Access revoked by admin" })
+        .where(eq(userTable.id, existingRequest.userId));
+
+      await logAction({
+        userId: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        action: "REVOKE_USER",
+        details: {
+          targetName: existingRequest.name,
+          targetEmail: existingRequest.email,
+        },
+      });
+    } else {
+      // Deny
+      await logAction({
+        userId: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        action: "DENY_USER",
+        details: {
+          targetName: existingRequest.name,
+          targetEmail: existingRequest.email,
+        },
+      });
+    }
+
+    // Send notification email (fire-and-forget) - only for approve/deny, not revoke
+    if (action === "approve") {
+      sendApprovalEmail(existingRequest.email, existingRequest.name).catch(
+        (err: unknown) => console.error("Failed to send approval email:", err),
+      );
+    } else if (action === "deny") {
+      sendDenialEmail(existingRequest.email, existingRequest.name).catch(
+        (err: unknown) => console.error("Failed to send denial email:", err),
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      status: newStatus,
     });
-  } else if (action === "revoke") {
-    // Revoke: clear dashboard role and ban the user
-    await db
-      .update(userTable)
-      .set({ dashboardRole: null, banned: true, banReason: "Access revoked by admin" })
-      .where(eq(userTable.id, existingRequest.userId));
-
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "REVOKE_USER",
-      details: {
-        targetName: existingRequest.name,
-        targetEmail: existingRequest.email,
-      },
-    });
-  } else {
-    // Deny
-    await logAction({
-      userId: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      action: "DENY_USER",
-      details: {
-        targetName: existingRequest.name,
-        targetEmail: existingRequest.email,
-      },
-    });
-  }
-
-  // Send notification email (fire-and-forget) - only for approve/deny, not revoke
-  if (action === "approve") {
-    sendApprovalEmail(existingRequest.email, existingRequest.name).catch(
-      (err: unknown) => console.error("Failed to send approval email:", err),
-    );
-  } else if (action === "deny") {
-    sendDenialEmail(existingRequest.email, existingRequest.name).catch(
-      (err: unknown) => console.error("Failed to send denial email:", err),
-    );
-  }
-
-  return NextResponse.json({
-    success: true,
-    status: newStatus,
   });
 }

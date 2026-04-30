@@ -1,14 +1,13 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { participants, events, eventRegistrations } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { requireAuthenticatedSession } from "@/lib/api/session-auth";
 
 export async function GET() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuthenticatedSession();
+  if ("error" in auth) {
+    return auth.error;
   }
   
   try {

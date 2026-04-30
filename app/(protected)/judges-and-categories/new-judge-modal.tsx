@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useState } from "react";
 import { CsvImportFormSection } from "@/components/csv-import-form-section";
 import { JudgeCategorySelectField } from "@/components/judge-category-select-field";
 import { TwoModeCreateDialog } from "@/components/two-mode-create-dialog";
@@ -10,6 +10,7 @@ import { FormFooter, FormMessage } from "@/components/form-dialog";
 import { parseCSV } from "@/lib/csv-parser";
 import { type CategoryType, createJudge, createJudgesBulk } from "./actions";
 import { useSubmissionState } from "./use-submission-state";
+import { useTwoModeCreateState } from "./use-two-mode-create-state";
 
 interface NewJudgeModalProps {
   categories: {
@@ -20,13 +21,16 @@ interface NewJudgeModalProps {
 }
 
 export function NewJudgeModal({ categories }: NewJudgeModalProps) {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-  const { isLoading, error, success, start, finish } = useSubmissionState(() => setOpen(false));
-
-  const singleFormRef = useRef<HTMLFormElement>(null);
-  const bulkFormRef = useRef<HTMLFormElement>(null);
+  const { open, setOpen, id, singleFormRef, bulkFormRef } = useTwoModeCreateState();
+  const { isLoading, error, success, start, finish, finishWithReset } = useSubmissionState(() => setOpen(false));
   const [categoryValue, setCategoryValue] = useState<string>("");
+  const resetSingleForm = () => {
+    singleFormRef.current?.reset();
+    setCategoryValue("");
+  };
+  const resetBulkForm = () => {
+    bulkFormRef.current?.reset();
+  };
 
   const handleSingleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -48,12 +52,7 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
       categoryId,
     });
 
-    if (result.success) {
-      singleFormRef.current?.reset();
-      setCategoryValue("");
-    }
-
-    finish(result, "Judge created successfully!", "Failed to create judge");
+    finishWithReset(result, "Judge created successfully!", "Failed to create judge", resetSingleForm);
   };
 
   const handleBulkSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -85,11 +84,7 @@ export function NewJudgeModal({ categories }: NewJudgeModalProps) {
 
     const result = await createJudgesBulk(result_.data);
 
-    if (result.success) {
-      bulkFormRef.current?.reset();
-    }
-
-    finish(result, `Created ${result.count} judges successfully!`, "Failed to create judges");
+    finishWithReset(result, `Created ${result.count} judges successfully!`, "Failed to create judges", resetBulkForm);
   };
 
   return (

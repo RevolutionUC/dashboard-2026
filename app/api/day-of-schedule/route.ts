@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { dayOfSchedule, user } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
 import {
+  assignSchedulingUpdateFields,
   parseOptionalCapacity,
   parseOptionalDate,
   parseOptionalString,
@@ -89,10 +90,7 @@ export async function PATCH(request: NextRequest) {
 
       const updateData: Record<string, unknown> = {};
       if (name !== undefined) updateData.name = name;
-      if (startTime !== undefined) updateData.startTime = parseOptionalDate(startTime);
-      if (endTime !== undefined) updateData.endTime = parseOptionalDate(endTime);
-      if (location !== undefined) updateData.location = parseOptionalString(location);
-      if (capacity !== undefined) updateData.capacity = parseOptionalCapacity(capacity);
+      assignSchedulingUpdateFields(updateData, { startTime, endTime, location, capacity });
       if (visibility !== undefined) updateData.visibility = visibility;
       updateData.updatedAt = new Date();
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useActionState, useState } from "react";
 import { ActionStateMessage } from "@/components/action-state-message";
 import { DialogActionFooter } from "@/components/dialog-action-footer";
 import { Button } from "@/components/ui/button";
@@ -15,18 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTimedActionMessage } from "@/hooks/use-timed-action-message";
+import { useFormActionDialogState } from "@/hooks/use-form-action-dialog-state";
 import { assignProjectsToJudgeGroups } from "./actions";
 
 export function AssignSubmissionsButton() {
-  const [open, setOpen] = useState(false);
-  const [state, formAction, pending] = useActionState(
-    assignProjectsToJudgeGroups,
-    null,
-  );
-  const showMessage = useTimedActionMessage(state, {
+  const { open, setOpen, state, formAction, pending, showMessage } =
+    useFormActionDialogState(assignProjectsToJudgeGroups, {
     durationMs: 2000,
-    onSuccess: () => setOpen(false),
   });
 
   return (
